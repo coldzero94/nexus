@@ -1,0 +1,35 @@
+name: "✨ 기능/아이디어"
+description: "만들고 싶은 기능이나 아이디어 제안"
+labels: ["기능"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: 무엇을
+      description: 만들고 싶은 것을 한두 문장으로
+      placeholder: 예) 캐릭터가 3일 연속 쉬면 심심한 표정을 짓는다
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: 왜
+      description: 이게 있으면 뭐가 좋아지는지
+      placeholder: 예) 복귀 동기를 만들되 죄책감은 주지 않기 위해
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: 완료 기준
+      description: 어떻게 되면 "끝났다"고 할 수 있는지
+      placeholder: 예) 3일 무활동 후 앱을 열면 심심 표정 + 산책 제안 대사가 보인다
+    validations:
+      required: true
+  - type: textarea
+    id: ref
+    attributes:
+      label: 참고 (선택)
+      description: 화면 스케치, 참고 앱, 관련 문서 링크
+    validations:
+      required: false

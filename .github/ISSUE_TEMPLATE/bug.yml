@@ -1,0 +1,36 @@
+name: "🐛 버그"
+description: "이상하게 동작하는 것 신고"
+labels: ["버그"]
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: 재현 절차
+      description: 내가 뭘 했더니 (순서대로)
+      placeholder: |
+        1. 앱을 켠다
+        2. 성장 탭을 연다
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대한 것
+      placeholder: 예) 오늘 걸음 8,000보가 보여야 한다
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제로 벌어진 것
+      placeholder: 예) 0보로 나온다 / 앱이 꺼진다
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: 환경·스크린샷
+      description: 기기, iOS 버전, 빌드 번호(TestFlight에 표시), 스크린샷
+    validations:
+      required: false

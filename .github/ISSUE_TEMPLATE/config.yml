@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "❓ 뭘 골라야 할지 모르겠으면"
+    url: https://github.com/coldzero94/nexus/blob/main/docs/WORKFLOW.md
+    about: 협업 가이드(WORKFLOW.md)를 먼저 읽어보세요. 그래도 모르겠으면 빈 이슈로 그냥 쓰면 됩니다.
