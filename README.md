@@ -11,6 +11,8 @@
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | **처음이면 여기부터** — 협업 방법, 이슈 쓰는 법, 스프린트 리듬 |
 | [docs/MVP.md](docs/MVP.md) | 제품 정의 v0.2 — 화면, XP 산식, 데이터 모델, 수익화 경계 |
 | [docs/SPRINTS.md](docs/SPRINTS.md) | 스프린트 일정과 백로그 (S0~S4 → 알파) |
+| [docs/BACKLOG.md](docs/BACKLOG.md) | 기능 백로그 — 에픽→태스크 상세 (완료 기준·의존성·규모) |
+| [docs/STACK.md](docs/STACK.md) | 기술 스택 결정 (iOS 26 · SwiftUI · SwiftData · Xcode Cloud) |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | 시장·경쟁 조사 보고서 (2026-07) |
 | [docs/BENCHMARK.md](docs/BENCHMARK.md) | 기능별 벤치마크 — 베낄 것 vs 피할 것 |
 | Project_NEXUS_제작기획서.docx | 초기 비전 기획서 (장기 로드맵의 북극성) |

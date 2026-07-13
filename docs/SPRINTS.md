@@ -5,6 +5,7 @@
 - **개발은 둘 다 한다** — 아래 담당 표기는 리드일 뿐, 구현 이슈는 플래닝에서 나눠 가진다.
 - **GitHub에서 보는 법**: 스프린트 = [마일스톤](https://github.com/coldzero94/nexus/milestones) (진행률 바 제공), 작업 현황 = 프로젝트 보드.
 - 제품 스펙 근거는 [MVP.md](./MVP.md), 설계 근거는 [BENCHMARK.md](./BENCHMARK.md) 참고.
+- **태스크 단위 상세**(완료 기준·의존성·규모)는 [BACKLOG.md](./BACKLOG.md) — 플래닝 때 여기서 이슈를 떠서 담당을 나눈다. 기술 스택은 [STACK.md](./STACK.md).
 
 ## 일정 요약
 
