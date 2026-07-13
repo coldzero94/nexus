@@ -48,7 +48,7 @@
 - `Character` — 외형, 레벨, 누적 XP, **컨디션(0-100, 소프트 손실 대상)**, 기분(enum 5)
 - `StatBlock` — 지구력/민첩/힘/회복 (+집중/친화 잠금)
 - `ClassAffinity` — 최근 28일 활동 벡터 → 성향 %
-- `RewardEvent` — 모든 XP 지급 로그(원본 참조 유지 → 산식 변경 시 소급 재계산)
+- `RewardEvent` — 모든 XP 지급의 불변 원장: 멱등성 키(HK 샘플 UUID), provenance(소스 번들ID+수기 여부), 단조 시퀀스, 산식 버전 태그. 취소는 수정이 아닌 보상 이벤트 append — 서버 전환 대비 계약은 [BACKEND.md §1](./BACKEND.md)
 - `Expedition` — 원정 시작/종료 시각, 보상
 - `Item/Badge` — 슬롯, 해금 조건 (월 1회 한정 배지 캘린더 포함)
 
