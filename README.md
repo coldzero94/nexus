@@ -20,7 +20,7 @@
 ## 지금 어디까지 왔나
 
 - **스프린트**: [Milestones](https://github.com/coldzero94/nexus/milestones)에서 진행률 확인
-- **작업 현황**: [Issues](https://github.com/coldzero94/nexus/issues) · Projects 보드
+- **작업 현황**: [Issues](https://github.com/coldzero94/nexus/issues) · [보드](https://github.com/users/coldzero94/projects/1)
 
 ## 팀
 

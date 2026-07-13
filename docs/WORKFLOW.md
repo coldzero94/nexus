@@ -20,7 +20,7 @@
 |---|---|---|
 | 할 일·아이디어·버그 | [Issues](https://github.com/coldzero94/nexus/issues) | 모든 작업의 단위. 템플릿 골라서 작성 |
 | 스프린트 | [Milestones](https://github.com/coldzero94/nexus/milestones) | S0~S4. 진행률 바로 스프린트 상태 확인 |
-| 작업 현황판 | Projects 보드 | Backlog → 이번 스프린트 → 진행 중 → **확인 대기(교차 확인)** → Done |
+| 작업 현황판 | [보드](https://github.com/users/coldzero94/projects/1) | Backlog → 이번 스프린트 → 진행 중 → **확인 대기(교차 확인)** → Done |
 | 기획 문서 | [docs/](../docs/) | MVP 정의, 조사 보고서, 벤치마크, 이 문서 |
 | 코드 변경 | Pull Request | §4 참고 — 코드 대신 스크린샷·영상을 보면 됨 |
 
