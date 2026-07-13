@@ -24,5 +24,5 @@
 
 | | 역할 |
 |---|---|
-| 이찬영 ([@coldzero94](https://github.com/coldzero94)) | 엔지니어링 |
-| 김치완 ([@kimchi151](https://github.com/kimchi151)) | 프로덕트 오너 · 게임 디자인 |
+| 이찬영 ([@coldzero94](https://github.com/coldzero94)) | 개발 · 아키텍처/릴리즈 리드 |
+| 김치완 ([@kimchi151](https://github.com/kimchi151)) | 개발 · 프로덕트/게임 디자인 리드 |
