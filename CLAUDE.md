@@ -2,6 +2,13 @@
 
 Android life-RPG that turns health data (walking/running/strength) into 2D character growth. Two-person team (coldzero94, kimchi151). MVP is a local-only app with no server.
 
+Monorepo layout (see `docs/ARCHITECTURE.md` for rationale):
+
+- `kotlin/` — the Gradle root: `core/` (KMP game logic), `app/` (Android app), later `server/` (Ktor). **Run all Gradle commands from here.**
+- `web/` — (S7~) Astro landing/policy + share pages, pnpm
+- `supabase/` — (S9~) SQL migrations only
+- `docs/` — planning & design, the source of truth
+
 ## Docs are the source of truth
 
 Decisions and their rationale live in `docs/` (written in Korean), not in code. Check the relevant doc before working:
