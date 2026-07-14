@@ -46,7 +46,8 @@ All Gradle commands run from `kotlin/`. Requires JDK 21 and Android SDK (`kotlin
 
 - **No code without a ticket**: every branch starts from an issue. If work appears mid-task, create the issue first.
 - Branch naming: `feat|fix|docs|chore/<issue-number>-<slug>` (e.g., `feat/9-trust-filter`).
-- Commit messages in Korean with `docs:`/`feat:`/`fix:`/`chore:` prefix, referencing the issue: `feat: 신뢰 필터 3종 (#9)`.
+- Commit format: `type(scope)?: summary (#issue)` — types are `feat|fix|docs|refactor|test|chore|ci`, scope is a monorepo module (core/app/health/data/ui/web/supabase/server). Summary in Korean, no trailing period, ~50 chars, first line must stand alone. Optional body after a blank line explains what/why (never how). Formula-version or DB-schema changes use `feat!:` with the migration path in the body. Enforced by `.githooks/commit-msg` (`git config core.hooksPath .githooks`).
+- Commit small and often on branches — main only keeps the squashed PR title.
 - Every PR body must include a screenshot or screen recording, plus `Closes #N` (one issue per PR by default; list each if several). Merging then auto-closes the issue → board Done → milestone progress.
 - Merges are **squash-only**, the PR title becomes the main commit (repo setting), and branches auto-delete.
 - PR bodies must follow `.github/pull_request_template.md` — never skip the "확인 방법" section (reviews don't start without it). Update the description before merge if the code changed during review.
