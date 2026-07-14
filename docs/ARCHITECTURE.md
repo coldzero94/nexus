@@ -63,13 +63,31 @@ nexus/  (모노레포 — 폴리글랏 3파트, 모노레포 툴 없음)
 - **Kotlin 타입은 공식 생성기 없음**(TS/Go/Swift/Python만) → core에 수동 `@Serializable` 모델 + **TS 타입 diff를 "Kotlin 모델도 갱신하라"는 리뷰 신호로** 사용.
 - **무료 티어 운영 함정**: ① 7일 무활동 시 프로젝트 자동 정지, 정지 90일 후 복원 불가 → **GitHub Actions cron(주 2회)이 Ktor의 DB 터치 헬스체크를 호출**(E10-8) ② 활성 무료 프로젝트 2개 한도가 계정 합산 → 스테이징 없이 "로컬=프리뷰, 원격 1개=프로덕션(서울)" ③ Branching 2.0은 Pro 전용이라 설계에서 제외. 실사용자가 붙으면 Pro $25/월이 정지 리스크 제거를 겸하는 가장 싼 보험.
 
-## 6. CI — paths 게이트 + 단일 required check
+## 6. 모노레포 계약(Contract) 설계 — 단일 레포의 본전 뽑기
+
+**원칙: 경계를 넘는 모든 계약은 "단일 소스 → 생성물 커밋 → CI 드리프트 체크(`git diff --exit-code`)"** — 같은 레포이므로 계약 변경과 소비자 갱신이 한 PR에서 원자적으로 일어나고, 어기면 CI가 깨진다.
+
+| 계약 | 단일 소스 | 소비자 | 동기화 메커니즘 | 시점 |
+|---|---|---|---|---|
+| 게임 로직·도메인 모델 | `kotlin/core` (commonMain) | app · server · (iOS) | **Gradle project dependency — 코드젠 자체가 불필요** (모노레포 최대 이점) | S1~ |
+| **서버 API 계약** | Ktor 라우트 → **OpenAPI 스펙 생성**(Ktor 3.4+) → `openapi/nexus-api.yaml` 커밋 | 웹(openapi-typescript로 TS 클라이언트), API 문서, 향후 iOS 클라이언트, 계약 테스트 | 서버 변경 PR에서 스펙 재생성 → 드리프트 체크. app↔server는 core의 `@Serializable` DTO를 직접 공유하므로 OpenAPI는 "비 Kotlin 소비자용 뷰" | S9 |
+| DB 스키마 | `supabase/migrations/` (SQL) | server(JDBC) · 웹(gen types TS) · app 읽기(supabase-kt) | `gen types typescript` 드리프트 체크, Kotlin 모델은 TS diff를 리뷰 신호로 (§5) | S9 |
+| **밸런스 케이스 테이블** | `balance/*.csv` (치완 스프레드시트 export) | core 테스트(E3-13) · **server 테스트(E10-5 — 같은 표로 서버 재계산 검증)** · (선택) 웹 밸런스 시뮬레이터 | 같은 CSV를 픽스처로 로드 — 산식 버전마다 표도 버전링 | S2~ |
+| 분석 이벤트 스키마 | core의 이벤트 정의(allowlist 포함) | app 계측 · 문서 | allowlist 위반이 테스트에서 걸림 (E8-1) | S7 |
+| 딥링크 라우트 | 라우트 매니페스트(JSON): `/s/crew/{id}` 등 | app intent-filter · 웹 Astro 라우트 · assetlinks 검증 | 매니페스트 대조 테스트 — 앱과 웹이 서로 다른 경로를 아는 사고 방지 | S10 |
+| 디자인 토큰 | `tokens.json` (컬러·타이포·스페이싱) | app Compose 토큰 · 웹 CSS 변수 | 생성 스크립트 (웹 공유 페이지가 앱과 같은 룩) | S10 |
+| 앱 서명 ↔ App Links | Play App Signing SHA256 | `web/public/.well-known/assetlinks.json` | 문서화 + 배포 전 검증 스크립트 | S10 |
+
+**OpenAPI 파이프라인 상세** (E10-11): 코드 퍼스트 — Ktor 라우트가 진실, 스펙은 생성물. ① 서버 빌드가 `openapi/nexus-api.yaml` 생성 ② PR CI가 재생성 후 드리프트 체크(스펙 갱신 없는 API 변경 차단) ③ `web/`은 openapi-typescript로 TS 타입·클라이언트 생성(공유 스냅샷 페이지의 서버 호출이 타입 안전) ④ 스펙 자체가 API 문서(치완 포함 누구나 열람). app은 이 파이프라인을 타지 않는다 — core DTO 직접 공유가 더 강한 보장(컴파일 타임).
+
+## 7. CI — paths 게이트 + 단일 required check
 
 - 워크플로 3개(android/web/supabase)를 항상 트리거하되, 첫 job에서 `dorny/paths-filter`(**SHA 핀 고정** — tj-actions 오염 사고 CVE-2025-30066 교훈)로 변경 파트를 감지해 후속 job을 `if`로 게이트.
 - **함정 회피**: 워크플로 수준 `on.paths` + required check 조합은 스킵 시 Pending으로 머지가 영구 차단됨 → `if: always()`로 취합하는 **단일 `ci-ok` job만 required check**로 지정.
 - kotlin CI에 core의 iOS klib 컴파일 포함(§2). 계측 테스트는 CI 제외(로컬/야간). (S9~) server job: `kotlin/server/**` 변경 시 이미지 빌드 → Cloud Run 배포, `max-instances` 상한·예산 알림 필수.
+- **계약 드리프트 체크(§6)를 CI에 통합**: OpenAPI 스펙·Supabase TS 타입·라우트 매니페스트가 생성물과 불일치하면 PR이 깨진다.
 
-## 7. 무료 원칙 정합 (STACK.md §8 연장)
+## 8. 무료 원칙 정합 (STACK.md §8 연장)
 
 | 파트 | 비용 |
 |---|---|
