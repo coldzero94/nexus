@@ -47,6 +47,7 @@ All Gradle commands run from `kotlin/`. Requires JDK 21 (`export JAVA_HOME=/opt/
 - Every PR body must include a screenshot or screen recording, plus `Closes #N`.
 - Write PR titles/descriptions in product language (Korean, readable by a non-engineer).
 - Commit messages in Korean with `docs:`/`feat:`/`fix:`/`chore:` prefix.
+- Never `git add -A` / `git add .` — stage explicit paths only. (A `git add -A` on a branch without .gitignore once committed 1,500 build-cache files to main.)
 - No direct pushes to main for code — `feature/*` branch + PR. (Docs-only changes may commit to main directly.)
 - Definition of done: not merged, but **verified on-device by the person who didn't build it**, with a confirming issue comment.
 
