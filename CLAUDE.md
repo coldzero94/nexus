@@ -59,9 +59,10 @@ _To be filled at scaffolding (E1-1). Expected shape:_
 
 ## Engineering rules
 
-- Stack: Kotlin 2.4.x + Compose, minSdk 34, Health Connect (connect-client 1.1.0), Room, Glance, WorkManager. Monorepo layout (android/ · web/ · supabase/) is defined in `docs/ARCHITECTURE.md`; details in `docs/STACK.md`.
+- Stack: Kotlin 2.4.x + Compose, minSdk 34, Health Connect (connect-client 1.1.0), Room, Glance, WorkManager. Monorepo layout (kotlin/ · web/ · supabase/) is defined in `docs/ARCHITECTURE.md`; details in `docs/STACK.md`.
 - `core/` is a KMP module (commonMain) — **no Android imports**, and its iOS targets stay enabled so klib compilation catches commonMain contamination in CI. The XP formula exists only as pure functions in core.
-- `supabase/` is Deno territory — never apply Node tooling (pnpm/eslint) to it. All schema changes via `supabase migration new`, never the dashboard.
+- `supabase/` holds migrations only (no Edge Functions — server compute lives in `kotlin/server/` so the XP formula stays single-sourced in core). All schema changes via `supabase migration new`, never the dashboard.
+- Server (`kotlin/server/`, S9~): every DB query must be scoped by the verified JWT `sub` (server bypasses RLS). `sb_secret`/DB password live only in deployment secrets.
 - Web share pages must render OG tags in initial HTML (Kakao scraper doesn't run JS). Game logic is never reimplemented in TS — derived values come from server snapshots.
 - `RewardEvent` is an immutable ledger: never mutate existing records; corrections are appended compensating events.
 - Changing the XP formula = one atomic set: bump formula version tag + update `docs/MVP.md §5` + update the case-table tests (spreadsheet parity).

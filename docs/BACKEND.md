@@ -8,7 +8,7 @@
 |---|---|---|---|
 | **1. 로컬** | MVP~알파 | Health Connect = 원본의 단일 진실 소스, 게임 상태는 Room 로컬. 파생 상태의 클라우드 동기화 없음 | 없음 |
 | **1.5 백업** | 알파 전 필수 | 수동 내보내기/가져오기 + Android 자동 백업(allowBackup) | 없음 |
-| **2. 하이브리드** | 게이트 통과 후 (커뮤니티) | 게임 상태는 로컬 유지, **리더보드만 서버**(제출형): 활동 요약 제출 → 서버가 산식 재계산 + 개연성 검증 | Supabase 서울 (1순위) |
+| **2. 하이브리드** | 게이트 통과 후 (커뮤니티) | 게임 상태는 로컬 유지, **리더보드만 서버**(제출형): 활동 요약 제출 → 서버가 산식 재계산 + 개연성 검증 | **Supabase(DB·Auth) + 자체 Ktor 서버(Cloud Run 서울)** |
 | **3. 서버 권위** | 필요 시 | RewardEvent 원장을 서버로 임포트 — 리플레이를 신뢰하는 게 아니라 **검증하며 재계산** | 2단계 + 보조 서비스 |
 
 ## 1. 지금 MVP 코드에 들어가야 할 계약 ⚠️
@@ -50,27 +50,32 @@
 게임 상태 전체를 서버 권위로 옮기지 않는다. Strava(ML 이상치 탐지)·Sweatcoin(서버측 계산, 5~8% 거절)·Niantic(수동 입력 무시)이 증명한 패턴:
 
 ```
-클라이언트                                  서버 (Supabase)
-─────────                                  ──────────────
-게임 상태·캐릭터: 로컬 유지                 크루/시즌/리더보드 객체
-기간별 활동 요약 생성  ──Play Integrity──▶  ① 무결성 판정 검증 (요청 출처 보증)
-(유형·시간·심박존 요약,                     ② 산식으로 점수 재계산 (클라 점수 안 믿음)
- 원본 샘플 아님)                            ③ 개연성 검증 (인간 한계·일일 상한·recordingMethod)
-                                           ④ 이상 시 소프트 제재 (랭킹 제외, 밴 아님)
+클라이언트 (Android)                     [Cloud Run 서울 · 무료] server/ = Ktor + core(KMP)
+─────────                                ──────────────────────────────
+게임 상태·캐릭터: 로컬 유지               ① Play Integrity + JWT 검증 (Supabase JWKS)
+기간별 활동 요약 생성 ──HTTPS──▶          ② core 산식으로 재계산 — 앱과 같은 Kotlin 코드
+(유형·시간·심박존 요약, 원본 아님)         ③ 개연성 검증 (인간 한계·상한·recordingMethod)
+                                         ④ 결과를 Postgres에 기록, 이상 시 소프트 제재
+리더보드 읽기: supabase-kt+RLS ──▶       [Supabase 서울 · 관리형] Postgres + Auth
 ```
 
-핵심 원칙: **클라이언트가 보낸 것은 사실(event)이 아니라 검증 대상 요청(command)이다.** Play Integrity API(iOS 확장 시 App Attest)는 "진짜 기기의 진짜 앱"만 보증할 뿐 가짜 건강 데이터를 못 막으므로 서버측 재계산·개연성 검증과 반드시 병행.
+핵심 원칙 두 가지:
+1. **클라이언트가 보낸 것은 사실(event)이 아니라 검증 대상 요청(command)** — Play Integrity(iOS 확장 시 App Attest)는 "진짜 기기의 진짜 앱"만 보증하므로 서버측 재계산·개연성 검증과 반드시 병행.
+2. **산식의 단일 진실**: 서버 재계산은 `server/`(Ktor)가 core(KMP)를 직접 의존해 수행 — Edge Functions(TS)로 산식을 재구현하는 이원화를 배제한다. 치완 스프레드시트 케이스 테이블이 서버 검증 테스트로도 그대로 쓰임. (Ktor 공식 풀스택 KMP 패턴, Confetti 선례)
+
+**서버 구성 요점** (검증 2026-07): Ktor 3.5.x(CIO) + 멀티스테이지 Dockerfile → **Cloud Run asia-northeast3(서울)**, scale-to-zero — 무료 한도(월 200만 요청·18만 vCPU초)의 극히 일부만 사용. `max-instances 1~2` + 예산 알림으로 과금 폭주 차단. JVM 콜드스타트 수 초는 비실시간 제출이라 클라이언트 재시도로 흡수(필요 시 GraalVM native). 인증은 Supabase **JWKS 비대칭 키** 검증(신 `sb_secret`/`sb_publishable` 키 체계 — legacy 키는 2026년 말 폐기). DB는 Supavisor 풀러(session 5432) 경유 JDBC, 인스턴스당 풀 3~5. **서버 경로는 RLS를 우회하므로 모든 쿼리를 JWT sub로 스코핑하는 계층 강제.** Edge Functions는 불채택 — 웹훅은 pg_net이 Ktor를 직접 호출, keep-alive는 GitHub Actions cron이 Ktor의 DB 터치 헬스체크 호출.
 
 ### 플랫폼: 배제할 것 / 열어둘 것
 
 | 후보 | 판정 | 근거 |
 |---|---|---|
-| **Supabase** | **1순위 — 열어둠** | 서울 리전(ap-northeast-2) 직접 지원 → 국외이전 요건 구조적 회피. **Free 티어(50k MAU·500MB)로 PoC·초기 운영 → 필요해질 때만 Pro $25/월**. Google/Apple 소셜 로그인 네이티브. Postgres라 리더보드를 RPC·머티리얼라이즈드 뷰로 정석 구현. Android 확장 시 REST 그대로 재사용. 약점: Play Integrity 서버 검증 DIY(Edge Function), **리더보드에 RLS 직접 조회 금지**(10만 행에서 초 단위 지연 — security definer RPC로 우회) |
+| **Supabase (DB·Auth만)** | **채택 — 역할 축소** | 서울 리전 → 국외이전 회피, Free 티어로 시작. Google 소셜 로그인, Postgres 리더보드(RLS 직접 조회 금지 — security definer RPC). **Edge Functions는 불채택**(산식 이원화 방지 — 계산은 Ktor로) |
+| **자체 Ktor 서버 (계산·검증만)** | **채택** | core(KMP) 직접 의존 = 산식 단일 진실. 무상태 컨테이너라 운영 부담 최소. Cloud Run 서울 무료(월 200만 요청, scale-to-zero). 백업 플랜: Render free(콜드 60초)·Oracle A1(2026-06 무통보 반토막 전례) |
 | Firebase | 2순위 — 조건부 | App Check(Play Integrity/App Attest) 1st-party 통합이 유일한 강점. 단 **Auth가 미국에서만 처리** → 개인정보보호법 국외이전 고지 대상, 읽기 과금이 리더보드 워크로드와 상성 나쁨 |
 | CloudKit public DB | **배제** | 서버 로직 전무(시즌 정산·안티치트 불가), Android SDK 없음 → 커뮤니티 데이터를 여기 쌓으면 이전 비용이 전면 재작성 |
-| 자체 Vapor/Hummingbird | 2단계 시작점으로는 배제 | Vapor 4 유지보수 모드 + v5 알파 과도기. 2인 팀이 인증·백업·보안 패치까지 짊어짐. 3단계에서 BaaS 옆 보조 서비스(시즌 정산 배치)로만 재검토 |
+| 풀 자체 호스팅(DB·인증 포함) | **배제 유지** | 2인 팀이 백업·보안 패치·인증을 짊어지는 구조. 자체화는 무상태 계산 컨테이너(Ktor)까지만 |
 
-**착수 규칙**: 게이트(알파 D14 리텐션) 통과 후, Supabase 서울 리전으로 1주 PoC 스파이크 → 확정. 그전에는 어떤 백엔드 코드도 쓰지 않는다.
+**착수 규칙**: 게이트(알파 D14 리텐션) 통과 후, **Supabase 서울 + Cloud Run Ktor 왕복 1주 PoC 스파이크**(JWT 검증→core 재계산→Postgres 기록) → 확정. 그전에는 어떤 백엔드 코드도 쓰지 않는다. 보험: core에 js() 타깃+@JsExport로 산식을 Edge Functions에서 실행하는 경로를 별도 스파이크로 검증해 둠(호스팅 무료 티어 변동 리스크 헤지).
 
 ## 5. 규제 연결 (상세: [RESEARCH.md §8](./RESEARCH.md#8-규제플랫폼-정책-체크리스트))
 

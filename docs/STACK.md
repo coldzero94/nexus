@@ -17,7 +17,7 @@
 | 분석 | TelemetryDeck Kotlin SDK 7.x (무료 50k/월) | 리텐션·세션 빌트인, 식별자 해시. 대안 Aptabase |
 | 크래시 | Sentry 무료(5k/월, tracing off, PII off) + Play vitals 보조 | vitals 단독은 초기 소규모에서 임계치 미달로 안 보임. **Crashlytics 배제**(동의 전 자동 수집) |
 | 프로젝트 구성 | AGP 9.x + Gradle 9.6.x + JDK 17 + 버전 카탈로그 + build-logic 컨벤션 플러그인 | 2026-05 JetBrains 신 KMP 표준 구조 — [ARCHITECTURE.md](./ARCHITECTURE.md) |
-| **서버 (S9~)** | Supabase-in-repo (`supabase/`: 마이그레이션·Edge Functions=Deno) | 공식 CLI 표준 구조, CI로 db push·functions deploy. 무료 티어 + keep-alive cron |
+| **서버 (S9~)** | **하이브리드**: Supabase(DB·Auth, 관리형) + **자체 Ktor 서버**(core 재사용, Docker→Cloud Run 서울 무료) | 산식 단일 진실 — Edge Functions(TS) 재구현 이원화 배제. 무상태 컨테이너라 운영 부담 최소 |
 | **웹** | Astro + Cloudflare Workers 무료 — 랜딩·폴리시(정적) + 공유 스냅샷(SSR·OG) | KMP 웹 타깃 기각(CMP Web=Beta·SEO 불가). Vercel Hobby는 비상업 한정이라 기각 |
 | **공유 전략** | **core = KMP 모듈**(`com.android.kotlin.multiplatform.library` 플러그인) — **iOS 타깃은 지금부터 켜되 iosApp은 게이트 후** | klib 컴파일은 Linux CI에서 가능 → macOS 러너 없이 commonMain의 Android 오염을 매 PR 차단. 구 플러그인 방식은 AGP 10에서 제거 예정 |
 
@@ -69,7 +69,7 @@
 
 ## 7. 프로젝트 구조
 
-**모노레포 전체 구성은 [ARCHITECTURE.md](./ARCHITECTURE.md)가 단일 기준** — `android/`(Gradle 루트: build-logic + core KMP + app) · `web/`(Astro) · `supabase/`(Deno). `android/` 내부 논리 모듈: core(XP 엔진·상태머신 — commonMain), data(Room·원장), health(HC 어댑터), ui(토큰·캐릭터 컴포저), app(조립·Glance).
+**모노레포 전체 구성은 [ARCHITECTURE.md](./ARCHITECTURE.md)가 단일 기준** — `kotlin/`(Gradle 루트: build-logic + core KMP + app + server) · `web/`(Astro) · `supabase/`(마이그레이션). `kotlin/` 내부 논리 모듈: core(XP 엔진·상태머신 — commonMain, android+ios+jvm 타깃), data(Room·원장), health(HC 어댑터), ui(토큰·캐릭터 컴포저), app(조립·Glance), server(S9~ Ktor).
 
 의존 방향: `app → ui/data/health → core`. core는 치완 스프레드시트와 같은 케이스 테이블로 테스트하며, iOS 확장 시 무수정 재사용. 건강 어댑터는 인터페이스만 common에 두고 플랫폼별 구현(Health Connect/HealthKit). UI·위젯·워치·웹은 공유하지 않는다(리텐션 표면이 전부 플랫폼 전용 — Compose Multiplatform은 iOS·웹 모두 비채택, [ARCHITECTURE.md §3](./ARCHITECTURE.md)).
 
