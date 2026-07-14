@@ -9,6 +9,7 @@
 | 문서 | 내용 |
 |---|---|
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | **처음이면 여기부터** — 협업 방법, 이슈 쓰는 법, 스프린트 리듬 |
+| [docs/SETUP.md](docs/SETUP.md) | **개발 환경 세팅** — 윈도우/맥, 에뮬레이터·실기기 실행까지 |
 | [docs/MVP.md](docs/MVP.md) | 제품 정의 — 화면, XP 산식, 데이터 모델, 수익화 경계 |
 | [docs/SPRINTS.md](docs/SPRINTS.md) | 스프린트 일정 (S0~S7 → 알파, S8+ 확장·S9~S12 커뮤니티) |
 | [docs/BACKLOG.md](docs/BACKLOG.md) | 기능 백로그 — 에픽→태스크 상세 (완료 기준·의존성·규모) |
