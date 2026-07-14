@@ -62,9 +62,12 @@
 - 계측(에뮬레이터) 테스트는 CI에서 제외(분수 폭증) — 로컬/야간.
 - 워치 앱 배포는 Play 내부 트랙 또는 adb 사이드로드 (릴리즈 APK 직설치는 폰 전용).
 
-## 6. 개발 환경 (맥 + 에뮬레이터)
+## 6. 개발 환경 (맥·윈도우 혼성 팀)
 
-- API 34/36 에뮬레이터(HC 내장) + **Health Connect Toolbox**(공식 컴패니언)로 걸음·운동 세션 합성 데이터 주입. 디버그 빌드에 시드 데이터 버튼. 단위 테스트는 FakeHealthConnectClient.
+- **찬영 = 맥, 치완 = 윈도우** — 우리 스택은 윈도우 1급 지원(Android Studio·에뮬레이터·gradlew.bat·삼성 기기 드라이버). 우분투 전환 불필요. iOS 관련 태스크만 맥/CI 전담(역할 분담과 일치). 줄바꿈은 `.gitattributes`로 LF 강제.
+- 치완 셋업 = Android Studio 설치(JDK 21 내장) + repo clone + `kotlin/local.properties`에 sdk.dir — 끝.
+- API 34/36 에뮬레이터(HC 내장) + **Health Connect Toolbox**로 걸음·운동 세션 합성 데이터 주입. 디버그 빌드에 시드 데이터 버튼. 단위 테스트는 FakeHealthConnectClient.
+- **Wear OS도 에뮬레이터 개발 가능**(android-wear 이미지, Health Services 합성 운동 데이터, 폰↔워치 AVD 페어링) — 단 삼성 레이어(삼성헬스 경로·One UI 배터리·잠금화면 위젯)는 에뮬레이터에 없음.
 - 치완 갤럭시 실기기 전담 검증: 삼성헬스→HC 동기화 지연 분포, dataOrigin 실측, One UI 배터리 정책, (보유 시) 갤럭시워치 경로.
 
 ## 7. 프로젝트 구조
