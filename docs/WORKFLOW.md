@@ -21,13 +21,14 @@
 |---|---|---|
 | 할 일·아이디어·버그 | [Issues](https://github.com/coldzero94/nexus/issues) | 모든 작업의 단위. 템플릿 골라서 작성 |
 | 스프린트 | [Milestones](https://github.com/coldzero94/nexus/milestones) | S0~S4. 진행률 바로 스프린트 상태 확인 |
-| 작업 현황판 | [보드](https://github.com/users/coldzero94/projects/1) | Backlog → 이번 스프린트 → 진행 중 → **확인 대기(교차 확인)** → Done |
+| 작업 현황판 | [보드](https://github.com/users/coldzero94/projects/1) | Backlog → Ready → 진행 중 → **확인 대기(교차 확인)** → Done |
 
 ### 보드 운영 규칙
 
-- **모든 이슈는 Backlog에서 시작**한다. 전체 백로그(58개+)가 스프린트 마일스톤에 미리 배정돼 있고, 보드의 '이번 스프린트' 이동은 **플래닝에서 사람이** 한다.
-- 자동으로 움직이는 것: 이슈가 닫히면 → Done, PR 머지 시 `Closes #N`으로 이슈가 닫히며 마일스톤 진행률 갱신. (보드 우측 상단 **Workflows**에서 "Item added to project → Backlog", "Item closed → Done", "Pull request merged → Done", "Auto-add to project"를 켜두면 수동 관리가 사라진다)
-- 스프린트별 뷰: 보드 `+ New view` → Group by **Milestone**. 달성률은 [Milestones](https://github.com/coldzero94/nexus/milestones) 진행률 바.
+- **Status(칸반)와 스프린트(마일스톤)는 별개 축이다.** Status는 작업 흐름만 표현하고, 어느 스프린트 소속인지는 마일스톤이 담당한다 — GitHub 표준 팀 플래닝 템플릿(Backlog/Ready/In progress/In review/Done) 구조.
+- **모든 이슈는 Backlog에서 시작**한다. 플래닝에서 이번 스프린트 마일스톤의 이슈를 **Ready**로 올리고, 각자 잡을 때 '진행 중'으로 옮긴다.
+- 자동으로 움직이는 것: PR 머지 시 `Closes #N`으로 이슈가 닫히면 → Done + 마일스톤 진행률 갱신. (보드 우측 상단 **Workflows**에서 "Item added to project → Backlog", "Item closed → Done", "Pull request merged → Done", "Auto-add to project"를 켜두면 수동 관리가 사라진다)
+- 추천 뷰 구성 (`+ New view`): ① "이번 스프린트" — Filter: `milestone:"S0 · 세팅"` (스프린트 시작마다 필터만 갱신) ② "스프린트별" — Group by **Milestone**. 달성률은 [Milestones](https://github.com/coldzero94/nexus/milestones) 진행률 바.
 | 기획 문서 | [docs/](../docs/) | MVP 정의, 조사 보고서, 벤치마크, 이 문서 |
 | 코드 변경 | Pull Request | §4 참고 — 코드 대신 스크린샷·영상을 보면 됨 |
 

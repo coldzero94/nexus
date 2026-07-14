@@ -1,58 +1,73 @@
-# NEXUS — Claude Code 프로젝트 규칙
+# NEXUS — Project Rules for Claude Code
 
-건강 데이터(걷기·러닝·근력)를 2D 캐릭터 성장으로 바꾸는 Android 라이프 RPG. 2인 팀(coldzero94, kimchi151), MVP는 서버 없는 로컬 앱.
+Android life-RPG that turns health data (walking/running/strength) into 2D character growth. Two-person team (coldzero94, kimchi151). MVP is a local-only app with no server.
 
-## 문서가 진실의 원천
+## Docs are the source of truth
 
-결정·근거는 코드가 아니라 `docs/`에 있다. 작업 전 해당 문서를 먼저 확인하라:
+Decisions and their rationale live in `docs/` (written in Korean), not in code. Check the relevant doc before working:
 
-- `docs/MVP.md` — 제품 스펙 (화면·XP 산식·데이터 모델·수익화 경계)
-- `docs/BACKLOG.md` — 태스크 정의 (E-ID, 완료 기준, 규모)
-- `docs/SPRINTS.md` — 스프린트 일정·목표·게이트
-- `docs/STACK.md` — 기술 스택 결정과 근거 (Android)
-- `docs/BACKEND.md` — 서버 대비 계약, 백업, 2단계 아키텍처
-- `docs/WORKFLOW.md` — 협업 방식 / `docs/RESEARCH.md`, `docs/BENCHMARK.md` — 시장 근거
+- `docs/MVP.md` — product spec (screens, XP formula, data model, monetization boundary)
+- `docs/BACKLOG.md` — task definitions (E-IDs, acceptance criteria, size)
+- `docs/SPRINTS.md` — sprint schedule, goals, gates
+- `docs/STACK.md` — tech stack decisions and rationale (Android)
+- `docs/BACKEND.md` — server-readiness contracts, backup, phase-2 architecture
+- `docs/WORKFLOW.md` — collaboration process / `docs/RESEARCH.md`, `docs/BENCHMARK.md` — market evidence
 
-**결정이 바뀌면 같은 커밋에서 해당 문서를 갱신하고, 관련 이슈에 결정 근거를 코멘트로 남긴다.**
+**When a decision changes, update the affected doc in the same commit and record the rationale as a comment on the related issue.**
 
-## 프로젝트 관리 규칙 (GitHub)
+## Maintaining this file
 
-- 모든 작업 단위는 이슈다. 새 태스크를 발견하면: ① `docs/BACKLOG.md`에 E-ID로 추가 ② 이슈 생성(제목 `[S#][E#-#] 제목`, 본문에 완료 기준) ③ 해당 스프린트 마일스톤 배정 ④ 보드에 추가.
-- 스프린트 = 마일스톤(S0~S4, S5+). 이슈의 스프린트 이동은 마일스톤 변경으로 한다.
-- 보드(Projects #1) Status: 새 이슈는 **Backlog**로 시작한다. `이번 스프린트`로의 이동은 플래닝에서 사람이 결정하며, Claude가 임의로 옮기지 않는다.
-- 이슈를 닫을 때는 PR의 `Closes #N`으로 닫는다 (마일스톤 진행률 자동 갱신).
-- 스프린트 범위·일정이 바뀌면 `docs/SPRINTS.md`와 마일스톤 마감일을 함께 수정한다.
-- 기획 관련 아이디어·버그는 카톡이 아니라 이슈 템플릿(기능/버그)으로 기록한다.
+- Update CLAUDE.md **in the same commit** whenever architecture materializes or changes: module added/renamed, build/test commands change, a new convention is adopted, or a rule below becomes stale.
+- When project scaffolding lands (issue #5 / E1-1), fill in the "Build & commands" section below with real commands.
+- If the user corrects the same mistake twice, add a specific rule here instead of relying on conversation.
+- Keep this file under 200 lines. Prune rules that no longer apply; never keep two conflicting rules.
 
-## PR·커밋 규칙
+## Build & commands
 
-- PR 본문에 스크린샷 또는 화면 녹화 필수. 제목·설명은 제품 언어(비개발자가 읽히게).
-- PR에 `Closes #이슈번호` 필수.
-- 커밋 메시지는 한국어, `docs:`/`feat:`/`fix:`/`chore:` 접두사.
-- main 직접 푸시 금지 — `feature/*` 브랜치 + PR. (문서만 수정하는 경우는 main 직접 커밋 허용)
-- 완료의 정의: 머지가 아니라 **만든 사람이 아닌 다른 한 명이 기기에서 확인하고 이슈에 코멘트를 남긴 것**.
+_To be filled at scaffolding (E1-1). Expected shape:_
 
-## 제품 불변 규칙 (위반 금지)
+- Build: `./gradlew assembleDebug`
+- Unit tests: `./gradlew test` (run before every commit that touches `core/`)
+- Lint: `./gradlew lint`
 
-- 환금성 보상(현금·토큰·거래) 절대 금지 — 어떤 단계에서도. (STEPN 붕괴·게임산업법 §32)
-- 분석·크래시 이벤트에 건강 원천·파생 수치(걸음 수·운동 시간·심박·XP 수치) 탑재 금지 — 이벤트는 발생 사실만. (Play 정책: "의도치 않은 수신도 위반")
-- 원본 건강 수치는 기기 밖으로 내보내지 않는다 — 백업·서버 페이로드에는 XP 산출값·산식 버전만.
-- 캐릭터는 죽거나 퇴화하지 않는다. 손실은 '컨디션' 소프트 손실만.
-- "실시간 반영"을 UI·마케팅에서 약속하지 않는다 (삼성헬스→HC 동기화 30~60분 지연).
-- 무료 티어 원칙: 유료 서비스·SDK 도입 전 `docs/STACK.md §8`의 무료 대안을 먼저 소진한다.
+## Project management (GitHub)
 
-## 개발 규칙
+- Every unit of work is an issue. When a new task is discovered: ① add it to `docs/BACKLOG.md` with an E-ID ② create an issue titled `[S#][E#-#] title` with acceptance criteria ③ assign the sprint milestone ④ add it to the project board.
+- Sprint = milestone (S0–S4, S5+). Moving an issue between sprints = changing its milestone.
+- Board (Projects #1) status is a kanban axis (Backlog → Ready → 진행 중 → 확인 대기 → Done), separate from sprint membership (= milestone). New issues start in **Backlog**. Only humans move items to `Ready` (during planning) — never move them yourself.
+- Close issues via `Closes #N` in the PR body (keeps milestone progress accurate).
+- If sprint scope or dates change, update `docs/SPRINTS.md` and the milestone due date together.
+- Ideas and bugs go into issue templates (기능/버그), not chat.
 
-- 스택: Kotlin 2.3.x + Compose, minSdk 34, Health Connect(connect-client 1.1.0), Room, Glance, WorkManager. 세부는 `docs/STACK.md`.
-- `core/` 모듈은 KMP(commonMain) — **Android import 금지** (컴파일로 강제). XP 산식은 core의 순수 함수로만.
-- `RewardEvent`는 불변 원장: 기존 레코드 수정 금지, 정정은 보상 이벤트(compensating event) append.
-- XP 산식 변경 시: 산식 버전 태그 증가 + `docs/MVP.md §5` 갱신 + 케이스 테이블 테스트(스프레드시트 대조) 갱신을 한 세트로.
-- 걸음은 `aggregate(COUNT_TOTAL)`로 읽는다 (readRecords 직접 사용 금지 — 이중 카운트).
-- dataOrigin 화이트리스트 하드코딩 금지 — 원격 구성 가능 구조 + `getCurrentDeviceDataSource()` 병용 (2026-06 SPN 변경).
-- 문자열 하드코딩 금지(리소스, ko 기본). 디자인 토큰 밖의 색·치수 하드코딩 금지.
-- Health Connect 권한 거부 상태에서도 전 화면이 동작해야 한다 (데모 모드).
+## PR & commit rules
 
-## 테스트·검증
+- Every PR body must include a screenshot or screen recording, plus `Closes #N`.
+- Write PR titles/descriptions in product language (Korean, readable by a non-engineer).
+- Commit messages in Korean with `docs:`/`feat:`/`fix:`/`chore:` prefix.
+- No direct pushes to main for code — `feature/*` branch + PR. (Docs-only changes may commit to main directly.)
+- Definition of done: not merged, but **verified on-device by the person who didn't build it**, with a confirming issue comment.
 
-- core 로직은 케이스 테이블(입력→기대 XP) 테스트 필수 — 치완 스프레드시트와 같은 표.
-- 에뮬레이터 개발 시 Health Connect Toolbox로 합성 데이터 주입. 실기기(갤럭시) 검증이 필요한 항목은 이슈에 `실기기` 체크로 명시.
+## Product invariants (never violate)
+
+- No monetizable rewards (cash, tokens, trading) at any stage. (STEPN collapse; Korean game law §32)
+- Never put health-derived values (step counts, workout duration, heart rate, XP numbers) into analytics/crash event payloads — events record occurrence only. (Google Play policy: "unintended receipt is still a violation")
+- Raw health values never leave the device — backup/server payloads carry only computed XP and formula version.
+- The character never dies or regresses. The only loss mechanic is the soft "condition" stat.
+- Never promise "real-time" sync in UI or marketing (Samsung Health → Health Connect lags 30–60 min).
+- Free-tier principle: before adopting any paid service/SDK, exhaust the free alternatives listed in `docs/STACK.md §8`.
+
+## Engineering rules
+
+- Stack: Kotlin 2.3.x + Compose, minSdk 34, Health Connect (connect-client 1.1.0), Room, Glance, WorkManager. Details in `docs/STACK.md`.
+- `core/` is a KMP module (commonMain) — **no Android imports** (enforced by compilation). The XP formula exists only as pure functions in core.
+- `RewardEvent` is an immutable ledger: never mutate existing records; corrections are appended compensating events.
+- Changing the XP formula = one atomic set: bump formula version tag + update `docs/MVP.md §5` + update the case-table tests (spreadsheet parity).
+- Read steps via `aggregate(COUNT_TOTAL)` — never `readRecords` for steps (double counting).
+- Never hardcode the dataOrigin allowlist — remotely configurable, and always include `getCurrentDeviceDataSource()` alongside `"android"` (June 2026 SPN change).
+- No hardcoded strings (resources, Korean default). No colors/dimensions outside design tokens.
+- Every screen must work with Health Connect permissions denied (demo mode).
+
+## Testing & verification
+
+- `core/` logic requires case-table tests (input → expected XP) — the same table as the balance spreadsheet.
+- Use Health Connect Toolbox to seed synthetic data on emulators. Mark items needing a physical Galaxy device with a `실기기` note in the issue.
