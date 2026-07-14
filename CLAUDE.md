@@ -22,6 +22,7 @@ Decisions and their rationale live in `docs/` (written in Korean), not in code. 
 - When project scaffolding lands (issue #5 / E1-1), fill in the "Build & commands" section below with real commands.
 - If the user corrects the same mistake twice, add a specific rule here instead of relying on conversation.
 - Keep this file under 200 lines. Prune rules that no longer apply; never keep two conflicting rules.
+- **Scoped rules live in `.claude/rules/`** (one topic per file, `paths:` frontmatter): `kotlin.md` (kotlin/**), `web.md` (web/**), `backend.md` (supabase/**, kotlin/server/**). They load only when matching files are touched. Rules that apply to every session (project management, PR/commit, product invariants) stay in this file. New area → new rule file, not more lines here.
 
 ## Build & commands
 
@@ -64,23 +65,3 @@ All Gradle commands run from `kotlin/`. Requires JDK 21 and Android SDK (`kotlin
 - The character never dies or regresses. The only loss mechanic is the soft "condition" stat.
 - Never promise "real-time" sync in UI or marketing (Samsung Health → Health Connect lags 30–60 min).
 - Free-tier principle: before adopting any paid service/SDK, exhaust the free alternatives listed in `docs/STACK.md §8`.
-
-## Engineering rules
-
-- Stack: Kotlin 2.4.x + Compose, minSdk 34, Health Connect (connect-client 1.1.0), Room, Glance, WorkManager. Monorepo layout (kotlin/ · web/ · supabase/) is defined in `docs/ARCHITECTURE.md`; details in `docs/STACK.md`.
-- `core/` is a KMP module (commonMain) — **no Android imports**, and its iOS targets stay enabled so klib compilation catches commonMain contamination in CI. The XP formula exists only as pure functions in core.
-- `supabase/` holds migrations only (no Edge Functions — server compute lives in `kotlin/server/` so the XP formula stays single-sourced in core). All schema changes via `supabase migration new`, never the dashboard.
-- Server (`kotlin/server/`, S9~): every DB query must be scoped by the verified JWT `sub` (server bypasses RLS). `sb_secret`/DB password live only in deployment secrets.
-- Cross-boundary contracts follow "single source → committed artifact → CI drift check" (`docs/ARCHITECTURE.md` §6). Changing a server API means regenerating `openapi/` in the same PR; changing the balance formula means updating the shared `balance/*.csv` fixtures.
-- Web share pages must render OG tags in initial HTML (Kakao scraper doesn't run JS). Game logic is never reimplemented in TS — derived values come from server snapshots.
-- `RewardEvent` is an immutable ledger: never mutate existing records; corrections are appended compensating events.
-- Changing the XP formula = one atomic set: bump formula version tag + update `docs/MVP.md §5` + update the case-table tests (spreadsheet parity).
-- Read steps via `aggregate(COUNT_TOTAL)` — never `readRecords` for steps (double counting).
-- Never hardcode the dataOrigin allowlist — remotely configurable, and always include `getCurrentDeviceDataSource()` alongside `"android"` (June 2026 SPN change).
-- No hardcoded strings (resources, Korean default). No colors/dimensions outside design tokens.
-- Every screen must work with Health Connect permissions denied (demo mode).
-
-## Testing & verification
-
-- `core/` logic requires case-table tests (input → expected XP) — the same table as the balance spreadsheet.
-- Use Health Connect Toolbox to seed synthetic data on emulators. Mark items needing a physical Galaxy device with a `실기기` note in the issue.
