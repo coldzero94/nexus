@@ -13,7 +13,7 @@
 | 위젯 | Glance 1.2.0-rc01 — **홈 위젯 1차** | 잠금화면 위젯(Android 16 QPR2/One UI 8)은 갤럭시 실기기 검증 전까지 약속 금지 |
 | 캐릭터 렌더링 | Compose 레이어드 Image + 프레임 티커, 위젯용은 비트맵 합성 → ImageProvider | 앱/위젯이 공유하는 단일 '캐릭터 컴포저' 모듈 |
 | CI/CD | GitHub Actions (ubuntu) + Play App Signing | 리눅스 러너 1x 배율 — 월 2,000분 무료로 충분. 연 고정비 $0 (Play $25 일회성뿐) |
-| 배포 | 일상: **Firebase App Distribution** / 주 1회: **Play 내부 트랙** | FAD는 무심사·즉시, 내부 트랙은 워치 앱 배포 경로 확보용 |
+| 배포 | 개발 중: **GitHub Releases APK 자동 업로드** → Play 계정 후: **Play 내부 트랙** | 추가 서비스 0개(Firebase 불필요). 내부 트랙은 자동 업데이트 + 워치 앱 배포 경로 |
 | 분석 | TelemetryDeck Kotlin SDK 7.x (무료 50k/월) | 리텐션·세션 빌트인, 식별자 해시. 대안 Aptabase |
 | 크래시 | Sentry 무료(5k/월, tracing off, PII off) + Play vitals 보조 | vitals 단독은 초기 소규모에서 임계치 미달로 안 보임. **Crashlytics 배제**(동의 전 자동 수집) |
 | 프로젝트 구성 | AGP 9.x + Gradle 9.6.x + JDK 17 + 버전 카탈로그 + build-logic 컨벤션 플러그인 | 2026-05 JetBrains 신 KMP 표준 구조 — [ARCHITECTURE.md](./ARCHITECTURE.md) |
@@ -57,10 +57,10 @@
 
 ## 5. CI/CD·배포
 
-- GitHub Actions: PR → lint+단위 테스트 / main 머지 → 서명 AAB → **Firebase App Distribution** / 태그 → Play 내부 트랙(`r0adkll/upload-google-play`). gradle/actions v6 + configuration cache로 ~5분.
+- GitHub Actions: PR → lint+단위 테스트 / main 머지 → 서명 APK를 **GitHub Release로 자동 업로드**(추가 서비스 불필요) / Play 계정 생성 후엔 내부 트랙 업로드(`r0adkll/upload-google-play`)로 승격. gradle/actions v6 + configuration cache로 ~5분.
 - Play App Signing(업로드 키 분실해도 리셋 가능 — 2인 팀에 결정적), 키스토어는 GitHub Secrets(base64), 커밋 금지.
 - 계측(에뮬레이터) 테스트는 CI에서 제외(분수 폭증) — 로컬/야간.
-- 워치 앱은 FAD로 설치 안 됨(추정) → Play 내부 트랙 또는 adb 사이드로드.
+- 워치 앱 배포는 Play 내부 트랙 또는 adb 사이드로드 (릴리즈 APK 직설치는 폰 전용).
 
 ## 6. 개발 환경 (맥 + 에뮬레이터)
 
