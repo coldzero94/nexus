@@ -1,0 +1,6 @@
+# 크로스 OS(맥/윈도우/리눅스 CI) 줄바꿈 강제 — 윈도우 clone에서도 소스는 LF
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jar binary
+*.apk binary

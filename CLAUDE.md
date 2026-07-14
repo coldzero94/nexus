@@ -25,7 +25,7 @@ Decisions and their rationale live in `docs/` (written in Korean), not in code. 
 
 ## Build & commands
 
-All Gradle commands run from `kotlin/`. Requires JDK 21 (`export JAVA_HOME=/opt/homebrew/opt/openjdk@21` on this machine) and Android SDK (`kotlin/local.properties` → `sdk.dir`, not committed).
+All Gradle commands run from `kotlin/`. Requires JDK 21 and Android SDK (`kotlin/local.properties` → `sdk.dir`, not committed). Team OS mix: macOS (coldzero94, `JAVA_HOME=/opt/homebrew/opt/openjdk@21`), Windows (kimchi151 — use Android Studio's embedded JDK and `gradlew.bat`), Linux (CI). Line endings are enforced LF via `.gitattributes`. iOS-target tasks never run on Windows — CI covers the klib check.
 
 - Build APK: `./gradlew :app:assembleDebug` (on this machine use `gradle`, not `./gradlew` — wrapper download is blocked by local TLS interception; CI uses the wrapper fine)
 - Unit tests: `./gradlew :core:jvmTest` (run before every commit that touches `core/`)
