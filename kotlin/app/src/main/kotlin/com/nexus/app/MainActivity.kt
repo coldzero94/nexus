@@ -35,6 +35,6 @@ fun HelloNexus() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(text = "Hello NEXUS", style = MaterialTheme.typography.headlineLarge)
-        Text(text = "30분 러닝 = ${'$'}{sampleXp} XP (산식 v${'$'}{XpEngine.FORMULA_VERSION})")
+        Text(text = "30분 러닝 = $sampleXp XP (산식 v${XpEngine.FORMULA_VERSION})")
     }
 }
