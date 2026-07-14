@@ -48,7 +48,8 @@ All Gradle commands run from `kotlin/`. Requires JDK 21 and Android SDK (`kotlin
 - Branch naming: `feat|fix|docs|chore/<issue-number>-<slug>` (e.g., `feat/9-trust-filter`).
 - Commit messages in Korean with `docs:`/`feat:`/`fix:`/`chore:` prefix, referencing the issue: `feat: 신뢰 필터 3종 (#9)`.
 - Every PR body must include a screenshot or screen recording, plus `Closes #N` (one issue per PR by default; list each if several). Merging then auto-closes the issue → board Done → milestone progress.
-- Merges are **squash-only** and branches auto-delete (enforced by repo settings).
+- Merges are **squash-only**, the PR title becomes the main commit (repo setting), and branches auto-delete.
+- PR bodies must follow `.github/pull_request_template.md` — never skip the "확인 방법" section (reviews don't start without it). Update the description before merge if the code changed during review.
 - Write PR titles/descriptions in product language (Korean, readable by a non-engineer).
 - Never `git add -A` / `git add .` — stage explicit paths only. (A `git add -A` on a branch without .gitignore once committed 1,500 build-cache files to main.)
 - No direct pushes to main for code — branch + PR. (Docs-only changes may commit to main directly.)
