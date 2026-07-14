@@ -29,7 +29,8 @@ _To be filled at scaffolding (E1-1). Expected shape:_
 
 - Build: `./gradlew assembleDebug`
 - Unit tests: `./gradlew test` (run before every commit that touches `core/`)
-- Lint: `./gradlew lint`
+- Format: `./gradlew spotlessApply` (run before every commit — CI runs `spotlessCheck`)
+- Static analysis: `./gradlew detekt` / Android lint: `./gradlew lint`
 
 ## Project management (GitHub)
 

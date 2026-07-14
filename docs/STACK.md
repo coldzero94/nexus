@@ -91,9 +91,12 @@
 
 원칙: 유료 전환은 "무료 한도 초과가 2개월 연속"일 때만 검토하고, 그 전에 무료 대안(퍼블릭화·셀프호스트·다이어트)을 먼저 소진한다.
 
-## 9. 컨벤션 요점
+## 9. 컨벤션·코드 품질
 
+- **포맷팅**: ktlint(코틀린 공식 스타일) — Spotless로 실행, `.editorconfig`로 IDE 동기화. 로컬 `spotlessApply` 자동 수정 / CI `spotlessCheck` 차단 → 포맷 논쟁이 PR에서 사라짐.
+- **정적 분석**: detekt(+Compose 룰셋) — 코드 스멜·복잡도·Compose 함정(remember 누락 등). Android Lint는 AGP 내장(CI 포함).
+- **적용 방식**: build-logic 컨벤션 플러그인(`nexus.kotlin.quality`)에 한 번 정의 → core·app·server 전 모듈 자동 적용. 룰 조정도 한 곳에서.
+- **아키텍처 규칙**: core 순수성은 KMP 타깃 분리가 컴파일러로 강제. Konsist(모듈 경계 유닛 테스트)는 보류 — 도입 트리거: 경계 위반이 리뷰에서 2회 잡히면.
 - 상태: Compose + ViewModel(+ Flow). 테스트: JUnit5 + core는 케이스 테이블 기반.
-- 문자열: 리소스 externalize, ko 기본.
-- 분석 이벤트 allowlist를 코드로 강제 — 건강 원천·파생 수치 필드 금지(§2 정책).
+- 문자열: 리소스 externalize, ko 기본. 분석 이벤트 allowlist를 코드로 강제(§2 정책).
 - 연 1회(가을) AGP/Gradle 마이그레이션 버퍼.
