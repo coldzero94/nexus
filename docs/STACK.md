@@ -6,7 +6,7 @@
 
 | 영역 | 결정 | 한 줄 근거 |
 |---|---|---|
-| 언어·UI | Kotlin 2.3.x + Jetpack Compose 1.11 (BOM) | 2026년 완전 성숙, K2 기본 |
+| 언어·UI | Kotlin **2.4.x** + Jetpack Compose 1.11 (BOM) | 2.4.0이 2026-06 안정판. K2 기본 |
 | minSdk | **34 (Android 14)** | Health Connect 프레임워크 내장(설치 마찰 0), 백그라운드 읽기가 14+ 전용, 한국 Android의 ~76.5%가 API 34+ |
 | 데이터 소스 | **Health Connect** (connect-client 1.1.0 안정판) | 삼성헬스·갤럭시워치 데이터가 여기로 모임. Samsung Health Data SDK는 파트너십 심사 필요라 MVP 배제 |
 | 로컬 DB | Room (+ WorkManager 2.11.2) | Glance 위젯이 앱 프로세스에서 실행되므로 멀티프로세스 불필요. Room도 KMP 지원이라 iOS 확장 시 락인 낮음 |
@@ -16,8 +16,10 @@
 | 배포 | 일상: **Firebase App Distribution** / 주 1회: **Play 내부 트랙** | FAD는 무심사·즉시, 내부 트랙은 워치 앱 배포 경로 확보용 |
 | 분석 | TelemetryDeck Kotlin SDK 7.x (무료 50k/월) | 리텐션·세션 빌트인, 식별자 해시. 대안 Aptabase |
 | 크래시 | Sentry 무료(5k/월, tracing off, PII off) + Play vitals 보조 | vitals 단독은 초기 소규모에서 임계치 미달로 안 보임. **Crashlytics 배제**(동의 전 자동 수집) |
-| 프로젝트 구성 | AGP 9.2 + Gradle 9.4.x + JDK 17 + Kotlin DSL + 버전 카탈로그 | 처음부터 2026 표준으로 시작해 마이그레이션 부채 0 |
-| **공유 전략** | **core = KMP 모듈(commonMain)**, iOS 타깃은 게이트 전까지 비활성 | XP 엔진·상태머신·원장 로직을 iOS 확장 시 무수정 재사용. 컴파일러가 "core에 Android 의존 금지"를 강제 |
+| 프로젝트 구성 | AGP 9.x + Gradle 9.6.x + JDK 17 + 버전 카탈로그 + build-logic 컨벤션 플러그인 | 2026-05 JetBrains 신 KMP 표준 구조 — [ARCHITECTURE.md](./ARCHITECTURE.md) |
+| **서버 (S9~)** | Supabase-in-repo (`supabase/`: 마이그레이션·Edge Functions=Deno) | 공식 CLI 표준 구조, CI로 db push·functions deploy. 무료 티어 + keep-alive cron |
+| **웹** | Astro + Cloudflare Workers 무료 — 랜딩·폴리시(정적) + 공유 스냅샷(SSR·OG) | KMP 웹 타깃 기각(CMP Web=Beta·SEO 불가). Vercel Hobby는 비상업 한정이라 기각 |
+| **공유 전략** | **core = KMP 모듈**(`com.android.kotlin.multiplatform.library` 플러그인) — **iOS 타깃은 지금부터 켜되 iosApp은 게이트 후** | klib 컴파일은 Linux CI에서 가능 → macOS 러너 없이 commonMain의 Android 오염을 매 PR 차단. 구 플러그인 방식은 AGP 10에서 제거 예정 |
 
 ## 1. Health Connect 파이프라인 (검증 완료)
 
@@ -67,19 +69,9 @@
 
 ## 7. 프로젝트 구조
 
-```
-nexus/
-├── app/                    # 조립만
-├── widget/                 # Glance (앱 프로세스, 스냅샷만 읽음)
-├── core/                   # XP 엔진·클래스·상태머신 — 순수 Kotlin, Android 의존 0
-├── data/                   # Room·리포지토리·롤업 (RewardEvent 원장)
-├── health/                 # Health Connect 어댑터 (수집·필터·Changes 동기화)
-├── ui/                     # 디자인 토큰, 캐릭터 컴포저, 공용 컴포넌트
-├── wear/                   # (게이트 후) WFF 워치페이스 + 워치 앱
-└── assets-src/             # Aseprite 원본 + 내보내기 스크립트
-```
+**모노레포 전체 구성은 [ARCHITECTURE.md](./ARCHITECTURE.md)가 단일 기준** — `android/`(Gradle 루트: build-logic + core KMP + app) · `web/`(Astro) · `supabase/`(Deno). `android/` 내부 논리 모듈: core(XP 엔진·상태머신 — commonMain), data(Room·원장), health(HC 어댑터), ui(토큰·캐릭터 컴포저), app(조립·Glance).
 
-의존 방향: `app → ui/data/health → core`. **core는 KMP 모듈(commonMain)** — 치완 스프레드시트와 같은 케이스 테이블로 테스트. iOS 확장 시 XP 엔진·클래스·상태머신·원장 로직이 무수정 재사용되고, 건강 어댑터는 인터페이스만 common에 두고 플랫폼별 구현(Health Connect / HealthKit). UI·위젯·워치는 공유하지 않는다(리텐션 표면이 전부 플랫폼 전용이므로 Compose Multiplatform iOS는 게이트 후에도 비채택 기조).
+의존 방향: `app → ui/data/health → core`. core는 치완 스프레드시트와 같은 케이스 테이블로 테스트하며, iOS 확장 시 무수정 재사용. 건강 어댑터는 인터페이스만 common에 두고 플랫폼별 구현(Health Connect/HealthKit). UI·위젯·워치·웹은 공유하지 않는다(리텐션 표면이 전부 플랫폼 전용 — Compose Multiplatform은 iOS·웹 모두 비채택, [ARCHITECTURE.md §3](./ARCHITECTURE.md)).
 
 ## 8. 비용 원칙 — 전부 무료 티어
 

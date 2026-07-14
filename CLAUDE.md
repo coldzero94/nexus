@@ -10,6 +10,7 @@ Decisions and their rationale live in `docs/` (written in Korean), not in code. 
 - `docs/BACKLOG.md` — task definitions (E-IDs, acceptance criteria, size)
 - `docs/SPRINTS.md` — sprint schedule, goals, gates
 - `docs/STACK.md` — tech stack decisions and rationale (Android)
+- `docs/ARCHITECTURE.md` — monorepo layout (android/ · web/ · supabase/), CI strategy
 - `docs/BACKEND.md` — server-readiness contracts, backup, phase-2 architecture
 - `docs/WORKFLOW.md` — collaboration process / `docs/RESEARCH.md`, `docs/BENCHMARK.md` — market evidence
 
@@ -58,8 +59,10 @@ _To be filled at scaffolding (E1-1). Expected shape:_
 
 ## Engineering rules
 
-- Stack: Kotlin 2.3.x + Compose, minSdk 34, Health Connect (connect-client 1.1.0), Room, Glance, WorkManager. Details in `docs/STACK.md`.
-- `core/` is a KMP module (commonMain) — **no Android imports** (enforced by compilation). The XP formula exists only as pure functions in core.
+- Stack: Kotlin 2.4.x + Compose, minSdk 34, Health Connect (connect-client 1.1.0), Room, Glance, WorkManager. Monorepo layout (android/ · web/ · supabase/) is defined in `docs/ARCHITECTURE.md`; details in `docs/STACK.md`.
+- `core/` is a KMP module (commonMain) — **no Android imports**, and its iOS targets stay enabled so klib compilation catches commonMain contamination in CI. The XP formula exists only as pure functions in core.
+- `supabase/` is Deno territory — never apply Node tooling (pnpm/eslint) to it. All schema changes via `supabase migration new`, never the dashboard.
+- Web share pages must render OG tags in initial HTML (Kakao scraper doesn't run JS). Game logic is never reimplemented in TS — derived values come from server snapshots.
 - `RewardEvent` is an immutable ledger: never mutate existing records; corrections are appended compensating events.
 - Changing the XP formula = one atomic set: bump formula version tag + update `docs/MVP.md §5` + update the case-table tests (spreadsheet parity).
 - Read steps via `aggregate(COUNT_TOTAL)` — never `readRecords` for steps (double counting).
