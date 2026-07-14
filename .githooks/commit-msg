@@ -1,0 +1,25 @@
+#!/bin/sh
+# NEXUS 커밋 메시지 형식 검사 — 활성화: git config core.hooksPath .githooks (SETUP.md)
+msg=$(head -n1 "$1")
+
+# merge/revert/fixup 커밋은 통과
+case "$msg" in
+  Merge*|Revert*|fixup!*|squash!*) exit 0 ;;
+esac
+
+if ! printf '%s' "$msg" | grep -Eq '^(feat|fix|docs|refactor|test|chore|ci)(\([a-z0-9-]+\))?!?: .+'; then
+  echo "✖ 커밋 메시지 형식: type(범위): 요약 (#이슈번호)" >&2
+  echo "  type: feat|fix|docs|refactor|test|chore|ci   예) feat(health): 신뢰 필터 3종 (#9)" >&2
+  echo "  규칙 상세: docs/WORKFLOW.md §4" >&2
+  exit 1
+fi
+
+case "$msg" in
+  *"#"*) : ;;
+  *) echo "ℹ 이슈 참조(#N)가 없습니다 — 티켓에서 시작한 작업이라면 붙여주세요" >&2 ;;
+esac
+
+case "$msg" in
+  *.) echo "ℹ 첫 줄 끝의 마침표는 빼는 관례입니다" >&2 ;;
+esac
+exit 0

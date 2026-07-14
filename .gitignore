@@ -1,0 +1,15 @@
+# Gradle / Android
+kotlin/.gradle/
+kotlin/build-logic/.gradle/
+kotlin/**/build/
+kotlin/local.properties
+kotlin/.kotlin/
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+
+# macOS
+.DS_Store
