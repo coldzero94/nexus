@@ -25,12 +25,13 @@ Decisions and their rationale live in `docs/` (written in Korean), not in code. 
 
 ## Build & commands
 
-_To be filled at scaffolding (E1-1). Expected shape:_
+All Gradle commands run from `kotlin/`. Requires JDK 21 (`export JAVA_HOME=/opt/homebrew/opt/openjdk@21` on this machine) and Android SDK (`kotlin/local.properties` → `sdk.dir`, not committed).
 
-- Build: `./gradlew assembleDebug`
-- Unit tests: `./gradlew test` (run before every commit that touches `core/`)
-- Format: `./gradlew spotlessApply` (run before every commit — CI runs `spotlessCheck`)
-- Static analysis: `./gradlew detekt` / Android lint: `./gradlew lint`
+- Build APK: `./gradlew :app:assembleDebug` (on this machine use `gradle`, not `./gradlew` — wrapper download is blocked by local TLS interception; CI uses the wrapper fine)
+- Unit tests: `./gradlew :core:jvmTest` (run before every commit that touches `core/`)
+- commonMain purity check: `./gradlew :core:compileKotlinIosArm64` (also runs in CI)
+- Format/static analysis: Spotless(ktlint)+detekt arrive with E1-7 (#107) — until then follow kotlin official style
+- AGP 9 has built-in Kotlin — never apply `org.jetbrains.kotlin.android`
 
 ## Project management (GitHub)
 
