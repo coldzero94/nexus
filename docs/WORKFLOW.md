@@ -20,8 +20,10 @@
 | 무엇 | 어디서 | 용도 |
 |---|---|---|
 | 할 일·아이디어·버그 | [Issues](https://github.com/coldzero94/nexus/issues) | 모든 작업의 단위. 템플릿 골라서 작성 |
-| 스프린트 | [Milestones](https://github.com/coldzero94/nexus/milestones) | S0~S4. 진행률 바로 스프린트 상태 확인 |
+| 스프린트 | [Milestones](https://github.com/coldzero94/nexus/milestones) | S0~S7(알파) + S8+(확장)·S9~S12(커뮤니티). 진행률 바로 상태 확인 |
 | 작업 현황판 | [보드](https://github.com/users/coldzero94/projects/1) | Backlog → Ready → 진행 중 → **확인 대기(교차 확인)** → Done |
+| 기획 문서 | [docs/](../docs/) | MVP 정의, 조사 보고서, 설계 문서, 이 문서 |
+| 코드 변경 | Pull Request | §4 참고 — 코드 대신 스크린샷·영상을 보면 됨 |
 
 ### 보드 운영 규칙
 
@@ -29,9 +31,6 @@
 - **모든 이슈는 Backlog에서 시작**한다. 플래닝에서 이번 스프린트 마일스톤의 이슈를 **Ready**로 올리고, 각자 잡을 때 '진행 중'으로 옮긴다.
 - 자동으로 움직이는 것: PR 머지 시 `Closes #N`으로 이슈가 닫히면 → Done + 마일스톤 진행률 갱신. (보드 우측 상단 **Workflows**에서 "Item added to project → Backlog", "Item closed → Done", "Pull request merged → Done", "Auto-add to project"를 켜두면 수동 관리가 사라진다)
 - 추천 뷰 구성 (`+ New view`): ① "이번 스프린트" — Filter: `milestone:"S0 · 세팅"` (스프린트 시작마다 필터만 갱신) ② "스프린트별" — Group by **Milestone**. 달성률은 [Milestones](https://github.com/coldzero94/nexus/milestones) 진행률 바.
-| 기획 문서 | [docs/](../docs/) | MVP 정의, 조사 보고서, 벤치마크, 이 문서 |
-| 코드 변경 | Pull Request | §4 참고 — 코드 대신 스크린샷·영상을 보면 됨 |
-
 ### 이슈 작성 규칙
 
 1. Issues → New issue → **[기능/아이디어]** 또는 **[버그]** 템플릿 선택
@@ -62,17 +61,11 @@ main (항상 동작하는 버전)
 ```
 
 - PR에는 **스크린샷 또는 화면 녹화 필수** — 리뷰는 코드가 아니라 동작으로 한다.
-- PR 제목·설명과 TestFlight 빌드 노트는 제품 언어로 쓴다 (예: "걸음 수를 읽어서 일별로 합산한다").
+- PR 제목·설명과 빌드 릴리즈 노트는 제품 언어로 쓴다 (예: "걸음 수를 읽어서 일별로 합산한다").
 
 ## 5. 스프린트별 치완 리드 영역 (개발 이슈는 플래닝에서 별도 배분)
 
-| 스프린트 | 포커스 | 산출물 |
-|---|---|---|
-| S0 | 기획 백로그 + XP 밸런스 설계 | 아이디어 이슈, XP 스프레드시트 v1, 캐릭터 컨셉 |
-| S1 | 실데이터 QA | 워치 데이터 vs 앱 대조 결과, 버그 이슈 |
-| S2 | 밸런스 튜닝 | 스프레드시트 v2 (실데이터 반영) |
-| S3 | 아트 파이프라인 | 표정·장비 에셋 확정, 트리거 표 |
-| S4 | 유저 테스트 운영 | 테스터 10명 모집·안내문·인터뷰 결과 |
+[SPRINTS.md의 '스프린트별 리드 (치완)' 표](./SPRINTS.md#스프린트별-리드-치완)가 단일 기준.
 
 ## 6. 규칙 (짧음)
 
@@ -87,7 +80,9 @@ main (항상 동작하는 버전)
 | 문서 | 내용 | 주 독자 |
 |---|---|---|
 | [MVP.md](./MVP.md) | 무엇을 만드는가 — 화면·산식·데이터·수익화 | 둘 다 (분쟁 시 기준) |
-| [SPRINTS.md](./SPRINTS.md) | 언제 무엇을 — 스프린트별 백로그 | 둘 다 |
+| [SPRINTS.md](./SPRINTS.md) | 언제 무엇을 — 스프린트 일정·게이트 | 둘 다 |
+| [BACKLOG.md](./BACKLOG.md) | 태스크 상세 (E-ID·완료 기준·규모) | 플래닝 때 |
+| [STACK.md](./STACK.md) · [ARCHITECTURE.md](./ARCHITECTURE.md) · [BACKEND.md](./BACKEND.md) | 기술 결정·모노레포·서버 설계 | 개발할 때 |
 | [RESEARCH.md](./RESEARCH.md) | 시장·경쟁 조사 (왜 이 방향인가) | 둘 다 |
 | [BENCHMARK.md](./BENCHMARK.md) | 기능별 베낄 것/피할 것 | 설계할 때 참조 |
 | 원 기획서(docx) | 치완의 초기 비전 (장기 로드맵의 북극성) | 참고용 |
