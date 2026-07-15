@@ -153,11 +153,25 @@ private fun SessionRow(session: ExerciseSummary, dtFormatter: DateTimeFormatter)
     ) {
         Text(whenLabel, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
         Text(
-            text = stringResource(R.string.session_meta_format, typeLabel, session.durationMinutes) +
-                " · " + hrLabel + " · " + tierLabel(session.trustTier),
+            text = stringResource(R.string.session_meta_format, typeLabel, session.durationMinutes) + " · " + hrLabel,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text(
+            text = stringResource(
+                R.string.session_trust_source_format,
+                tierLabel(session.trustTier),
+                sourceLabel(session.dataOrigin),
+            ),
             style = MaterialTheme.typography.bodySmall,
         )
     }
+}
+
+@Composable
+private fun sourceLabel(packageName: String): String = when (packageName) {
+    "com.sec.android.app.shealth" -> stringResource(R.string.source_samsung_health)
+    "com.samsung.android.wear.shealth" -> stringResource(R.string.source_samsung_watch)
+    else -> packageName
 }
 
 @Composable
