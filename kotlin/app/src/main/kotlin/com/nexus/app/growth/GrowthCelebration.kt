@@ -25,6 +25,7 @@ import com.nexus.core.ClassAffinity
 /**
  * 레벨업·성향 변화 축하 카드 (#61, E3-15). 스케일+페이드 등장 연출, 확인으로 닫음.
  * 캐릭터 애니메이션 에셋은 이후 스프린트 — v1은 카드 연출로 완료 기준 충족.
+ * 성향은 40% 문턱에서 오갈 때마다 축하된다(탭 진입 단위라 빈도 제한적) — v1 수용, 감쇠는 후속.
  */
 @Composable
 internal fun CelebrationCard(change: GrowthChange, visible: Boolean, onDismiss: () -> Unit) {

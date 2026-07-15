@@ -72,8 +72,9 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
         data = loaded
         if (loaded != null) {
             change = detectChange(stateStore, loaded.summary)
-            // 기준점은 감지 직후 갱신 — 탭 재진입 시 같은 변화를 두 번 축하하지 않는다 (#61)
-            stateStore.recordSeen(loaded.summary.level, loaded.summary.affinity)
+            // 기준점 소비는 "확인"(dismiss) 시점 — 감지 시점에 갱신하면 회전·프로세스 사망으로
+            // 카드가 영영 소실된다(#61 리뷰). 변화가 없을 때만 여기서 기준점을 세팅(최초 방문 포함).
+            if (change == null) stateStore.recordSeen(loaded.summary.level, loaded.summary.affinity)
         }
         loading = false
     }
@@ -94,7 +95,11 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
             else -> {
                 change?.let { c ->
                     // dismiss는 visible 토글 — 노드를 즉시 제거하면 exit 연출이 생략된다
-                    CelebrationCard(c, visible = celebrationVisible) { celebrationVisible = false }
+                    CelebrationCard(c, visible = celebrationVisible) {
+                        celebrationVisible = false
+                        // 확인한 순간이 기준점 — 재진입 시 같은 변화를 다시 축하하지 않는다
+                        data?.summary?.let { stateStore.recordSeen(it.level, it.affinity) }
+                    }
                 }
                 GrowthContent(data!!)
             }
