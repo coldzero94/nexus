@@ -22,7 +22,6 @@
     <ID>MagicNumber:StrengthAxis.kt$StrengthAxis$3</ID>
     <ID>MagicNumber:Trust.kt$TrustTier.B$0.85</ID>
     <ID>MagicNumber:XpEngine.kt$ActivityType.STRENGTH$1.5</ID>
-    <ID>ReturnCount:Baseline.kt$Baseline$fun personalCoefficient( todayBase: Double, priorDailyBases: List&lt;Double&gt;, ): Double</ID>
     <ID>SwallowedException:ActivityScreen.kt$e: Exception</ID>
     <ID>SwallowedException:HealthSyncWorker.kt$HealthSyncWorker$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ActivityScreen.kt$e: Exception</ID>
