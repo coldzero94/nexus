@@ -112,7 +112,8 @@ class ExerciseRepository(private val client: HealthConnectClient) {
         sums: MutableMap<String, LongArray>,
     ) {
         for ((id, start, end) in intervals) {
-            if (time < start || time > end) continue
+            // 경계는 기존 aggregate(TimeRangeFilter.between)와 동일하게 시작 포함·끝 제외
+            if (time < start || time >= end) continue
             val acc = sums.getOrPut(id) { LongArray(2) }
             acc[0] += bpm
             acc[1]++
