@@ -21,6 +21,13 @@ object ConditionEngine {
     /** 활동일 회복량(하락 최대치보다 크게 — 하루 활동이면 이틀 공백을 거의 만회). */
     const val RECOVERY_PER_ACTIVE_DAY = 15.0
 
+    /**
+     * 휴식일 버프 (#63, E4-10): 어제 쉬고 오늘 움직이면 회복이 이만큼 추가된다 — 고정 보너스라
+     * 자체 상한(완료 기준 "상한 있음"). 휴식을 손해가 아니라 리듬으로 만드는 장치.
+     * 수면·HRV 기반 정밀 감지는 후속(권한 추가 = 재심사).
+     */
+    const val REST_DAY_RECOVERY_BONUS = 7.0
+
     /** 컨디션 최대 기준 무활동 하락폭 — 바닥에 가까울수록 비례 감소(점근). */
     const val IDLE_DECAY_AT_MAX = 8.0
 
@@ -35,15 +42,22 @@ object ConditionEngine {
      *
      * 분기 순서가 계약이다: 활동 회복이 **바닥 가드보다 먼저** — 바닥에서도 활동하면
      * 즉시 회복해야 한다(무처벌 루프의 핵심, 테스트로 고정).
+     * [restedYesterday]가 참인 활동일엔 [REST_DAY_RECOVERY_BONUS]가 추가된다(#63).
      */
-    fun nextDay(current: Double, dayBasePoints: Double, restMode: Boolean = false): Double {
+    fun nextDay(
+        current: Double,
+        dayBasePoints: Double,
+        restMode: Boolean = false,
+        restedYesterday: Boolean = false,
+    ): Double {
         require(dayBasePoints >= 0) { "dayBasePoints must be >= 0" }
         // 손상 저장값 방어: NaN은 coerceIn을 통과하므로 기본값으로 복구, 범위 밖은 클램프.
         // 게이지는 연속값(Double) — 반올림은 표시·영속화 계층에서, 엔진은 하지 않는다.
         val clamped = if (current.isNaN()) DEFAULT else current.coerceIn(0.0, MAX)
+        val recovery = RECOVERY_PER_ACTIVE_DAY + if (restedYesterday) REST_DAY_RECOVERY_BONUS else 0.0
         return when {
             dayBasePoints >= ACTIVE_DAY_THRESHOLD_POINTS ->
-                (clamped + RECOVERY_PER_ACTIVE_DAY).coerceAtMost(MAX)
+                (clamped + recovery).coerceAtMost(MAX)
 
             restMode -> clamped
 

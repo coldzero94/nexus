@@ -116,4 +116,20 @@ class ConditionEngineTest {
         assertEquals(78.5, ConditionEngine.fromDailyPoints(listOf(30.0, 0.0)), 1e-9)
         assertEquals(ConditionEngine.DEFAULT, ConditionEngine.fromDailyPoints(emptyList()), 1e-9)
     }
+
+    @Test
+    fun restDayBuff_boostsRecovery_afterIdleDay() {
+        // 어제 휴식 → 오늘 활동: 회복 15 + 버프 7 = 22 (#63) — 버프는 고정 보너스(자체 상한)
+        assertEquals(72.0, ConditionEngine.nextDay(50.0, dayBasePoints = 30.0, restedYesterday = true), 1e-9)
+        // 연속 활동일엔 버프 없음
+        assertEquals(65.0, ConditionEngine.nextDay(50.0, dayBasePoints = 30.0, restedYesterday = false), 1e-9)
+        // 버프가 있어도 상한 100을 넘지 않는다
+        assertEquals(100.0, ConditionEngine.nextDay(95.0, dayBasePoints = 30.0, restedYesterday = true), 1e-9)
+    }
+
+    @Test
+    fun restDayBuff_notAppliedOnIdleDay() {
+        // 어제 쉬고 오늘도 쉼 — 버프는 활동일에만, 무활동 하락은 그대로
+        assertEquals(92.0, ConditionEngine.nextDay(100.0, dayBasePoints = 0.0, restedYesterday = true), 1e-9)
+    }
 }
