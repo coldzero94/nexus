@@ -1,9 +1,12 @@
 package com.nexus.app.data
 
+import com.nexus.app.health.ExerciseSummary
 import com.nexus.core.LedgerMath
 import com.nexus.core.RecordingMethod
 import com.nexus.core.RewardEventType
+import com.nexus.core.TrustPolicy
 import com.nexus.core.XpEngine
+import java.time.ZoneId
 
 /**
  * 원장 영속 저장소 (#162) — core [com.nexus.core.RewardLedger]와 같은 계약
@@ -48,6 +51,29 @@ class RewardLedgerRepository(private val dao: RewardEventDao) {
                 epochMillis = epochMillis,
             ),
         ) != -1L
+    }
+
+    /**
+     * 세션 목록 멱등 지급 (#163) — 워커(백그라운드)와 화면(로드 시)이 같은 진입점을 쓴다.
+     * 화면이 호출해도 안전: 같은 키는 DB가 무시하므로 원장은 항상 "본 세션까지" 상태.
+     * 지급 XP = 기본점수 × 개인 신뢰 계수(무상한 — 상한은 합산 시점, LedgerMath).
+     */
+    suspend fun grantSessions(sessions: List<ExerciseSummary>, zone: ZoneId, epochMillis: Long) {
+        sessions.forEach { session ->
+            val type = session.type ?: return@forEach
+            if (!TrustPolicy.isXpEligible(session.trustTier)) return@forEach
+            grant(
+                idempotencyKey = session.id,
+                xp = (
+                    XpEngine.baseScore(type, session.durationMinutes.toInt()) *
+                        session.trustTier.personalXpMultiplier
+                    ).toInt(),
+                dataOrigin = session.dataOrigin,
+                recordingMethod = session.recordingMethod,
+                epochMillis = epochMillis,
+                epochDay = session.start.atZone(zone).toLocalDate().toEpochDay(),
+            )
+        }
     }
 
     /** 표시용 누적 XP — 일 상한 적용(core LedgerMath). */

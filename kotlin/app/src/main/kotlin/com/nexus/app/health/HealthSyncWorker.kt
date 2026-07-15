@@ -12,8 +12,6 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
-import com.nexus.core.TrustPolicy
-import com.nexus.core.XpEngine
 import java.io.IOException
 import java.time.ZoneId
 import java.util.concurrent.TimeUnit
@@ -53,34 +51,25 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         } catch (e: IllegalStateException) {
             Log.w(TAG, "health sync state failure", e)
             Result.retry()
+        } catch (e: android.database.SQLException) {
+            // 원장 DB 문제 — 크래시 루프 대신 백오프 재시도 (#163)
+            Log.w(TAG, "ledger db failure", e)
+            Result.retry()
         }
     }
 
     /**
-     * 원장 append (#162): 최근 세션을 멱등 지급하고(이미 지급된 키는 DB가 무시),
-     * 삭제 감지분은 보상 취소(#133). 지급 XP = 기본점수 × 개인 신뢰 계수(무상한 —
-     * 일 상한은 합산 시점 규칙, LedgerMath KDoc). Tier C·3축 외는 지급 제외.
+     * 원장 append (#162): 최근 세션 멱등 지급 + 삭제 감지분 보상 취소(#133).
+     * 지급 규칙은 [RewardLedgerRepository.grantSessions] 단일 진입점 (#163).
      */
     private suspend fun appendToLedger(client: HealthConnectClient, deletedIds: List<String>) {
         val ledger = RewardLedgerRepository(NexusDatabase.get(applicationContext).rewardEventDao())
-        val zone = ZoneId.systemDefault()
         val now = System.currentTimeMillis()
-        ExerciseRepository(client).readRecentSessions(days = GRANT_WINDOW_DAYS).forEach { session ->
-            val type = session.type ?: return@forEach
-            if (!TrustPolicy.isXpEligible(session.trustTier)) return@forEach
-            val xp = (
-                XpEngine.baseScore(type, session.durationMinutes.toInt()) *
-                    session.trustTier.personalXpMultiplier
-                ).toInt()
-            ledger.grant(
-                idempotencyKey = session.id,
-                xp = xp,
-                dataOrigin = session.dataOrigin,
-                recordingMethod = session.recordingMethod,
-                epochMillis = now,
-                epochDay = session.start.atZone(zone).toLocalDate().toEpochDay(),
-            )
-        }
+        ledger.grantSessions(
+            sessions = ExerciseRepository(client).readRecentSessions(days = GRANT_WINDOW_DAYS),
+            zone = ZoneId.systemDefault(),
+            epochMillis = now,
+        )
         deletedIds.forEach { id ->
             if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
         }
