@@ -30,6 +30,7 @@ import com.nexus.app.character.CharacterComposer
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.StepRepository
+import com.nexus.app.settings.RestModeStore
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.core.ConditionEngine
 import com.nexus.core.DialogueSelector
@@ -68,15 +69,17 @@ internal sealed interface HomeLoad {
 /** 홈 (#32) — 캐릭터·컨디션·오늘 요약·다음 목표. 원정 상태는 E5에서 실데이터로. */
 @Composable
 fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
+    val context = LocalContext.current
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
     val stepRepo = remember { manager.stepRepositoryOrNull() }
     var load by remember { mutableStateOf<HomeLoad?>(null) }
 
+    val restStore = remember { RestModeStore(context) }
     LaunchedEffect(exerciseRepo, stepRepo) {
         load = if (exerciseRepo == null || stepRepo == null) {
             HomeLoad.PermissionDenied
         } else {
-            loadHome(exerciseRepo, stepRepo)
+            loadHome(exerciseRepo, stepRepo, restStore)
         }
     }
 
@@ -156,7 +159,11 @@ private fun DialogueBubble(spriteState: String) {
 }
 
 /** ActivityScreen.loadActivity와 같은 catch 계약 (#130) + 권한 회수는 안내로 (#144 패턴). */
-private suspend fun loadHome(exerciseRepo: ExerciseRepository, stepRepo: StepRepository): HomeLoad = try {
+private suspend fun loadHome(
+    exerciseRepo: ExerciseRepository,
+    stepRepo: StepRepository,
+    restStore: RestModeStore,
+): HomeLoad = try {
     val zone = ZoneId.systemDefault()
     val today = LocalDate.now(zone)
     val sessions = exerciseRepo.readRecentSessions(days = CONDITION_WINDOW_DAYS).map {
@@ -181,7 +188,11 @@ private suspend fun loadHome(exerciseRepo: ExerciseRepository, stepRepo: StepRep
     val condition = if (firstRecordedIdx == -1) {
         ConditionEngine.DEFAULT
     } else {
-        ConditionEngine.fromDailyPoints(windowDays.drop(firstRecordedIdx))
+        // 휴식 모드(#31): 휴식 시작일 이후의 날은 하락 면제 — 일자별로 restMode를 넣어 폴드
+        windowDays.withIndex().drop(firstRecordedIdx).fold(ConditionEngine.DEFAULT) { acc, (idx, points) ->
+            val epochDay = today.minusDays((CONDITION_WINDOW_DAYS - 1 - idx).toLong()).toEpochDay()
+            ConditionEngine.nextDay(acc, points, restMode = restStore.isRestDay(epochDay))
+        }
     }
     val todayEpoch = today.toEpochDay()
     HomeLoad.Success(
