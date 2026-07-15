@@ -29,6 +29,7 @@ import com.nexus.app.health.ExerciseSummary
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.TokenStore
 import com.nexus.core.ActivityType
+import com.nexus.core.TrustTier
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -47,6 +48,7 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)
 
     var steps by remember { mutableStateOf<List<DailySteps>?>(null) }
     var sessions by remember { mutableStateOf<List<ExerciseSummary>?>(null) }
+    var manualSteps by remember { mutableStateOf(0L) }
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
 
@@ -58,6 +60,7 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)
         }
         try {
             steps = stepRepo.readDailySteps(7)
+            manualSteps = stepRepo.readManualStepCount(7)
             sessions = exerciseRepo.readRecentSessions(7)
         } catch (e: Exception) {
             failed = true
@@ -85,6 +88,13 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)
                 val formatter = remember(pattern) { DateTimeFormatter.ofPattern(pattern, Locale.KOREAN) }
                 steps?.asReversed()?.forEach { day ->
                     StepRow(dateLabel = day.date.format(formatter), steps = day.steps)
+                }
+                if (manualSteps > 0L) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(R.string.steps_manual_excluded, manualSteps),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
         }
@@ -143,7 +153,8 @@ private fun SessionRow(session: ExerciseSummary, dtFormatter: DateTimeFormatter)
     ) {
         Text(whenLabel, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
         Text(
-            text = stringResource(R.string.session_meta_format, typeLabel, session.durationMinutes) + " · " + hrLabel,
+            text = stringResource(R.string.session_meta_format, typeLabel, session.durationMinutes) +
+                " · " + hrLabel + " · " + tierLabel(session.trustTier),
             style = MaterialTheme.typography.bodySmall,
         )
     }
@@ -156,6 +167,15 @@ private fun typeLabel(type: ActivityType?): String = stringResource(
         ActivityType.RUNNING -> R.string.session_type_running
         ActivityType.STRENGTH -> R.string.session_type_strength
         null -> R.string.session_type_other
+    },
+)
+
+@Composable
+private fun tierLabel(tier: TrustTier): String = stringResource(
+    when (tier) {
+        TrustTier.A -> R.string.trust_tier_a
+        TrustTier.B -> R.string.trust_tier_b
+        TrustTier.C -> R.string.trust_tier_c
     },
 )
 
