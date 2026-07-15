@@ -28,10 +28,21 @@ class TokenStore(context: Context) {
             prefs.edit().putInt(KEY_LAST_COUNT, value).apply()
         }
 
+    /**
+     * 마지막 Changes 토큰 리셋(30일 만료) 시각, 0 = 없음 (#141).
+     * 리셋 = 그 시점까지의 델타 유실 — E3 소급 재계산이 "이 시각까지 재조회"의 입력으로 쓴다.
+     */
+    var lastTokenResetEpochMillis: Long
+        get() = prefs.getLong(KEY_LAST_TOKEN_RESET, 0L)
+        set(value) {
+            prefs.edit().putLong(KEY_LAST_TOKEN_RESET, value).apply()
+        }
+
     private companion object {
         const val PREFS = "nexus_sync"
         const val KEY_TOKEN = "changes_token"
         const val KEY_LAST_SYNC = "last_sync_millis"
         const val KEY_LAST_COUNT = "last_change_count"
+        const val KEY_LAST_TOKEN_RESET = "last_token_reset_millis"
     }
 }
