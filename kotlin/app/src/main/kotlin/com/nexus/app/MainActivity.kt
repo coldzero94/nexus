@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -30,11 +31,15 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.growth.GrowthScreen
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
+import com.nexus.app.home.AppOpenTracker
 import com.nexus.app.home.HomeScreen
+import com.nexus.app.home.WelcomeBackScene
 import com.nexus.app.onboarding.OnboardingScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.core.ActivityType
+import com.nexus.core.ReturnWelcomePolicy
 import com.nexus.core.XpEngine
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +61,18 @@ private fun NexusApp(manager: HealthConnectManager) {
     var finished by rememberSaveable { mutableStateOf(false) }
     var connected by rememberSaveable { mutableStateOf(false) }
 
+    // 복귀 환영 (#30): 판정은 프로세스당 1회(기준점 캡처 후 즉시 오늘로 갱신) —
+    // rememberSaveable이라 회전·프로세스 복원에도 같은 판정이 유지된다.
+    val tracker = remember { AppOpenTracker(context) }
+    var welcomeGapDays by rememberSaveable {
+        val today = LocalDate.now().toEpochDay()
+        val last = tracker.lastOpenEpochDay
+        tracker.recordOpen(today)
+        mutableStateOf(
+            if (ReturnWelcomePolicy.shouldWelcome(last, today)) ReturnWelcomePolicy.gapDays(last, today) else 0L,
+        )
+    }
+
     if (!finished) {
         OnboardingScreen(manager) { isConnected ->
             connected = isConnected
@@ -63,6 +80,9 @@ private fun NexusApp(manager: HealthConnectManager) {
             // 연결 성공 시 15분 주기 백그라운드 동기화 등록 (#8)
             if (isConnected) HealthSyncWorker.enqueuePeriodic(context)
         }
+    } else if (connected && welcomeGapDays > 0L) {
+        // 3일+ 공백 복귀 → 환영 씬 먼저 (#30, 1급 기능)
+        WelcomeBackScene(gapDays = welcomeGapDays, onContinue = { welcomeGapDays = 0L })
     } else if (connected) {
         // 연결됨 → 홈/활동/성장 3탭 (#23·#32).
         ConnectedTabs(manager, onReconnect = { finished = false })

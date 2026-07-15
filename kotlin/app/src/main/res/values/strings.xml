@@ -25,6 +25,9 @@
     <string name="home_goal_done">오늘 몫은 충분해요 — 캐릭터가 든든해해요</string>
     <string name="home_dialogue_format">“%1$s”</string>
     <string name="activity_demo_body">Health Connect 권한이 없어 걸음·운동을 읽을 수 없어요. 연결하면 기록이 캐릭터에 새겨져요.</string>
+    <string name="welcome_back_title">%1$d일 만이에요, 보고 싶었어요!</string>
+    <string name="welcome_back_body">쉬는 것도 리듬이에요. 캐릭터는 잘 지내고 있었어요 — 오늘부터 다시 같이 걸어요.</string>
+    <string name="welcome_back_continue">다시 시작하기</string>
     <string name="onboarding_next">다음</string>
     <string name="onboarding_start">시작하기</string>
 
