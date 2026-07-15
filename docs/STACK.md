@@ -98,7 +98,7 @@
 
 - **포맷팅**: ktlint(코틀린 공식 스타일) — Spotless로 실행, `.editorconfig`로 IDE 동기화. 로컬 `spotlessApply` 자동 수정 / CI `spotlessCheck` 차단 → 포맷 논쟁이 PR에서 사라짐.
 - **정적 분석**: detekt(+Compose 룰셋) — 코드 스멜·복잡도·Compose 함정(remember 누락 등). Android Lint는 AGP 내장(CI 포함).
-- **적용 방식**: build-logic 컨벤션 플러그인(`nexus.kotlin.quality`)에 한 번 정의 → core·app·server 전 모듈 자동 적용. 룰 조정도 한 곳에서.
+- **적용 방식**: 루트 `kotlin/build.gradle.kts`에 일괄 적용(3모듈 규모에선 이게 단순 — #131). 모듈이 늘어 모듈별 설정이 필요해지면 `nexus.kotlin.quality` 컨벤션 플러그인으로 승격. detekt는 type resolution 없는 일괄 태스크라 TR 전용 룰은 미실행(detekt.yml 주석 참고).
 - **아키텍처 규칙**: core 순수성은 KMP 타깃 분리가 컴파일러로 강제. Konsist(모듈 경계 유닛 테스트)는 보류 — 도입 트리거: 경계 위반이 리뷰에서 2회 잡히면.
 - 상태: Compose + ViewModel(+ Flow). 테스트: JUnit5 + core는 케이스 테이블 기반.
 - 문자열: 리소스 externalize, ko 기본. 분석 이벤트 allowlist를 코드로 강제(§2 정책).

@@ -13,3 +13,9 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.{kt,kts}]
+# Compose 관례: @Composable 함수는 PascalCase. 주의: 이 항목은 IDE 동기화 전용 —
+# 빌드의 Spotless는 이 파일을 반영하지 못해 kotlin/build.gradle.kts의
+# editorConfigOverride에 같은 값이 있다. 수정 시 두 곳을 함께.
+ktlint_function_naming_ignore_when_annotated_with = Composable

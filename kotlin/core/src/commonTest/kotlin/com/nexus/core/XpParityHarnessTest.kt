@@ -55,11 +55,10 @@ class XpParityHarnessTest {
     }
 
     /** 헤더 1줄 스킵 + 공백 줄 제거 → 각 행을 컬럼 리스트로. */
-    private fun parse(csv: String): List<List<String>> =
-        csv.lineSequence()
-            .drop(1)
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .map { line -> line.split(",").map { it.trim() } }
-            .toList()
+    private fun parse(csv: String): List<List<String>> = csv.lineSequence()
+        .drop(1)
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .map { line -> line.split(",").map { it.trim() } }
+        .toList()
 }

@@ -21,20 +21,20 @@ data class DailySteps(val date: LocalDate, val steps: Long)
  * LocalDateTime 기반 슬라이싱이라 버킷 경계 = 기기 로컬(KST) 자정.
  */
 class StepRepository(private val client: HealthConnectClient) {
-
     suspend fun readDailySteps(days: Int = 7): List<DailySteps> {
         require(days >= 1) { "days must be >= 1" }
         val today = LocalDate.now()
         val start = today.minusDays((days - 1).toLong()).atStartOfDay()
         val end = LocalDateTime.of(today, LocalTime.MAX)
 
-        val buckets = client.aggregateGroupByPeriod(
-            AggregateGroupByPeriodRequest(
-                metrics = setOf(StepsRecord.COUNT_TOTAL),
-                timeRangeFilter = TimeRangeFilter.between(start, end),
-                timeRangeSlicer = Period.ofDays(1),
-            ),
-        )
+        val buckets =
+            client.aggregateGroupByPeriod(
+                AggregateGroupByPeriodRequest(
+                    metrics = setOf(StepsRecord.COUNT_TOTAL),
+                    timeRangeFilter = TimeRangeFilter.between(start, end),
+                    timeRangeSlicer = Period.ofDays(1),
+                ),
+            )
         // 데이터 없는 날은 버킷이 빠질 수 있어, 요청 구간 전체를 0으로 채운 뒤 덮어쓴다.
         val byDate = buckets.associate { it.startTime.toLocalDate() to (it.result[StepsRecord.COUNT_TOTAL] ?: 0L) }
         return (0 until days).map { offset ->
@@ -52,12 +52,13 @@ class StepRepository(private val client: HealthConnectClient) {
         require(days >= 1) { "days must be >= 1" }
         val end = Instant.now()
         val start = end.minus(Duration.ofDays(days.toLong()))
-        val response = client.readRecords(
-            ReadRecordsRequest(
-                recordType = StepsRecord::class,
-                timeRangeFilter = TimeRangeFilter.between(start, end),
-            ),
-        )
+        val response =
+            client.readRecords(
+                ReadRecordsRequest(
+                    recordType = StepsRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(start, end),
+                ),
+            )
         return response.records
             .filter { it.metadata.recordingMethod.toRecordingMethod() == RecordingMethod.MANUAL_ENTRY }
             .sumOf { it.count }

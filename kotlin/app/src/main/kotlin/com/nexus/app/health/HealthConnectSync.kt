@@ -16,15 +16,13 @@ data class SyncOutcome(val tokenReset: Boolean, val upserts: Int, val deletions:
  * 30일 만료 시 토큰 재발급 폴백. DeletionChange는 보상 이벤트 연결점으로 라우팅(실제 원장은 E3).
  * 폴링 남용 방지: 이 함수는 WorkManager 15분 주기에서만 호출.
  */
-class HealthConnectSync(
-    private val client: HealthConnectClient,
-    private val store: TokenStore,
-) {
-    private val recordTypes = setOf(
-        StepsRecord::class,
-        ExerciseSessionRecord::class,
-        HeartRateRecord::class,
-    )
+class HealthConnectSync(private val client: HealthConnectClient, private val store: TokenStore) {
+    private val recordTypes =
+        setOf(
+            StepsRecord::class,
+            ExerciseSessionRecord::class,
+            HeartRateRecord::class,
+        )
 
     suspend fun sync(): SyncOutcome {
         var token = store.changesToken ?: client.getChangesToken(ChangesTokenRequest(recordTypes))
@@ -41,7 +39,10 @@ class HealthConnectSync(
             }
             for (change in response.changes) {
                 when (change) {
-                    is UpsertionChange -> upserts++
+                    is UpsertionChange -> {
+                        upserts++
+                    }
+
                     is DeletionChange -> {
                         deletions++
                         onDeletion(change.recordId)

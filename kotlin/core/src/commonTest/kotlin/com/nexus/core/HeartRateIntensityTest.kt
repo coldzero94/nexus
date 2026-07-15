@@ -5,20 +5,20 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class HeartRateIntensityTest {
-
     private val delta = 1e-9
     private val maxHr = 190
 
     // (심박, 기대 존) — maxHr 190. 부동소수 경계 회피 위해 존 내부값 사용.
-    private val zoneCases = listOf(
-        80 to HrZone.Z1, // 0.42
-        95 to HrZone.Z1, // 0.50 (Z2 미만)
-        120 to HrZone.Z2, // 0.63
-        140 to HrZone.Z3, // 0.74
-        160 to HrZone.Z4, // 0.84
-        180 to HrZone.Z5, // 0.95
-        190 to HrZone.Z5, // 1.00
-    )
+    private val zoneCases =
+        listOf(
+            80 to HrZone.Z1, // 0.42
+            95 to HrZone.Z1, // 0.50 (Z2 미만)
+            120 to HrZone.Z2, // 0.63
+            140 to HrZone.Z3, // 0.74
+            160 to HrZone.Z4, // 0.84
+            180 to HrZone.Z5, // 0.95
+            190 to HrZone.Z5, // 1.00
+        )
 
     @Test
     fun zoneFor_matchesCaseTable() {

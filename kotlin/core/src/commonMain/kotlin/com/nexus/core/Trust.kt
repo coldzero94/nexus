@@ -23,25 +23,21 @@ enum class TrustTier(val xpMultiplier: Double) {
  * ⚠ 2026-06 SPN 변경: 온디바이스 소스가 "android" 대신 getCurrentDeviceDataSource()로 옴 →
  *   현재 기기 소스를 런타임에 tierB로 병합([withCurrentDeviceSource]).
  */
-data class DataOriginAllowlist(
-    val tierA: Set<String>,
-    val tierB: Set<String>,
-) {
-    fun withCurrentDeviceSource(packageName: String): DataOriginAllowlist =
-        copy(tierB = tierB + packageName)
+data class DataOriginAllowlist(val tierA: Set<String>, val tierB: Set<String>) {
+    fun withCurrentDeviceSource(packageName: String): DataOriginAllowlist = copy(tierB = tierB + packageName)
 
     companion object {
         /** 원격 구성 전 기본값. 실제 패키지·워치 소스는 #12 실측·원격 구성으로 확정. */
-        val DEFAULT = DataOriginAllowlist(
-            tierA = setOf("com.samsung.android.wear.shealth"),
-            tierB = setOf("com.sec.android.app.shealth"),
-        )
+        val DEFAULT =
+            DataOriginAllowlist(
+                tierA = setOf("com.samsung.android.wear.shealth"),
+                tierB = setOf("com.sec.android.app.shealth"),
+            )
     }
 }
 
 /** 신뢰 필터 3종 (#9, STACK.md §1). */
 object TrustPolicy {
-
     /** 일일 XP 인정 상한(anti-abuse). 적용은 XP 엔진(E3). */
     const val DAILY_ACCEPTED_XP_CAP: Int = 300
 

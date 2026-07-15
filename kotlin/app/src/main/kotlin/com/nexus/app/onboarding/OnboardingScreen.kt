@@ -37,10 +37,7 @@ private enum class OnboardingStep { Welcome, Rationale, SamsungHealth }
  * 권한 거부·HC 미가용 시에도 온보딩은 끝까지 진행되고 [onFinished]에 connected=false로 전달(데모 모드).
  */
 @Composable
-fun OnboardingScreen(
-    manager: HealthConnectManager,
-    onFinished: (connected: Boolean) -> Unit,
-) {
+fun OnboardingScreen(manager: HealthConnectManager, onFinished: (connected: Boolean) -> Unit) {
     var step by rememberSaveable { mutableStateOf(OnboardingStep.Welcome) }
     var granted by rememberSaveable { mutableStateOf(false) }
 
@@ -57,10 +54,12 @@ fun OnboardingScreen(
                 step = if (manager.isAvailable()) OnboardingStep.Rationale else OnboardingStep.SamsungHealth
             },
         )
+
         OnboardingStep.Rationale -> RationaleStep(
             onGrant = { permissionLauncher.launch(HealthPermissions.ALL) },
             onSkip = { onFinished(false) },
         )
+
         OnboardingStep.SamsungHealth -> SamsungHealthStep(
             onDone = { onFinished(granted) },
         )

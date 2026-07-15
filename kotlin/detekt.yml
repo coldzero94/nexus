@@ -1,0 +1,26 @@
+# NEXUS detekt 설정 — 기본 룰셋(buildUponDefaultConfig) 위에 최소 조정 (STACK.md §9)
+#
+# 한계: 루트 일괄 detekt 태스크는 type resolution이 없어 "Requires Type Resolution"
+# 표시가 붙은 룰(SuspendFunSwallowedCancellation 등)은 조용히 실행되지 않는다.
+# runCatching류 삼킴은 리뷰에서 잡아야 함(#130 참고). 모듈별 detektMain 전환 시 해제.
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ["Composable"]  # Compose 관례 — .editorconfig·Spotless override와 3중 동기
+
+style:
+  DestructuringDeclarationWithTooManyEntries:
+    # 케이스 테이블 테스트는 행 구조 분해가 관용적
+    excludes: ["**/commonTest/**", "**/jvmTest/**", "**/androidHostTest/**", "**/test/**"]
+  ReturnCount:
+    max: 4  # early-return 스타일 허용 (예: Baseline.personalCoefficient)
+  MagicNumber:
+    # 주의: excludes는 기본값에 병합이 아니라 "대체"됨 — 테스트 소스셋을 직접 전부 나열
+    excludes: ["**/commonTest/**", "**/jvmTest/**", "**/androidHostTest/**", "**/test/**"]
+    ignorePropertyDeclaration: true
+  MaxLineLength:
+    maxLineLength: 120  # .editorconfig max_line_length와 동기 — 한쪽만 바꾸지 말 것
+
+complexity:
+  LongParameterList:
+    functionThreshold: 8  # Compose 파라미터 대비

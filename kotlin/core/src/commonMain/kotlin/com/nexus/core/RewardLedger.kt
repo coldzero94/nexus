@@ -8,14 +8,14 @@ enum class RewardEventType { GRANT, CANCELLATION }
  * 서버가 "당시 산식"으로 재검산할 수 있도록 provenance·formulaVersion을 박제한다.
  */
 data class RewardEvent(
-    val sequence: Long,                  // ③ 단조 증가 전역 순서
-    val idempotencyKey: String,          // ① HC 레코드 id 기반 멱등성 키
-    val xp: Int,                         // 지급(+) / 취소(-)
+    val sequence: Long, // ③ 단조 증가 전역 순서
+    val idempotencyKey: String, // ① HC 레코드 id 기반 멱등성 키
+    val xp: Int, // 지급(+) / 취소(-)
     val type: RewardEventType,
-    val dataOrigin: String,              // ② provenance — 패키지명
+    val dataOrigin: String, // ② provenance — 패키지명
     val recordingMethod: RecordingMethod, // ② provenance — 기록 방식
-    val formulaVersion: Int,             // 재검산용 산식 버전
-    val epochMillis: Long,               // 발생 시각(호출자 주입 — core는 시계 비의존)
+    val formulaVersion: Int, // 재검산용 산식 버전
+    val epochMillis: Long, // 발생 시각(호출자 주입 — core는 시계 비의존)
 )
 
 /**
@@ -41,16 +41,17 @@ class RewardLedger {
         epochMillis: Long,
     ): RewardEvent? {
         if (idempotencyKey in grantedKeys) return null
-        val event = RewardEvent(
-            sequence = nextSequence++,
-            idempotencyKey = idempotencyKey,
-            xp = xp,
-            type = RewardEventType.GRANT,
-            dataOrigin = dataOrigin,
-            recordingMethod = recordingMethod,
-            formulaVersion = formulaVersion,
-            epochMillis = epochMillis,
-        )
+        val event =
+            RewardEvent(
+                sequence = nextSequence++,
+                idempotencyKey = idempotencyKey,
+                xp = xp,
+                type = RewardEventType.GRANT,
+                dataOrigin = dataOrigin,
+                recordingMethod = recordingMethod,
+                formulaVersion = formulaVersion,
+                epochMillis = epochMillis,
+            )
         entries.add(event)
         grantedKeys.add(idempotencyKey)
         return event
@@ -63,12 +64,13 @@ class RewardLedger {
     fun cancel(idempotencyKey: String, epochMillis: Long): RewardEvent? {
         if (idempotencyKey !in grantedKeys || idempotencyKey in cancelledKeys) return null
         val grant = entries.first { it.idempotencyKey == idempotencyKey && it.type == RewardEventType.GRANT }
-        val event = grant.copy(
-            sequence = nextSequence++,
-            xp = -grant.xp,
-            type = RewardEventType.CANCELLATION,
-            epochMillis = epochMillis,
-        )
+        val event =
+            grant.copy(
+                sequence = nextSequence++,
+                xp = -grant.xp,
+                type = RewardEventType.CANCELLATION,
+                epochMillis = epochMillis,
+            )
         entries.add(event)
         cancelledKeys.add(idempotencyKey)
         return event

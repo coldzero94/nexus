@@ -6,7 +6,6 @@ package com.nexus.core
  * 인정 경로(Tier A/B/C)는 신뢰 필터(#9)가 담당 — 여기선 근력 XP 산식만.
  */
 object StrengthAxis {
-
     /** 주당 근력 세션 빈도 보너스(꾸준함 보상). n=이번 주 근력 세션 수(이번 세션 포함). */
     fun weeklyFrequencyBonus(sessionsThisWeek: Int): Double = when {
         sessionsThisWeek <= 0 -> 0.0
