@@ -5,8 +5,8 @@
     <!-- 온보딩: 환영 / 캐릭터 생성 -->
     <string name="onboarding_welcome_title">함께 자랄 동료를 만나요</string>
     <string name="onboarding_welcome_body">당신의 걷기·러닝·근력이 이 아이의 능력치로 새겨져요. 체크리스트 없이, 움직이면 알아서 자랍니다.</string>
-    <string name="onboarding_character_placeholder">🥚</string>
-    <string name="onboarding_character_hint">(임시 그래픽 — 캐릭터 에셋은 이후 스프린트)</string>
+    <string name="onboarding_character_hint">(임시 그래픽 — 캐릭터 에셋은 #66에서 교체)</string>
+    <string name="character_content_desc">내 캐릭터</string>
     <string name="onboarding_next">다음</string>
     <string name="onboarding_start">시작하기</string>
 

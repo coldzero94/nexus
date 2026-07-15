@@ -10,7 +10,17 @@ data class AnimationState(
     val frames: Int,
     @SerialName("frameDurationMs") val frameDurationMs: Long,
     val loop: Boolean = true,
-)
+) {
+    /**
+     * 경과 시간 → 프레임 인덱스 (#26, E4-2). 앱 티커와 위젯이 같은 산술을 쓴다 —
+     * 루프면 순환, 아니면 마지막 프레임에서 정지.
+     */
+    fun frameAt(elapsedMs: Long): Int {
+        require(elapsedMs >= 0) { "elapsedMs must be >= 0" }
+        val step = (elapsedMs / frameDurationMs).toInt()
+        return if (loop) step % frames else minOf(step, frames - 1)
+    }
+}
 
 /** 캐릭터 애니메이션 세트 — 앱 assets의 JSON에서 로드. 상태 추가 = JSON+드로어블 추가(코드 무수정). */
 @Serializable

@@ -78,4 +78,26 @@ class CharacterAnimationTest {
         val set = CharacterAssetConvention.parse(meta)
         assertEquals(1, set.states.getValue("idle").frames)
     }
+
+    @Test
+    fun frameAt_loops_andNonLoopHoldsLastFrame() {
+        val loop = AnimationState(frames = 3, frameDurationMs = 100)
+        // 경과 → 프레임: [0,100)=0, [100,200)=1, [200,300)=2, 300=다시 0 (순환)
+        assertEquals(0, loop.frameAt(0))
+        assertEquals(0, loop.frameAt(99))
+        assertEquals(1, loop.frameAt(100))
+        assertEquals(2, loop.frameAt(299))
+        assertEquals(0, loop.frameAt(300))
+
+        val once = AnimationState(frames = 3, frameDurationMs = 100, loop = false)
+        assertEquals(2, once.frameAt(299))
+        assertEquals(2, once.frameAt(10_000)) // 비루프는 마지막 프레임 정지
+    }
+
+    @Test
+    fun frameAt_rejectsNegativeElapsed() {
+        assertFailsWith<IllegalArgumentException> {
+            AnimationState(frames = 2, frameDurationMs = 100).frameAt(-1)
+        }
+    }
 }
