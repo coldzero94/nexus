@@ -20,12 +20,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.health.HealthSyncWorker
 import com.nexus.app.onboarding.OnboardingScreen
-import com.nexus.app.steps.DailyStepsScreen
+import com.nexus.app.steps.ActivityScreen
 import com.nexus.core.ActivityType
 import com.nexus.core.XpEngine
 
@@ -45,6 +47,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun NexusApp(manager: HealthConnectManager) {
+    val context = LocalContext.current
     var finished by rememberSaveable { mutableStateOf(false) }
     var connected by rememberSaveable { mutableStateOf(false) }
 
@@ -52,10 +55,12 @@ private fun NexusApp(manager: HealthConnectManager) {
         OnboardingScreen(manager) { isConnected ->
             connected = isConnected
             finished = true
+            // 연결 성공 시 15분 주기 백그라운드 동기화 등록 (#8)
+            if (isConnected) HealthSyncWorker.enqueuePeriodic(context)
         }
     } else if (connected) {
-        // 연결됨 → 실데이터 화면 (#7 최근 7일 걸음). 실제 홈은 E4에서 대체.
-        DailyStepsScreen(manager)
+        // 연결됨 → 실데이터 화면 (#7 걸음 + #8 운동 세션·동기화). 실제 홈은 E4에서 대체.
+        ActivityScreen(manager)
     } else {
         DemoLanding(
             available = manager.isAvailable(),

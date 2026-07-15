@@ -5,6 +5,7 @@ composeBom = "2026.06.01"
 activityCompose = "1.13.0"
 coreKtx = "1.19.0"
 healthConnect = "1.1.0"
+workManager = "2.10.0"
 compileSdk = "37"
 minSdk = "34"
 targetSdk = "36"
@@ -13,6 +14,7 @@ targetSdk = "36"
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-health-connect = { module = "androidx.health.connect:connect-client", version.ref = "healthConnect" }
+androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-ui = { module = "androidx.compose.ui:ui" }
