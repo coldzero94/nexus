@@ -60,4 +60,10 @@
     <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
     <string name="sync_never">백그라운드 동기화 대기 중 (15분 주기)</string>
     <string name="sync_time_format">HH:mm</string>
+
+    <!-- 신뢰 필터 / 등급 (#9) -->
+    <string name="trust_tier_a">Tier A</string>
+    <string name="trust_tier_b">Tier B</string>
+    <string name="trust_tier_c">Tier C · XP 제외</string>
+    <string name="steps_manual_excluded">수기 입력 %1$,d보 — XP 제외</string>
 </resources>
