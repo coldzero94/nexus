@@ -43,6 +43,7 @@ import com.nexus.core.StatMapping
 import com.nexus.core.XpEngine
 import kotlinx.coroutines.CancellationException
 import java.io.IOException
+import java.time.ZoneId
 
 private const val TAG = "GrowthScreen"
 
@@ -77,7 +78,13 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
 private suspend fun loadGrowth(repo: ExerciseRepository): GrowthSummary? = try {
     GrowthCalculator.compute(
         repo.readRecentSessions(days = ClassAffinityCalculator.WINDOW_DAYS).map {
-            SessionInput(type = it.type, minutes = it.durationMinutes.toInt(), tier = it.trustTier)
+            SessionInput(
+                type = it.type,
+                minutes = it.durationMinutes.toInt(),
+                tier = it.trustTier,
+                // 일일 상한 그룹핑 키 — 사용자 시간대 기준 날짜 (GrowthCalculator KDoc)
+                epochDay = it.start.atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay(),
+            )
         },
     )
 } catch (e: CancellationException) {
