@@ -30,6 +30,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
+import com.nexus.app.data.NexusDatabase
+import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.ui.ConnectNotice
@@ -74,6 +76,7 @@ internal sealed interface GrowthLoad {
 fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
     val context = LocalContext.current
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
+    val ledger = remember { RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao()) }
     val stateStore = remember { GrowthStateStore(context) }
     var load by remember { mutableStateOf<GrowthLoad?>(null) }
     var change by remember { mutableStateOf<GrowthChange?>(null) }
@@ -81,7 +84,7 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
 
     LaunchedEffect(exerciseRepo) {
         // HC 미가용(repo null)과 권한 회수(SecurityException)는 같은 "미연결" 안내로 (#144)
-        val loaded = if (exerciseRepo == null) GrowthLoad.PermissionDenied else loadGrowth(exerciseRepo)
+        val loaded = if (exerciseRepo == null) GrowthLoad.PermissionDenied else loadGrowth(exerciseRepo, ledger)
         load = loaded
         if (loaded is GrowthLoad.Success) {
             change = detectChange(stateStore, loaded.state.summary)
@@ -144,9 +147,12 @@ private fun detectChange(store: GrowthStateStore, summary: GrowthSummary): Growt
  * 단 SecurityException은 실패가 아닌 [GrowthLoad.PermissionDenied]로 — 권한 회수는
  * 데모 안내+재연결 유도가 맞다(#144).
  */
-private suspend fun loadGrowth(repo: ExerciseRepository): GrowthLoad = try {
+private suspend fun loadGrowth(repo: ExerciseRepository, ledger: RewardLedgerRepository): GrowthLoad = try {
     val zone = ZoneId.systemDefault()
-    val sessions = repo.readRecentSessions(days = ClassAffinityCalculator.WINDOW_DAYS).map {
+    val raw = repo.readRecentSessions(days = ClassAffinityCalculator.WINDOW_DAYS)
+    // 화면 로드도 원장을 최신으로(멱등) — 워커 주기를 기다리지 않고 표시가 원장과 일치 (#163)
+    ledger.grantSessions(raw, zone, epochMillis = System.currentTimeMillis())
+    val sessions = raw.map {
         SessionInput(
             type = it.type,
             minutes = it.durationMinutes.toInt(),
@@ -155,9 +161,17 @@ private suspend fun loadGrowth(repo: ExerciseRepository): GrowthLoad = try {
             epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
         )
     }
+    // 누적 XP·레벨은 전 기간 원장 합산 (#163) — 28일 창 이탈로 레벨이 내려가던 v1 한계 해소.
+    // 성향·능력치·오늘 분해는 스펙대로 28일 창 유지.
+    val ledgerTotal = ledger.cappedTotalXp()
+    val summary = GrowthCalculator.compute(sessions)
     GrowthLoad.Success(
         GrowthUiState(
-            summary = GrowthCalculator.compute(sessions),
+            summary = summary.copy(
+                totalXp = ledgerTotal,
+                level = LevelCurve.displayLevel(ledgerTotal),
+                progress = LevelCurve.progressToNextLevel(ledgerTotal),
+            ),
             today = XpExplainer.explainDay(sessions, epochDay = LocalDate.now(zone).toEpochDay()),
         ),
     )
@@ -177,6 +191,10 @@ private suspend fun loadGrowth(repo: ExerciseRepository): GrowthLoad = try {
     GrowthLoad.Failure
 } catch (e: IllegalStateException) {
     Log.w(TAG, "growth load state failure", e)
+    GrowthLoad.Failure
+} catch (e: android.database.SQLException) {
+    // 원장 DB 문제(디스크·손상)는 화면 크래시 대신 에러 표시 (#163)
+    Log.w(TAG, "growth ledger db failure", e)
     GrowthLoad.Failure
 }
 
