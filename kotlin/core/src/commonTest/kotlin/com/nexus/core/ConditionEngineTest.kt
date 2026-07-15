@@ -91,6 +91,12 @@ class ConditionEngineTest {
     }
 
     @Test
+    fun nanInput_recoversToDefault() {
+        // NaN은 coerceIn을 통과해 게이지를 얼린다 — 기본값 복구 후 정상 계산 (손상 저장값 방어)
+        assertEquals(ConditionEngine.DEFAULT + 15.0, ConditionEngine.nextDay(Double.NaN, dayBasePoints = 30.0), 1e-9)
+    }
+
+    @Test
     fun negativePoints_rejected() {
         assertFailsWith<IllegalArgumentException> {
             ConditionEngine.nextDay(70.0, dayBasePoints = -1.0)

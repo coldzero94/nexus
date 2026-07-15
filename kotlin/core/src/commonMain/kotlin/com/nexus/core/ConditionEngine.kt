@@ -38,7 +38,9 @@ object ConditionEngine {
      */
     fun nextDay(current: Double, dayBasePoints: Double, restMode: Boolean = false): Double {
         require(dayBasePoints >= 0) { "dayBasePoints must be >= 0" }
-        val clamped = current.coerceIn(0.0, MAX)
+        // 손상 저장값 방어: NaN은 coerceIn을 통과하므로 기본값으로 복구, 범위 밖은 클램프.
+        // 게이지는 연속값(Double) — 반올림은 표시·영속화 계층에서, 엔진은 하지 않는다.
+        val clamped = if (current.isNaN()) DEFAULT else current.coerceIn(0.0, MAX)
         return when {
             dayBasePoints >= ACTIVE_DAY_THRESHOLD_POINTS ->
                 (clamped + RECOVERY_PER_ACTIVE_DAY).coerceAtMost(MAX)
