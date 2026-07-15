@@ -109,4 +109,11 @@ class ConditionEngineTest {
         assertEquals(92.0, ConditionEngine.nextDay(150.0, dayBasePoints = 0.0), 1e-9)
         assertEquals(15.0, ConditionEngine.nextDay(-10.0, dayBasePoints = 30.0), 1e-9)
     }
+
+    @Test
+    fun fromDailyPoints_foldsFromDefault() {
+        // 기본 70 → 활동일 +15(85) → 무활동 -8×(85-20)/80=6.5(78.5)
+        assertEquals(78.5, ConditionEngine.fromDailyPoints(listOf(30.0, 0.0)), 1e-9)
+        assertEquals(ConditionEngine.DEFAULT, ConditionEngine.fromDailyPoints(emptyList()), 1e-9)
+    }
 }
