@@ -14,7 +14,10 @@ spotless {
     kotlin {
         target("*/src/**/*.kt", "build-logic/src/**/*.kt")
         targetExclude("**/build/**")
-        ktlint(libs.versions.ktlint.get())
+        // 루트 .editorconfig는 kotlin/ 프로젝트 밖이라 Spotless가 못 읽음 → 명시 오버라이드
+        ktlint(libs.versions.ktlint.get()).editorConfigOverride(
+            mapOf("ktlint_function_naming_ignore_when_annotated_with" to "Composable"),
+        )
     }
     kotlinGradle {
         target("*.gradle.kts", "*/*.gradle.kts", "build-logic/**/*.gradle.kts")

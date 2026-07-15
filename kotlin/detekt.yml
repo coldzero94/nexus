@@ -4,6 +4,8 @@ naming:
     ignoreAnnotated: ["Composable"]
 
 style:
+  ReturnCount:
+    max: 4
   MagicNumber:
     excludes: ["**/commonTest/**", "**/test/**"]
     ignorePropertyDeclaration: true
