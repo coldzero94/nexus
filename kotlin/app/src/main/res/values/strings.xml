@@ -82,6 +82,17 @@
     <string name="growth_stat_value_format">%1$,d</string>
     <string name="growth_stat_locked_format">%1$s — 잠김 (후속 해금)</string>
     <string name="growth_scope_note">최근 %1$d일 운동 세션 기준 · 걸음 XP는 원장 배선 후 합산</string>
+    <string name="xp_explain_today_format">오늘 XP %1$,d pt</string>
+    <string name="xp_explain_show">환산 설명</string>
+    <string name="xp_explain_hide">접기</string>
+    <string name="xp_explain_empty">오늘 기록된 운동 세션이 없어요.</string>
+    <string name="xp_explain_line_format">%1$s %2$d분 · 신뢰 %3$s</string>
+    <string name="xp_explain_points_format">%1$,d pt</string>
+    <string name="xp_explain_excluded">XP 제외</string>
+    <string name="xp_explain_knee_note">기본 합계 %1$,d pt 중 200pt 초과분은 절반만 반영됐어요 (−%2$,d pt)</string>
+    <string name="xp_explain_hardcap_note">오늘 일일 상한 300pt에 도달했어요.</string>
+    <string name="xp_explain_formula_note">분당 포인트: 걷기 1 · 러닝 2 · 근력 1.5. 수기 입력·미상 기록(신뢰 C)과 3축 외 운동은 XP에 반영되지 않아요.</string>
+    <string name="activity_other">기타 운동</string>
     <string name="affinity_endurance">지구력형</string>
     <string name="affinity_agility">민첩형</string>
     <string name="affinity_strength">힘형</string>
