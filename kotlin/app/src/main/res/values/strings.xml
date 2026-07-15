@@ -45,4 +45,19 @@
     <string name="steps_error">걸음을 읽을 수 없어요</string>
     <string name="steps_count_format">%1$,d 걸음</string>
     <string name="steps_date_format">M월 d일 (E)</string>
+
+    <!-- 운동 세션 + 동기화 (#8) -->
+    <string name="sessions_title">최근 운동 세션</string>
+    <string name="sessions_empty">최근 운동 세션이 없어요</string>
+    <string name="session_type_walking">걷기</string>
+    <string name="session_type_running">러닝</string>
+    <string name="session_type_strength">근력</string>
+    <string name="session_type_other">기타</string>
+    <string name="session_meta_format">%1$s · %2$d분</string>
+    <string name="session_hr_format">심박 %1$d</string>
+    <string name="session_no_hr">심박 없음</string>
+    <string name="session_datetime_format">M월 d일 HH:mm</string>
+    <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
+    <string name="sync_never">백그라운드 동기화 대기 중 (15분 주기)</string>
+    <string name="sync_time_format">HH:mm</string>
 </resources>

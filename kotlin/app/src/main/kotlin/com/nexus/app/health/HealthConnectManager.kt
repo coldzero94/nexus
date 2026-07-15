@@ -48,4 +48,7 @@ class HealthConnectManager(private val context: Context) {
 
     /** 걸음 읽기용 리포지토리 (#7). HC 미가용 시 null → 데모 모드. */
     fun stepRepositoryOrNull(): StepRepository? = clientOrNull()?.let { StepRepository(it) }
+
+    /** 운동 세션 읽기용 리포지토리 (#8). HC 미가용 시 null. */
+    fun exerciseRepositoryOrNull(): ExerciseRepository? = clientOrNull()?.let { ExerciseRepository(it) }
 }
