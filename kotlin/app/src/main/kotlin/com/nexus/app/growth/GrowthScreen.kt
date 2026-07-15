@@ -182,7 +182,10 @@ private fun DemoNotice(onReconnect: (() -> Unit)?) {
     Card {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.growth_demo_title), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.growth_demo_body), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                stringResource(R.string.growth_demo_body, ClassAffinityCalculator.WINDOW_DAYS),
+                style = MaterialTheme.typography.bodyMedium,
+            )
             if (onReconnect != null) {
                 Button(onClick = onReconnect) {
                     Text(stringResource(R.string.action_retry_permission))
