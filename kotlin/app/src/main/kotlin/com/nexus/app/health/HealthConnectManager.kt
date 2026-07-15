@@ -45,4 +45,7 @@ class HealthConnectManager(private val context: Context) {
     /** rememberLauncherForActivityResult에 넘길 권한 요청 컨트랙트. */
     fun requestPermissionsContract() =
         PermissionController.createRequestPermissionResultContract()
+
+    /** 걸음 읽기용 리포지토리 (#7). HC 미가용 시 null → 데모 모드. */
+    fun stepRepositoryOrNull(): StepRepository? = clientOrNull()?.let { StepRepository(it) }
 }
