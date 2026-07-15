@@ -27,6 +27,11 @@ import kotlin.reflect.KClass
  */
 class FakeSyncStateStore(val events: MutableList<String> = mutableListOf()) : SyncStateStore {
     override var changesToken: String? = null
+        set(value) {
+            // 크래시 안전 불변식은 "마커가 토큰 '영속화'보다 먼저"(#141) — 쓰기 자체를 로깅해 단언 가능하게
+            events += "setToken($value)"
+            field = value
+        }
     override var lastSyncEpochMillis: Long = 0L
     override var lastChangeCount: Int = 0
     override var lastTokenResetEpochMillis: Long = 0L
@@ -56,10 +61,17 @@ class FakeHealthConnectClient(val events: MutableList<String> = mutableListOf())
     /** 토큰 → getChanges 응답 스크립트. */
     val changesByToken = mutableMapOf<String, ChangesResponse>()
 
-    /** recordType별 readRecords 응답 페이지 큐. */
-    val readPagesByType = mutableMapOf<KClass<out Record>, ArrayDeque<ReadRecordsResponse<out Record>>>()
+    /**
+     * recordType별, **요청 pageToken별** readRecords 응답(null = 첫 페이지). FIFO가 아니라 키 매칭 —
+     * 페이지 토큰을 실제로 전달하지 않는 회귀(실클라이언트에선 1페이지 무한 재조회)가 여기서 잡힌다.
+     */
+    val readPagesByType = mutableMapOf<KClass<out Record>, Map<String?, ReadRecordsResponse<out Record>>>()
+
+    /** 마지막 토큰 요청 — 재발급 시 recordTypes 축소 회귀 단언용. */
+    var lastChangesTokenRequest: ChangesTokenRequest? = null
 
     override suspend fun getChangesToken(request: ChangesTokenRequest): String {
+        lastChangesTokenRequest = request
         events += EVENT_ISSUE_TOKEN
         return tokensToIssue.removeFirst()
     }
@@ -71,8 +83,9 @@ class FakeHealthConnectClient(val events: MutableList<String> = mutableListOf())
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun <T : Record> readRecords(request: ReadRecordsRequest<T>): ReadRecordsResponse<T> {
-        val queue = checkNotNull(readPagesByType[request.recordType]) { "unscripted type: ${request.recordType}" }
-        return queue.removeFirst() as ReadRecordsResponse<T>
+        val pages = checkNotNull(readPagesByType[request.recordType]) { "unscripted type: ${request.recordType}" }
+        val page = checkNotNull(pages[request.pageToken]) { "unscripted pageToken: ${request.pageToken}" }
+        return page as ReadRecordsResponse<T>
     }
 
     override val permissionController: PermissionController
