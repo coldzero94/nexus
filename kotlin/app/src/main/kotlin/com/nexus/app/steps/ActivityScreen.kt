@@ -1,5 +1,7 @@
 package com.nexus.app.steps
 
+import android.os.RemoteException
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,15 +27,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.health.DailySteps
+import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.ExerciseSummary
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.health.StepRepository
 import com.nexus.app.health.TokenStore
 import com.nexus.core.ActivityType
 import com.nexus.core.TrustTier
+import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
+
+private const val TAG = "ActivityScreen"
+private const val WINDOW_DAYS = 7
 
 /**
  * 실데이터 활동 화면 (#7 걸음 + #8 운동 세션·동기화 상태). 실제 홈은 E4에서 대체.
@@ -58,15 +67,15 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)
             loading = false
             return@LaunchedEffect
         }
-        try {
-            steps = stepRepo.readDailySteps(7)
-            manualSteps = stepRepo.readManualStepCount(7)
-            sessions = exerciseRepo.readRecentSessions(7)
-        } catch (e: Exception) {
+        val data = loadActivity(stepRepo, exerciseRepo)
+        if (data == null) {
             failed = true
-        } finally {
-            loading = false
+        } else {
+            steps = data.steps
+            manualSteps = data.manualSteps
+            sessions = data.sessions
         }
+        loading = false
     }
 
     Column(
@@ -122,6 +131,35 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)
         // ── 동기화 상태 (#8) ──
         Text(text = syncFooter(store), style = MaterialTheme.typography.bodySmall)
     }
+}
+
+private data class ActivityData(
+    val steps: List<DailySteps>,
+    val manualSteps: Long,
+    val sessions: List<ExerciseSummary>,
+)
+
+/** 활동 데이터 로드 — 실패 시 로그 후 null(#130 침묵 실패 제거, 구체 예외). 복잡도 분리 위해 화면과 분리. */
+private suspend fun loadActivity(stepRepo: StepRepository, exerciseRepo: ExerciseRepository): ActivityData? = try {
+    ActivityData(
+        steps = stepRepo.readDailySteps(WINDOW_DAYS),
+        manualSteps = stepRepo.readManualStepCount(WINDOW_DAYS),
+        sessions = exerciseRepo.readRecentSessions(WINDOW_DAYS),
+    )
+} catch (e: CancellationException) {
+    throw e // 코루틴 취소는 전파
+} catch (e: IOException) {
+    Log.w(TAG, "activity load IO failure", e)
+    null
+} catch (e: RemoteException) {
+    Log.w(TAG, "activity load remote failure", e)
+    null
+} catch (e: SecurityException) {
+    Log.w(TAG, "activity load permission failure", e)
+    null
+} catch (e: IllegalStateException) {
+    Log.w(TAG, "activity load state failure", e)
+    null
 }
 
 @Composable

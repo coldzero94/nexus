@@ -3,7 +3,6 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>LongMethod:ActivityScreen.kt$@Composable fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)</ID>
-    <ID>MagicNumber:ActivityScreen.kt$7</ID>
     <ID>MagicNumber:HealthSyncWorker.kt$HealthSyncWorker.Companion$15</ID>
     <ID>MagicNumber:HealthSyncWorker.kt$HealthSyncWorker.Companion$30</ID>
     <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z1$0.50</ID>
@@ -22,10 +21,5 @@
     <ID>MagicNumber:StrengthAxis.kt$StrengthAxis$3</ID>
     <ID>MagicNumber:Trust.kt$TrustTier.B$0.85</ID>
     <ID>MagicNumber:XpEngine.kt$ActivityType.STRENGTH$1.5</ID>
-    <ID>SwallowedException:ActivityScreen.kt$e: Exception</ID>
-    <ID>SwallowedException:HealthSyncWorker.kt$HealthSyncWorker$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:ActivityScreen.kt$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:HealthSyncWorker.kt$HealthSyncWorker$e: Exception</ID>
-    <ID>UnusedParameter:HealthConnectSync.kt$HealthConnectSync$recordId: String</ID>
   </CurrentIssues>
 </SmellBaseline>
