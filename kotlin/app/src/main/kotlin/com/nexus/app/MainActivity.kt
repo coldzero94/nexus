@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.onboarding.OnboardingScreen
+import com.nexus.app.steps.DailyStepsScreen
 import com.nexus.core.ActivityType
 import com.nexus.core.XpEngine
 
@@ -52,18 +53,20 @@ private fun NexusApp(manager: HealthConnectManager) {
             connected = isConnected
             finished = true
         }
+    } else if (connected) {
+        // 연결됨 → 실데이터 화면 (#7 최근 7일 걸음). 실제 홈은 E4에서 대체.
+        DailyStepsScreen(manager)
     } else {
-        PostOnboarding(
-            connected = connected,
+        DemoLanding(
             available = manager.isAvailable(),
             onReconnect = { finished = false },
         )
     }
 }
 
-/** 온보딩 이후 임시 랜딩 — 연결/데모 상태 표시. 실제 홈 화면은 E4에서 대체. */
+/** 권한 거부·HC 미가용 시 데모 랜딩. 실제 홈 화면은 E4에서 대체. */
 @Composable
-private fun PostOnboarding(connected: Boolean, available: Boolean, onReconnect: () -> Unit) {
+private fun DemoLanding(available: Boolean, onReconnect: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -71,31 +74,23 @@ private fun PostOnboarding(connected: Boolean, available: Boolean, onReconnect: 
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (connected) {
-            Text(
-                text = stringResource(R.string.status_connected),
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-            )
-        } else {
-            val titleRes = if (available) R.string.status_demo_title else R.string.status_unavailable_title
-            val bodyRes = if (available) R.string.status_demo_body else R.string.status_unavailable_body
-            Text(
-                text = stringResource(titleRes),
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(bodyRes),
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-            )
-            if (available) {
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = onReconnect) {
-                    Text(stringResource(R.string.action_retry_permission))
-                }
+        val titleRes = if (available) R.string.status_demo_title else R.string.status_unavailable_title
+        val bodyRes = if (available) R.string.status_demo_body else R.string.status_unavailable_body
+        Text(
+            text = stringResource(titleRes),
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(bodyRes),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+        )
+        if (available) {
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onReconnect) {
+                Text(stringResource(R.string.action_retry_permission))
             }
         }
         Spacer(Modifier.height(24.dp))

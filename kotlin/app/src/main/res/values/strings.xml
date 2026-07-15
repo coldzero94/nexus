@@ -37,4 +37,12 @@
 
     <!-- 성장 미리보기(임시, core 연결 증명 — 실제 홈은 E4) -->
     <string name="growth_preview">30분 러닝 = %1$d XP (산식 v%2$d)</string>
+
+    <!-- 걸음 읽기 (#7) -->
+    <string name="steps_title">최근 7일 걸음</string>
+    <string name="steps_subtitle">삼성헬스 수치와 대조해 보세요 (동기화 지연으로 오늘 값은 늦을 수 있어요)</string>
+    <string name="steps_loading">걸음을 읽는 중…</string>
+    <string name="steps_error">걸음을 읽을 수 없어요</string>
+    <string name="steps_count_format">%1$,d 걸음</string>
+    <string name="steps_date_format">M월 d일 (E)</string>
 </resources>
