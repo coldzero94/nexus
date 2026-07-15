@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NEXUS</string>
+
+    <!-- 온보딩: 환영 / 캐릭터 생성 -->
+    <string name="onboarding_welcome_title">함께 자랄 동료를 만나요</string>
+    <string name="onboarding_welcome_body">당신의 걷기·러닝·근력이 이 아이의 능력치로 새겨져요. 체크리스트 없이, 움직이면 알아서 자랍니다.</string>
+    <string name="onboarding_character_placeholder">🥚</string>
+    <string name="onboarding_character_hint">(임시 그래픽 — 캐릭터 에셋은 이후 스프린트)</string>
+    <string name="onboarding_next">다음</string>
+    <string name="onboarding_start">시작하기</string>
+
+    <!-- 온보딩: 권한 설명 -->
+    <string name="permission_rationale_title">건강 데이터 연결이 필요해요</string>
+    <string name="permission_rationale_body">캐릭터를 키우려면 Health Connect에서 활동 데이터를 읽어야 해요. 원본 수치는 기기 밖으로 나가지 않아요.</string>
+    <string name="permission_read_title">활동 읽기</string>
+    <string name="permission_read_desc">걸음·운동 세션·심박을 읽어 XP로 바꿔요.</string>
+    <string name="permission_background_title">백그라운드 읽기</string>
+    <string name="permission_background_desc">앱을 안 켜도 운동이 반영되게 해요.</string>
+    <string name="permission_history_title">과거 이력</string>
+    <string name="permission_history_desc">지난 기록을 소급해 "이미 이만큼 자라 있었어요"를 보여줘요.</string>
+    <string name="permission_grant">권한 연결하기</string>
+
+    <!-- 온보딩: 삼성헬스 안내 -->
+    <string name="samsung_health_title">삼성헬스도 연결해 주세요</string>
+    <string name="samsung_health_body">갤럭시라면 삼성헬스가 Health Connect에 데이터를 \'쓰도록\' 켜야 걸음·운동이 흘러와요. 삼성헬스 → 설정 → Health Connect에서 켤 수 있어요.</string>
+    <string name="samsung_health_done">연결했어요</string>
+
+    <!-- 상태 / 데모 모드 -->
+    <string name="status_connected">건강 데이터 연결됨 — 이제 움직이면 캐릭터가 자라요</string>
+    <string name="status_demo_title">데모 모드로 둘러보기</string>
+    <string name="status_demo_body">권한 없이도 앱을 미리 볼 수 있어요. 나중에 설정에서 연결하면 실제 데이터로 자라요.</string>
+    <string name="status_unavailable_title">Health Connect를 쓸 수 없어요</string>
+    <string name="status_unavailable_body">이 기기에서 Health Connect를 사용할 수 없어 데모 모드로 진행해요.</string>
+    <string name="action_retry_permission">권한 다시 연결</string>
+    <string name="action_continue_demo">데모로 계속</string>
+
+    <!-- 성장 미리보기(임시, core 연결 증명 — 실제 홈은 E4) -->
+    <string name="growth_preview">30분 러닝 = %1$d XP (산식 v%2$d)</string>
+</resources>
