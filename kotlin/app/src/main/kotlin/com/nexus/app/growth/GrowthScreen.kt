@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
@@ -50,17 +51,31 @@ import java.time.ZoneId
 
 private const val TAG = "GrowthScreen"
 
+/** 성장 변화 연출 대상 (#61) — 성장 탭 진입 시 기준점([GrowthStateStore])과의 차이. */
+internal data class GrowthChange(val levelUpTo: Int?, val affinityChangedTo: com.nexus.core.ClassAffinity?)
+
 /** 성장 탭 화면 상태 — 요약과 오늘 XP 분해는 같은 세션 스냅샷에서 계산(불일치 방지). */
 internal data class GrowthUiState(val summary: GrowthSummary, val today: DayXpExplanation)
 
 @Composable
 fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
+    val stateStore = remember { GrowthStateStore(context) }
     var data by remember { mutableStateOf<GrowthUiState?>(null) }
     var loading by remember { mutableStateOf(true) }
+    var change by remember { mutableStateOf<GrowthChange?>(null) }
+    var celebrationVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(exerciseRepo) {
-        data = if (exerciseRepo == null) null else loadGrowth(exerciseRepo)
+        val loaded = if (exerciseRepo == null) null else loadGrowth(exerciseRepo)
+        data = loaded
+        if (loaded != null) {
+            change = detectChange(stateStore, loaded.summary)
+            // 기준점 소비는 "확인"(dismiss) 시점 — 감지 시점에 갱신하면 회전·프로세스 사망으로
+            // 카드가 영영 소실된다(#61 리뷰). 변화가 없을 때만 여기서 기준점을 세팅(최초 방문 포함).
+            if (change == null) stateStore.recordSeen(loaded.summary.level, loaded.summary.affinity)
+        }
         loading = false
     }
 
@@ -74,10 +89,35 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
         Text(stringResource(R.string.growth_title), style = MaterialTheme.typography.headlineSmall)
         when {
             loading -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+
             data == null -> Text(stringResource(R.string.growth_error), style = MaterialTheme.typography.bodyMedium)
-            else -> GrowthContent(data!!)
+
+            else -> {
+                change?.let { c ->
+                    // dismiss는 visible 토글 — 노드를 즉시 제거하면 exit 연출이 생략된다
+                    CelebrationCard(c, visible = celebrationVisible) {
+                        celebrationVisible = false
+                        // 확인한 순간이 기준점 — 재진입 시 같은 변화를 다시 축하하지 않는다
+                        data?.summary?.let { stateStore.recordSeen(it.level, it.affinity) }
+                    }
+                }
+                GrowthContent(data!!)
+            }
         }
     }
+}
+
+/**
+ * 기준점 대비 변화 감지 (#61): 레벨업은 상승만(최초 방문·창 이탈로 인한 하락은 무연출),
+ * 성향 변화는 기준점이 있을 때만. 변화 없으면 null(카드 미노출).
+ */
+private fun detectChange(store: GrowthStateStore, summary: GrowthSummary): GrowthChange? {
+    val lastLevel = store.lastSeenLevel
+    val lastAffinity = store.lastSeenAffinity
+    val levelUpTo = summary.level.takeIf { lastLevel in 1 until it }
+    val affinityChangedTo = summary.affinity.takeIf { lastAffinity != null && lastAffinity != it }
+    if (levelUpTo == null && affinityChangedTo == null) return null
+    return GrowthChange(levelUpTo, affinityChangedTo)
 }
 
 /** ActivityScreen.loadActivity와 같은 catch 계약 (#130 — 실패는 드러내고 취소는 전파). */
