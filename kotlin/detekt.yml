@@ -4,6 +4,8 @@ naming:
     ignoreAnnotated: ["Composable"]
 
 style:
+  DestructuringDeclarationWithTooManyEntries:
+    excludes: ["**/commonTest/**", "**/test/**"]
   ReturnCount:
     max: 4
   MagicNumber:

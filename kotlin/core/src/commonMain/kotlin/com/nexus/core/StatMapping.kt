@@ -6,11 +6,11 @@ package com.nexus.core
  */
 enum class Stat(val locked: Boolean) {
     ENDURANCE(false), // 지구력
-    AGILITY(false),   // 민첩
-    STRENGTH(false),  // 힘
-    RECOVERY(false),  // 회복 (휴식 기반, S4)
-    FOCUS(true),      // 집중 — 잠금
-    AFFINITY(true),   // 친화 — 잠금
+    AGILITY(false), // 민첩
+    STRENGTH(false), // 힘
+    RECOVERY(false), // 회복 (휴식 기반, S4)
+    FOCUS(true), // 집중 — 잠금
+    AFFINITY(true), // 친화 — 잠금
 }
 
 /**
