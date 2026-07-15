@@ -2,6 +2,7 @@ package com.nexus.core
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class ConditionEngineTest {
@@ -30,10 +31,12 @@ class ConditionEngineTest {
         var condition = 100.0
         repeat(100) {
             val next = ConditionEngine.nextDay(condition, dayBasePoints = 0.0)
-            assertTrue(next <= condition, "monotonic decay")
+            assertTrue(next < condition, "strictly decreasing decay") // 하락 0 회귀 방지
             assertTrue(next >= ConditionEngine.SOFT_FLOOR, "never below floor: $next")
             condition = next
         }
+        // 점근 수렴: 20 + 80×0.9^100 ≈ 20.002 — 바닥에 붙어야 한다 (심층 하락 무력화 회귀 방지)
+        assertEquals(ConditionEngine.SOFT_FLOOR, condition, 0.01)
     }
 
     @Test
@@ -59,6 +62,39 @@ class ConditionEngineTest {
     fun belowThreshold_countsAsIdle() {
         // 걷기 5분(5pt) < 활동 문턱(10pt) → 무활동 취급
         assertEquals(92.0, ConditionEngine.nextDay(100.0, dayBasePoints = 5.0), 1e-9)
+    }
+
+    @Test
+    fun activeDay_recoversFromFloor() {
+        // 바닥에서도 활동하면 즉시 회복 — 무처벌 루프의 핵심 (분기 순서 회귀 방지)
+        assertEquals(35.0, ConditionEngine.nextDay(20.0, dayBasePoints = 30.0), 1e-9)
+        assertEquals(25.0, ConditionEngine.nextDay(10.0, dayBasePoints = 30.0), 1e-9) // 바닥 아래 손상값에서도
+    }
+
+    @Test
+    fun exactlyAtThreshold_countsAsActive() {
+        // 걷기 딱 10분(10pt) = 활동일 (경계 포함 ≥)
+        assertEquals(65.0, ConditionEngine.nextDay(50.0, dayBasePoints = 10.0), 1e-9)
+    }
+
+    @Test
+    fun belowFloor_idleDay_staysPut() {
+        // 바닥 아래 손상값: 무활동이어도 그대로 — 공짜 회복도, 위로 스냅도 없음
+        // (가드 제거 시 하락식이 음수가 되어 +1 "회복"하는 회귀를 잡는다)
+        assertEquals(10.0, ConditionEngine.nextDay(10.0, dayBasePoints = 0.0), 1e-9)
+    }
+
+    @Test
+    fun nearFloor_singleStepDecay() {
+        // 21 → 20.9: 하락 8×(21-20)/80 = 0.1 — 선형 계수의 소단 끝 고정
+        assertEquals(20.9, ConditionEngine.nextDay(21.0, dayBasePoints = 0.0), 1e-9)
+    }
+
+    @Test
+    fun negativePoints_rejected() {
+        assertFailsWith<IllegalArgumentException> {
+            ConditionEngine.nextDay(70.0, dayBasePoints = -1.0)
+        }
     }
 
     @Test
