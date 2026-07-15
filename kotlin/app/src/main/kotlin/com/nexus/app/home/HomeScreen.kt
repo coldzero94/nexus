@@ -35,6 +35,7 @@ import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.StepRepository
+import com.nexus.app.notify.ExpeditionReturnWorker
 import com.nexus.app.settings.RestModeStore
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.core.ConditionEngine
@@ -119,14 +120,16 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
             is HomeLoad.Success -> HomeContent(
                 state = current.state,
                 onDepart = {
-                    // 출발 = 에너지 확정 소모(#67) + 시작 시각 기록(#34)
+                    // 출발 = 에너지 확정 소모(#67) + 시작 시각 기록(#34) + 완료 알림 예약(#71)
                     if (energyStore.trySpend(current.state.cappedTotalXp, EnergyEngine.EXPEDITION_COST)) {
                         expeditionStore.start(System.currentTimeMillis())
+                        ExpeditionReturnWorker.scheduleFor(context)
                         reloadKey++
                     }
                 },
                 onOpen = {
                     expeditionStore.open() // 보상 지급·연출은 E5-7(#68)에서 이 지점에 연결
+                    ExpeditionReturnWorker.cancel(context) // 이미 확인한 원정은 알리지 않는다 (#71)
                     reloadKey++
                 },
             )

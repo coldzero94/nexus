@@ -43,6 +43,8 @@
     <string name="notify_channel_name">캐릭터 리마인더</string>
     <string name="notify_reminder_title">캐릭터가 기다려요</string>
     <string name="notify_reminder_body">잠깐 걸으면 오늘도 함께 자랄 수 있어요.</string>
+    <string name="notify_expedition_title">캐릭터가 돌아왔어요!</string>
+    <string name="notify_expedition_body">모험 이야기가 도착했어요 — 열어볼까요?</string>
     <string name="onboarding_next">다음</string>
     <string name="onboarding_start">시작하기</string>
 
