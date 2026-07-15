@@ -267,8 +267,18 @@ private fun deriveCondition(sessions: List<SessionInput>, today: LocalDate, rest
     }
     val firstRecordedIdx = windowDays.indexOfFirst { it > 0.0 }
     if (firstRecordedIdx == -1) return ConditionEngine.DEFAULT
+    var prevPoints = 0.0
     return windowDays.withIndex().drop(firstRecordedIdx).fold(ConditionEngine.DEFAULT) { acc, (idx, points) ->
         val epochDay = today.minusDays((CONDITION_WINDOW_DAYS - 1 - idx).toLong()).toEpochDay()
-        ConditionEngine.nextDay(acc, points, restMode = restStore.isRestDay(epochDay))
+        val next = ConditionEngine.nextDay(
+            acc,
+            points,
+            restMode = restStore.isRestDay(epochDay),
+            // 휴식일 버프 (#63): 어제 쉬고 오늘 움직인 날은 회복 보너스
+            restedYesterday = idx > firstRecordedIdx &&
+                prevPoints < ConditionEngine.ACTIVE_DAY_THRESHOLD_POINTS,
+        )
+        prevPoints = points
+        next
     }
 }
