@@ -36,6 +36,7 @@ import com.nexus.app.home.AppOpenTracker
 import com.nexus.app.home.HomeScreen
 import com.nexus.app.home.WelcomeBackScene
 import com.nexus.app.onboarding.OnboardingScreen
+import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
@@ -109,6 +110,7 @@ private enum class MainTab(val labelRes: Int) {
     HOME(R.string.tab_home),
     ACTIVITY(R.string.tab_activity),
     GROWTH(R.string.tab_growth),
+    SETTINGS(R.string.tab_settings),
 }
 
 @Composable
@@ -132,6 +134,7 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
             MainTab.HOME -> HomeScreen(manager, Modifier.padding(padding), onReconnect)
             MainTab.ACTIVITY -> ActivityScreen(manager, Modifier.padding(padding), onReconnect)
             MainTab.GROWTH -> GrowthScreen(manager, Modifier.padding(padding), onReconnect)
+            MainTab.SETTINGS -> SettingsScreen(Modifier.padding(padding))
         }
     }
 }
