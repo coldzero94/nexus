@@ -9,13 +9,15 @@ enum class RecordingMethod {
 }
 
 /**
- * 신뢰 등급 (MVP §4). Tier C는 XP 제외(계수 0).
- * ⚠ 신뢰 계수는 개인 레벨엔 미적용 권고(#2 시뮬 결과) — 향후 리더보드 가중에만. 여기선 구조만 보존.
+ * 신뢰 등급 (MVP §4).
+ * - [personalXpMultiplier]: **개인 레벨용** (#62/#2② 채택) — 수기·미상(C)만 제외, A·B 모두 100%.
+ *   '워치 없어도 1급' 원칙: 폰 유저(B)에게 개인 성장 페널티를 주지 않는다.
+ * - [xpMultiplier]: **리더보드 가중치**(향후) — A=1.0, B=0.85, C=0.0.
  */
-enum class TrustTier(val xpMultiplier: Double) {
-    A(1.0), // 워치 세션 + 심박 시계열
-    B(0.85), // 자동/능동 폰 기록·신뢰 앱
-    C(0.0), // 수기·미상 — XP 제외
+enum class TrustTier(val xpMultiplier: Double, val personalXpMultiplier: Double) {
+    A(1.0, 1.0), // 워치 세션 + 심박 시계열
+    B(0.85, 1.0), // 폰 기록 — 리더보드는 감산, 개인 레벨은 100%
+    C(0.0, 0.0), // 수기·미상 — XP 제외(개인·리더보드 공통)
 }
 
 /**
