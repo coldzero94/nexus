@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexus.app.R
+import com.nexus.app.character.CharacterComposer
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthPermissions
 
@@ -81,10 +83,7 @@ private fun StepScaffold(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun WelcomeStep(onNext: () -> Unit) = StepScaffold {
-    Text(
-        text = stringResource(R.string.onboarding_character_placeholder),
-        fontSize = 96.sp,
-    )
+    CharacterComposer.CharacterSprite(state = "idle", modifier = Modifier.size(120.dp))
     Text(
         text = stringResource(R.string.onboarding_character_hint),
         style = MaterialTheme.typography.labelSmall,
