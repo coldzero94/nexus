@@ -28,6 +28,11 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        // 단위 테스트에서 android.util.Log 등 안드로이드 API를 no-op으로 (#146)
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -39,4 +44,7 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 }

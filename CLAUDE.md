@@ -36,7 +36,7 @@ Decisions and their rationale live in `docs/` (written in Korean), not in code. 
 All Gradle commands run from `kotlin/`. Requires JDK 21 and Android SDK (`kotlin/local.properties` → `sdk.dir`, not committed). Team OS mix: macOS (coldzero94, `JAVA_HOME=/opt/homebrew/opt/openjdk@21`), Windows (kimchi151 — use Android Studio's embedded JDK and `gradlew.bat`), Linux (CI). Line endings are enforced LF via `.gitattributes`. iOS-target tasks never run on Windows — CI covers the klib check.
 
 - Build APK: `./gradlew :app:assembleDebug` (on this machine use `gradle`, not `./gradlew` — wrapper download is blocked by local TLS interception; CI uses the wrapper fine)
-- Unit tests: `./gradlew :core:jvmTest` (run before every commit that touches `core/`)
+- Unit tests: `./gradlew :core:jvmTest` (run before every commit that touches `core/`) · app-layer fakes: `./gradlew :app:testDebugUnitTest` (HealthConnectSync/ExerciseRepository — run when touching `app/…/health/`)
 - commonMain purity check: `./gradlew :core:compileKotlinIosArm64` (also runs in CI)
 - Format: `./gradlew spotlessApply` before every commit. Static analysis: `./gradlew detekt` (Compose rules included). CI blocks on both `spotlessCheck` + `detekt`. Legacy findings live in `kotlin/detekt-baseline.xml` — shrink it, never grow it
 - AGP 9 has built-in Kotlin — never apply `org.jetbrains.kotlin.android`
