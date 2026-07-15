@@ -71,4 +71,30 @@
     <string name="source_samsung_health">삼성헬스</string>
     <string name="source_samsung_watch">삼성워치</string>
     <string name="session_trust_source_format">%1$s · 출처 %2$s</string>
+
+    <!-- 성장 탭 (#23) -->
+    <string name="growth_title">성장</string>
+    <string name="growth_error">성장 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</string>
+    <string name="growth_level_format">레벨 %1$d</string>
+    <string name="growth_xp_format">누적 %1$,d XP · 산식 v%2$d</string>
+    <string name="growth_affinity_format">클래스 성향: %1$s</string>
+    <string name="growth_stats_title">능력치</string>
+    <string name="growth_stat_value_format">%1$,d</string>
+    <string name="growth_stat_locked_format">%1$s — 잠김 (후속 해금)</string>
+    <string name="growth_scope_note">최근 %1$d일 운동 세션 기준 · 걸음 XP는 원장 배선 후 합산</string>
+    <string name="affinity_endurance">지구력형</string>
+    <string name="affinity_agility">민첩형</string>
+    <string name="affinity_strength">힘형</string>
+    <string name="affinity_balanced">균형형</string>
+    <string name="activity_walking">걷기</string>
+    <string name="activity_running">러닝</string>
+    <string name="activity_strength">근력</string>
+    <string name="stat_endurance">지구력</string>
+    <string name="stat_agility">민첩</string>
+    <string name="stat_strength">힘</string>
+    <string name="stat_recovery">회복</string>
+    <string name="stat_focus">집중</string>
+    <string name="stat_affinity">친화</string>
+    <string name="tab_activity">활동</string>
+    <string name="tab_growth">성장</string>
 </resources>

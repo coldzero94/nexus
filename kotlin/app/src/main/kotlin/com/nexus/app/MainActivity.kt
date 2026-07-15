@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.nexus.app.growth.GrowthScreen
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
 import com.nexus.app.onboarding.OnboardingScreen
@@ -59,13 +63,42 @@ private fun NexusApp(manager: HealthConnectManager) {
             if (isConnected) HealthSyncWorker.enqueuePeriodic(context)
         }
     } else if (connected) {
-        // 연결됨 → 실데이터 화면 (#7 걸음 + #8 운동 세션·동기화). 실제 홈은 E4에서 대체.
-        ActivityScreen(manager)
+        // 연결됨 → 활동/성장 2탭 (#23). 홈(캐릭터) 탭은 E4에서 추가.
+        ConnectedTabs(manager)
     } else {
         DemoLanding(
             available = manager.isAvailable(),
             onReconnect = { finished = false },
         )
+    }
+}
+
+private enum class MainTab(val labelRes: Int) {
+    ACTIVITY(R.string.tab_activity),
+    GROWTH(R.string.tab_growth),
+}
+
+@Composable
+private fun ConnectedTabs(manager: HealthConnectManager) {
+    var tab by rememberSaveable { mutableStateOf(MainTab.ACTIVITY) }
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                MainTab.entries.forEach { t ->
+                    NavigationBarItem(
+                        selected = tab == t,
+                        onClick = { tab = t },
+                        icon = {},
+                        label = { Text(stringResource(t.labelRes)) },
+                    )
+                }
+            }
+        },
+    ) { padding ->
+        when (tab) {
+            MainTab.ACTIVITY -> ActivityScreen(manager, Modifier.padding(padding))
+            MainTab.GROWTH -> GrowthScreen(manager, Modifier.padding(padding))
+        }
     }
 }
 
