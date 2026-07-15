@@ -27,9 +27,7 @@ object HealthPermissions {
  * Health Connect 접근 래퍼. #6은 '가용성 확인 + 권한 요청'까지만 담당한다.
  * Health Connect는 안드로이드 전용 API라 core(KMP commonMain)가 아니라 app 모듈에 둔다.
  */
-class HealthConnectManager(
-    private val context: Context,
-) {
+class HealthConnectManager(private val context: Context) {
     /** SDK_AVAILABLE / SDK_UNAVAILABLE / SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED */
     fun sdkStatus(): Int = HealthConnectClient.getSdkStatus(context)
 

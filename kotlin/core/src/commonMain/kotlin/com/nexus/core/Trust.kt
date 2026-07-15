@@ -12,9 +12,7 @@ enum class RecordingMethod {
  * 신뢰 등급 (MVP §4). Tier C는 XP 제외(계수 0).
  * ⚠ 신뢰 계수는 개인 레벨엔 미적용 권고(#2 시뮬 결과) — 향후 리더보드 가중에만. 여기선 구조만 보존.
  */
-enum class TrustTier(
-    val xpMultiplier: Double,
-) {
+enum class TrustTier(val xpMultiplier: Double) {
     A(1.0), // 워치 세션 + 심박 시계열
     B(0.85), // 자동/능동 폰 기록·신뢰 앱
     C(0.0), // 수기·미상 — XP 제외
@@ -25,10 +23,7 @@ enum class TrustTier(
  * ⚠ 2026-06 SPN 변경: 온디바이스 소스가 "android" 대신 getCurrentDeviceDataSource()로 옴 →
  *   현재 기기 소스를 런타임에 tierB로 병합([withCurrentDeviceSource]).
  */
-data class DataOriginAllowlist(
-    val tierA: Set<String>,
-    val tierB: Set<String>,
-) {
+data class DataOriginAllowlist(val tierA: Set<String>, val tierB: Set<String>) {
     fun withCurrentDeviceSource(packageName: String): DataOriginAllowlist = copy(tierB = tierB + packageName)
 
     companion object {
@@ -57,13 +52,12 @@ object TrustPolicy {
         dataOrigin: String,
         hasHeartRate: Boolean,
         allowlist: DataOriginAllowlist = DataOriginAllowlist.DEFAULT,
-    ): TrustTier =
-        when {
-            recordingMethod == RecordingMethod.MANUAL_ENTRY -> TrustTier.C
-            dataOrigin in allowlist.tierA && hasHeartRate -> TrustTier.A
-            dataOrigin in allowlist.tierA || dataOrigin in allowlist.tierB -> TrustTier.B
-            else -> TrustTier.C
-        }
+    ): TrustTier = when {
+        recordingMethod == RecordingMethod.MANUAL_ENTRY -> TrustTier.C
+        dataOrigin in allowlist.tierA && hasHeartRate -> TrustTier.A
+        dataOrigin in allowlist.tierA || dataOrigin in allowlist.tierB -> TrustTier.B
+        else -> TrustTier.C
+    }
 
     /** XP 인정 대상인가(수기·미상 제외). */
     fun isXpEligible(tier: TrustTier): Boolean = tier != TrustTier.C

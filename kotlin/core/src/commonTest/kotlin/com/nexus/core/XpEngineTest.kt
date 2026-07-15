@@ -6,11 +6,7 @@ import kotlin.test.assertFailsWith
 
 class XpEngineTest {
     // E3-13 케이스 테이블 하네스의 씨앗 — 치완 스프레드시트와 같은 (입력 → 기대 XP) 형태를 유지한다.
-    private data class Case(
-        val type: ActivityType,
-        val minutes: Int,
-        val expected: Int,
-    )
+    private data class Case(val type: ActivityType, val minutes: Int, val expected: Int)
 
     private val cases =
         listOf(
@@ -33,10 +29,7 @@ class XpEngineTest {
     }
 
     // ── #13 일일 상한(200 knee + 300 cap) 케이스 테이블 (#2 스프레드시트 대조) ──
-    private data class CapCase(
-        val raw: Double,
-        val expected: Int,
-    )
+    private data class CapCase(val raw: Double, val expected: Int)
 
     private val capCases =
         listOf(

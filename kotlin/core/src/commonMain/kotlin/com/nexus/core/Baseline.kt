@@ -14,10 +14,7 @@ object Baseline {
      * @param todayBase 오늘 기본점수(0=휴식 → NEUTRAL, 어차피 base 0이면 XP 0)
      * @param priorDailyBases 이전 일별 기본점수(휴식일 0 포함, 오늘 제외). 최근 [WINDOW_DAYS]일만 사용.
      */
-    fun personalCoefficient(
-        todayBase: Double,
-        priorDailyBases: List<Double>,
-    ): Double {
+    fun personalCoefficient(todayBase: Double, priorDailyBases: List<Double>): Double {
         if (todayBase <= 0.0) return NEUTRAL
         val activeDays = priorDailyBases.takeLast(WINDOW_DAYS).filter { it > 0.0 }
         if (activeDays.isEmpty()) return NEUTRAL // 콜드스타트: 비교 대상 없음 → 중립

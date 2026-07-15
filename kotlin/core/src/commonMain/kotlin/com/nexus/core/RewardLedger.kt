@@ -61,10 +61,7 @@ class RewardLedger {
      * 취소(레코드 삭제 감지 — #8 DeletionChange). 기존 이벤트를 **수정하지 않고** 보상 이벤트 append.
      * 미지급·이미 취소된 키면 null.
      */
-    fun cancel(
-        idempotencyKey: String,
-        epochMillis: Long,
-    ): RewardEvent? {
+    fun cancel(idempotencyKey: String, epochMillis: Long): RewardEvent? {
         if (idempotencyKey !in grantedKeys || idempotencyKey in cancelledKeys) return null
         val grant = entries.first { it.idempotencyKey == idempotencyKey && it.type == RewardEventType.GRANT }
         val event =

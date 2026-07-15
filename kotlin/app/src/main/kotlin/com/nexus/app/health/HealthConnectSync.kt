@@ -9,21 +9,14 @@ import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.ChangesTokenRequest
 
 /** 한 번의 동기화 결과. [tokenReset]=만료로 토큰 재발급됨(변경분 유실 → E3 소급 재계산 대상). */
-data class SyncOutcome(
-    val tokenReset: Boolean,
-    val upserts: Int,
-    val deletions: Int,
-)
+data class SyncOutcome(val tokenReset: Boolean, val upserts: Int, val deletions: Int)
 
 /**
  * Changes API 증분 동기화 (#8). 토큰을 저장해두고 다음 주기에 델타만 읽는다.
  * 30일 만료 시 토큰 재발급 폴백. DeletionChange는 보상 이벤트 연결점으로 라우팅(실제 원장은 E3).
  * 폴링 남용 방지: 이 함수는 WorkManager 15분 주기에서만 호출.
  */
-class HealthConnectSync(
-    private val client: HealthConnectClient,
-    private val store: TokenStore,
-) {
+class HealthConnectSync(private val client: HealthConnectClient, private val store: TokenStore) {
     private val recordTypes =
         setOf(
             StepsRecord::class,

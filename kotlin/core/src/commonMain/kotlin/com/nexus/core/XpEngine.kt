@@ -1,8 +1,6 @@
 package com.nexus.core
 
-enum class ActivityType(
-    val pointsPerMinute: Double,
-) {
+enum class ActivityType(val pointsPerMinute: Double) {
     WALKING(1.0),
     RUNNING(2.0),
     STRENGTH(1.5),
@@ -22,10 +20,7 @@ object XpEngine {
     const val PERSONAL_COEF_MAX = 1.5
 
     /** MVP.md §5 기본 점수: 활동 유형별 분당 포인트 × 시간. */
-    fun baseScore(
-        type: ActivityType,
-        minutes: Int,
-    ): Int {
+    fun baseScore(type: ActivityType, minutes: Int): Int {
         require(minutes >= 0) { "minutes must be >= 0" }
         return (type.pointsPerMinute * minutes).toInt()
     }

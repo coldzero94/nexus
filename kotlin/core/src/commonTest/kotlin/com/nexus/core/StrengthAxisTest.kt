@@ -23,12 +23,7 @@ class StrengthAxisTest {
     }
 
     // (분, 주당세션, 심박보정) → 기대 힘 XP. STRENGTH base = 1.5×분.
-    private data class Case(
-        val min: Int,
-        val sessions: Int,
-        val hr: Double,
-        val expected: Int,
-    )
+    private data class Case(val min: Int, val sessions: Int, val hr: Double, val expected: Int)
 
     private val cases =
         listOf(

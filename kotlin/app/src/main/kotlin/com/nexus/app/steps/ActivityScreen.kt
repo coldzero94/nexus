@@ -82,7 +82,9 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)
         Spacer(Modifier.height(12.dp))
         when {
             loading -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
+
             failed -> Text(stringResource(R.string.steps_error), style = MaterialTheme.typography.bodyMedium)
+
             else -> {
                 val pattern = stringResource(R.string.steps_date_format)
                 val formatter = remember(pattern) { DateTimeFormatter.ofPattern(pattern, Locale.KOREAN) }

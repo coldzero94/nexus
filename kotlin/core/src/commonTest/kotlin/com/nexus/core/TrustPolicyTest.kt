@@ -11,12 +11,7 @@ class TrustPolicyTest {
     private val unknown = "com.random.thirdparty"
 
     // (recordingMethod, dataOrigin, hasHeartRate) → 기대 Tier
-    private data class Case(
-        val method: RecordingMethod,
-        val origin: String,
-        val hr: Boolean,
-        val expected: TrustTier,
-    )
+    private data class Case(val method: RecordingMethod, val origin: String, val hr: Boolean, val expected: TrustTier)
 
     private val cases =
         listOf(

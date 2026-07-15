@@ -6,9 +6,7 @@ import android.content.Context
  * Changes 토큰 + 마지막 동기화 상태 영속화 (#8). 단순 문자열/롱이라 SharedPreferences로 충분.
  * 로컬 온리 MVP — 서버 없음.
  */
-class TokenStore(
-    context: Context,
-) {
+class TokenStore(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     var changesToken: String?

@@ -14,18 +14,13 @@ import java.time.LocalTime
 import java.time.Period
 
 /** 하루치 걸음 집계 결과 (일별 요약의 걸음 축 — DailySummary의 일부). */
-data class DailySteps(
-    val date: LocalDate,
-    val steps: Long,
-)
+data class DailySteps(val date: LocalDate, val steps: Long)
 
 /**
  * 걸음 읽기 (#7). **aggregate(COUNT_TOTAL)만 사용** — readRecords 직접 사용 금지(이중 카운트).
  * LocalDateTime 기반 슬라이싱이라 버킷 경계 = 기기 로컬(KST) 자정.
  */
-class StepRepository(
-    private val client: HealthConnectClient,
-) {
+class StepRepository(private val client: HealthConnectClient) {
     suspend fun readDailySteps(days: Int = 7): List<DailySteps> {
         require(days >= 1) { "days must be >= 1" }
         val today = LocalDate.now()
