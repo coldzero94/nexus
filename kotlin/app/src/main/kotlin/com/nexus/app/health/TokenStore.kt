@@ -3,37 +3,52 @@ package com.nexus.app.health
 import android.content.Context
 
 /**
+ * 동기화 상태 저장 계약 (#146) — 프로덕션은 [TokenStore](SharedPreferences),
+ * 테스트는 인메모리 페이크. [HealthConnectSync]는 이 인터페이스에만 의존한다.
+ */
+interface SyncStateStore {
+    var changesToken: String?
+    var lastSyncEpochMillis: Long
+    var lastChangeCount: Int
+    val lastTokenResetEpochMillis: Long
+    val lostDeltaWindowStartEpochMillis: Long
+
+    /** 토큰 리셋 마커 기록 — 계약은 [TokenStore.recordTokenReset] KDoc 참고. */
+    fun recordTokenReset(resetAtEpochMillis: Long)
+}
+
+/**
  * Changes 토큰 + 마지막 동기화 상태 영속화 (#8). 단순 문자열/롱이라 SharedPreferences로 충분.
  * 로컬 온리 MVP — 서버 없음.
  */
-class TokenStore(context: Context) {
+class TokenStore(context: Context) : SyncStateStore {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    var changesToken: String?
+    override var changesToken: String?
         get() = prefs.getString(KEY_TOKEN, null)
         set(value) {
             prefs.edit().putString(KEY_TOKEN, value).apply()
         }
 
-    var lastSyncEpochMillis: Long
+    override var lastSyncEpochMillis: Long
         get() = prefs.getLong(KEY_LAST_SYNC, 0L)
         set(value) {
             prefs.edit().putLong(KEY_LAST_SYNC, value).apply()
         }
 
     /** 마지막 동기화에서 감지한 변경(업서트+삭제) 개수. */
-    var lastChangeCount: Int
+    override var lastChangeCount: Int
         get() = prefs.getInt(KEY_LAST_COUNT, 0)
         set(value) {
             prefs.edit().putInt(KEY_LAST_COUNT, value).apply()
         }
 
     /** 마지막 Changes 토큰 리셋(30일 만료) 시각, 0 = 없음 (#141). [recordTokenReset]으로만 기록. */
-    val lastTokenResetEpochMillis: Long
+    override val lastTokenResetEpochMillis: Long
         get() = prefs.getLong(KEY_LAST_TOKEN_RESET, 0L)
 
     /** 리셋으로 유실된 델타 구간의 시작(= 리셋 감지 시점의 lastSync), 0 = 미상 (#141). */
-    val lostDeltaWindowStartEpochMillis: Long
+    override val lostDeltaWindowStartEpochMillis: Long
         get() = prefs.getLong(KEY_LOST_WINDOW_START, 0L)
 
     /**
@@ -43,7 +58,7 @@ class TokenStore(context: Context) {
      * 두 값은 단일 edit로 원자 기록(반쪽 마커 방지). 마커는 최신 리셋 우선(latest-wins) —
      * E3 도착 전 리셋이 겹치면(≥30일 간격) 마지막 것만 남으며, 이는 상한이 뒤로 밀릴 뿐 안전하다.
      */
-    fun recordTokenReset(resetAtEpochMillis: Long) {
+    override fun recordTokenReset(resetAtEpochMillis: Long) {
         prefs.edit()
             .putLong(KEY_LAST_TOKEN_RESET, resetAtEpochMillis)
             .putLong(KEY_LOST_WINDOW_START, lastSyncEpochMillis)

@@ -32,7 +32,7 @@ jobs:
         run: ./gradlew spotlessCheck detekt
       # core: JVM 테스트(케이스 테이블) + iOS klib 컴파일(commonMain 오염 차단, 리눅스에서 가능)
       - name: Build and test
-        run: ./gradlew :core:jvmTest :core:compileKotlinIosArm64 :app:assembleDebug
+        run: ./gradlew :core:jvmTest :app:testDebugUnitTest :core:compileKotlinIosArm64 :app:assembleDebug
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
