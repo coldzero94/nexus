@@ -21,22 +21,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
+import com.nexus.app.character.CharacterAssets
 import com.nexus.app.character.CharacterComposer
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.StepRepository
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.core.ConditionEngine
+import com.nexus.core.DialogueSelector
 import com.nexus.core.SessionInput
 import com.nexus.core.XpEngine
 import com.nexus.core.XpExplainer
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.random.Random
 
 private const val TAG = "HomeScreen"
 
@@ -100,6 +106,7 @@ private fun HomeContent(state: HomeUiState) {
     // 오늘 움직였으면 걷는 모습 — 데이터가 캐릭터에 그대로 새겨진다는 감각(임시 규칙, 기분 표는 E4-4)
     val spriteState = if (state.todayActiveMinutes > 0) "walk" else "idle"
     CharacterComposer.CharacterSprite(state = spriteState, modifier = Modifier.size(140.dp))
+    DialogueBubble(spriteState)
     ConditionGauge(state.condition)
     TodaySummaryCard(state)
     ExpeditionPlaceholderCard()
@@ -122,6 +129,31 @@ private fun nextGoalText(state: HomeUiState): String = when {
 
 /** 다음 목표 문구의 활동 기준(분) — 컨디션 활동 문턱(10pt≈걷기 10분)과 맞춘다. */
 private const val ACTIVE_GOAL_MINUTES = 10
+
+/**
+ * 캐릭터 대사 말풍선 (#29, E4-5) — 상태별 풀에서 반복 회피로 한 줄. 대사는 코드가 아닌
+ * assets JSON(데이터 테이블)이라 하드코딩 문자열 규칙의 대상이 아니다 — 수정 = JSON만.
+ */
+@Composable
+private fun DialogueBubble(spriteState: String) {
+    val context = LocalContext.current
+    var line by remember(spriteState) { mutableStateOf<String?>(null) }
+    LaunchedEffect(spriteState) {
+        line = withContext(Dispatchers.IO) {
+            val candidates = CharacterAssets(context).loadDialoguePool().linesOrDefault(spriteState)
+            val memory = DialogueMemory(context)
+            val picked = DialogueSelector.pick(candidates, memory.recent, Random.nextInt(candidates.size))
+            memory.recent = DialogueSelector.remember(memory.recent, picked, DialogueMemory.RECENT_CAPACITY)
+            picked
+        }
+    }
+    line?.let {
+        Text(
+            text = stringResource(R.string.home_dialogue_format, it),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+    }
+}
 
 /** ActivityScreen.loadActivity와 같은 catch 계약 (#130) + 권한 회수는 안내로 (#144 패턴). */
 private suspend fun loadHome(exerciseRepo: ExerciseRepository, stepRepo: StepRepository): HomeLoad = try {

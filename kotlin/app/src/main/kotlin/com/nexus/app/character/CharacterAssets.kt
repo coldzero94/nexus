@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.annotation.DrawableRes
 import com.nexus.core.CharacterAnimationSet
 import com.nexus.core.CharacterAssetConvention
+import com.nexus.core.DialoguePool
+import com.nexus.core.DialogueTable
 
 /**
  * 캐릭터 에셋 로더 (#25, E4-1). 컴포저(E4-2)의 유일한 에셋 진입점.
@@ -17,6 +19,11 @@ class CharacterAssets(private val context: Context) {
     /** 애니메이션 메타 로드 — 잘못된 표는 여기서 즉시 실패(조용한 무애니메이션 방지, core 검증). */
     fun loadAnimationSet(): CharacterAnimationSet = context.assets.open(META_PATH).bufferedReader().use {
         CharacterAssetConvention.parse(it.readText())
+    }
+
+    /** 대사 풀 로드 (#29) — 같은 fail-fast 계약. 대사 수정 = JSON만(코드 무수정). */
+    fun loadDialoguePool(): DialoguePool = context.assets.open(DIALOGUE_PATH).bufferedReader().use {
+        DialogueTable.parse(it.readText())
     }
 
     /**
@@ -35,5 +42,6 @@ class CharacterAssets(private val context: Context) {
 
     private companion object {
         const val META_PATH = "character/animations.json"
+        const val DIALOGUE_PATH = "character/dialogue.json"
     }
 }
