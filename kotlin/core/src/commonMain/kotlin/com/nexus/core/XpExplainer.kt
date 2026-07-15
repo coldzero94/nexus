@@ -21,6 +21,8 @@ data class DayXpExplanation(
     val cappedXp: Int,
     /** raw가 200 니를 넘어 초과분 절반 체감이 적용됐는가. */
     val kneeApplied: Boolean,
+    /** 니 체감으로 깎인 포인트(하드캡 클리핑 제외) — UI가 감소 사유를 분리 표기(#24 리뷰). */
+    val kneeReducedPoints: Int,
     /** 하드캡 300 도달 여부. */
     val hardCapped: Boolean,
 )
@@ -45,12 +47,14 @@ object XpExplainer {
         }
         val raw = lines.filter { it.countsForXp }
             .sumOf { it.basePoints * it.tier.personalXpMultiplier }
+        val softened = XpEngine.applyKnee(raw)
         val capped = XpEngine.applyDailyCap(raw)
         return DayXpExplanation(
             lines = lines,
             rawPoints = raw.toInt(),
             cappedXp = capped,
             kneeApplied = raw > XpEngine.DAILY_KNEE,
+            kneeReducedPoints = (raw - softened).toInt(),
             hardCapped = capped >= XpEngine.DAILY_HARD_CAP.toInt(),
         )
     }

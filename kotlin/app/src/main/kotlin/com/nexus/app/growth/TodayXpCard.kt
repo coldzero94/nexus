@@ -91,7 +91,7 @@ private fun CapNotes(explanation: DayXpExplanation) {
             stringResource(
                 R.string.xp_explain_knee_note,
                 explanation.rawPoints,
-                explanation.rawPoints - explanation.cappedXp,
+                explanation.kneeReducedPoints,
             ),
             style = MaterialTheme.typography.bodySmall,
         )
