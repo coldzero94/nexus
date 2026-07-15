@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,7 +55,11 @@ object CharacterComposer {
             }
         }
 
-        val loaded = set ?: return
+        val loaded = set
+        if (loaded == null) {
+            Box(modifier) // 로드 전 자리 예약 — 스프라이트 등장 시 레이아웃 점프 방지 (#26 리뷰)
+            return
+        }
         val resolvedState = if (state in loaded.states) state else loaded.defaultState
         val resId = assets.frameResIdOrNull(resolvedState, frame)
             ?: assets.frameResIdOrNull(loaded.defaultState, 0)
