@@ -45,9 +45,15 @@ object XpEngine {
         return applyDailyCap(raw)
     }
 
-    /** 일일 상한: 200 초과분 절반 체감 후 300 하드캡. */
-    fun applyDailyCap(raw: Double): Int {
-        val softened = if (raw <= DAILY_KNEE) raw else DAILY_KNEE + (raw - DAILY_KNEE) * DAILY_SOFT_RATE
-        return softened.coerceAtMost(DAILY_HARD_CAP).toInt()
+    /** 니 체감만(하드캡 이전) — 환산 설명(#24)이 체감·상한 감소량을 분리 표기할 때 재사용. */
+    fun applyKnee(raw: Double): Double = if (raw <=
+        DAILY_KNEE
+    ) {
+        raw
+    } else {
+        DAILY_KNEE + (raw - DAILY_KNEE) * DAILY_SOFT_RATE
     }
+
+    /** 일일 상한: 200 초과분 절반 체감 후 300 하드캡. */
+    fun applyDailyCap(raw: Double): Int = applyKnee(raw).coerceAtMost(DAILY_HARD_CAP).toInt()
 }

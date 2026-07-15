@@ -34,6 +34,7 @@ import com.nexus.app.health.HealthConnectManager
 import com.nexus.core.ActivityType
 import com.nexus.core.ClassAffinity
 import com.nexus.core.ClassAffinityCalculator
+import com.nexus.core.DayXpExplanation
 import com.nexus.core.GrowthCalculator
 import com.nexus.core.GrowthSummary
 import com.nexus.core.LevelCurve
@@ -41,16 +42,21 @@ import com.nexus.core.SessionInput
 import com.nexus.core.Stat
 import com.nexus.core.StatMapping
 import com.nexus.core.XpEngine
+import com.nexus.core.XpExplainer
 import kotlinx.coroutines.CancellationException
 import java.io.IOException
+import java.time.LocalDate
 import java.time.ZoneId
 
 private const val TAG = "GrowthScreen"
 
+/** 성장 탭 화면 상태 — 요약과 오늘 XP 분해는 같은 세션 스냅샷에서 계산(불일치 방지). */
+internal data class GrowthUiState(val summary: GrowthSummary, val today: DayXpExplanation)
+
 @Composable
 fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
-    var data by remember { mutableStateOf<GrowthSummary?>(null) }
+    var data by remember { mutableStateOf<GrowthUiState?>(null) }
     var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(exerciseRepo) {
@@ -75,17 +81,20 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
 }
 
 /** ActivityScreen.loadActivity와 같은 catch 계약 (#130 — 실패는 드러내고 취소는 전파). */
-private suspend fun loadGrowth(repo: ExerciseRepository): GrowthSummary? = try {
-    GrowthCalculator.compute(
-        repo.readRecentSessions(days = ClassAffinityCalculator.WINDOW_DAYS).map {
-            SessionInput(
-                type = it.type,
-                minutes = it.durationMinutes.toInt(),
-                tier = it.trustTier,
-                // 일일 상한 그룹핑 키 — 사용자 시간대 기준 날짜 (GrowthCalculator KDoc)
-                epochDay = it.start.atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay(),
-            )
-        },
+private suspend fun loadGrowth(repo: ExerciseRepository): GrowthUiState? = try {
+    val zone = ZoneId.systemDefault()
+    val sessions = repo.readRecentSessions(days = ClassAffinityCalculator.WINDOW_DAYS).map {
+        SessionInput(
+            type = it.type,
+            minutes = it.durationMinutes.toInt(),
+            tier = it.trustTier,
+            // 일일 상한 그룹핑 키 — 사용자 시간대 기준 날짜 (GrowthCalculator KDoc)
+            epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
+        )
+    }
+    GrowthUiState(
+        summary = GrowthCalculator.compute(sessions),
+        today = XpExplainer.explainDay(sessions, epochDay = LocalDate.now(zone).toEpochDay()),
     )
 } catch (e: CancellationException) {
     throw e
@@ -107,10 +116,11 @@ private suspend fun loadGrowth(repo: ExerciseRepository): GrowthSummary? = try {
 }
 
 @Composable
-private fun GrowthContent(data: GrowthSummary) {
-    LevelCard(data)
-    AffinityCard(data)
-    StatsCard(data)
+private fun GrowthContent(data: GrowthUiState) {
+    TodayXpCard(data.today)
+    LevelCard(data.summary)
+    AffinityCard(data.summary)
+    StatsCard(data.summary)
     Text(
         stringResource(R.string.growth_scope_note, ClassAffinityCalculator.WINDOW_DAYS),
         style = MaterialTheme.typography.bodySmall,
