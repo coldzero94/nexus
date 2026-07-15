@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,16 +62,23 @@ private fun NexusApp(manager: HealthConnectManager) {
     var finished by rememberSaveable { mutableStateOf(false) }
     var connected by rememberSaveable { mutableStateOf(false) }
 
-    // 복귀 환영 (#30): 판정은 프로세스당 1회(기준점 캡처 후 즉시 오늘로 갱신) —
-    // rememberSaveable이라 회전·프로세스 복원에도 같은 판정이 유지된다.
+    // 복귀 환영 (#30): 판정·마커 갱신은 커밋된 컴포지션에서 1회(LaunchedEffect) —
+    // 이니셜라이저 부수효과는 프레임 폐기 시 마커만 소모하고 판정을 잃을 수 있다.
+    // rememberSaveable(-1 = 미판정)이라 회전·프로세스 복원에도 같은 판정이 유지된다.
     val tracker = remember { AppOpenTracker(context) }
-    var welcomeGapDays by rememberSaveable {
-        val today = LocalDate.now().toEpochDay()
-        val last = tracker.lastOpenEpochDay
-        tracker.recordOpen(today)
-        mutableStateOf(
-            if (ReturnWelcomePolicy.shouldWelcome(last, today)) ReturnWelcomePolicy.gapDays(last, today) else 0L,
-        )
+    var welcomeGapDays by rememberSaveable { mutableStateOf(UNDECIDED_GAP) }
+    LaunchedEffect(Unit) {
+        if (welcomeGapDays == UNDECIDED_GAP) {
+            val today = LocalDate.now().toEpochDay()
+            val last = tracker.lastOpenEpochDay
+            tracker.recordOpen(today)
+            welcomeGapDays =
+                if (ReturnWelcomePolicy.shouldWelcome(last, today)) {
+                    ReturnWelcomePolicy.gapDays(last, today)
+                } else {
+                    0L
+                }
+        }
     }
 
     if (!finished) {
@@ -93,6 +101,9 @@ private fun NexusApp(manager: HealthConnectManager) {
         )
     }
 }
+
+/** 복귀 판정 전 표식 — 온보딩이 먼저 렌더되므로 사용자에게 보이는 지연은 없다 (#30). */
+private const val UNDECIDED_GAP = -1L
 
 private enum class MainTab(val labelRes: Int) {
     HOME(R.string.tab_home),
