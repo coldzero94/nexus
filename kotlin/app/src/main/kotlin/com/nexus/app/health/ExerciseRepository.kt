@@ -64,15 +64,18 @@ class ExerciseRepository(private val client: HealthConnectClient) {
             }
     }
 
-    /** 세션 범위 심박 평균. 실패/없음 시 null (심박 없는 세션 = Tier B 후보). */
-    private suspend fun avgHeartRate(start: Instant, end: Instant): Long? = runCatching {
-        client.aggregate(
-            AggregateRequest(
-                metrics = setOf(HeartRateRecord.BPM_AVG),
-                timeRangeFilter = TimeRangeFilter.between(start, end),
-            ),
-        )[HeartRateRecord.BPM_AVG]
-    }.getOrNull()
+    /**
+     * 세션 범위 심박 평균. 데이터 없음 = null (심박 없는 세션 = Tier B 후보).
+     * 조회 "실패"는 삼키지 않고 전파한다(#130) — 실패를 null로 합치면 일시 오류가
+     * Tier 강등으로 원장에 굳는다. 전파된 예외는 호출 경로의 구체 catch가
+     * 재시도(Worker)/에러 표시(Screen)로 처리하고, 코루틴 취소도 자연 전파된다.
+     */
+    private suspend fun avgHeartRate(start: Instant, end: Instant): Long? = client.aggregate(
+        AggregateRequest(
+            metrics = setOf(HeartRateRecord.BPM_AVG),
+            timeRangeFilter = TimeRangeFilter.between(start, end),
+        ),
+    )[HeartRateRecord.BPM_AVG]
 
     private fun mapType(raw: Int): ActivityType? = when (raw) {
         ExerciseSessionRecord.EXERCISE_TYPE_WALKING -> ActivityType.WALKING
