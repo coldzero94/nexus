@@ -91,7 +91,7 @@
     <string name="xp_explain_excluded">XP 제외</string>
     <string name="xp_explain_knee_note">기본 합계 %1$,d pt 중 200pt 초과분은 절반만 반영됐어요 (−%2$,d pt)</string>
     <string name="xp_explain_hardcap_note">오늘 일일 상한 300pt에 도달했어요.</string>
-    <string name="xp_explain_formula_note">분당 포인트: 걷기 1 · 러닝 2 · 근력 1.5. 수기 입력·미상 기록(신뢰 C)과 3축 외 운동은 XP에 반영되지 않아요.</string>
+    <string name="xp_explain_formula_note">분당 포인트: 걷기 %1$s · 러닝 %2$s · 근력 %3$s. 수기 입력·미상 기록(신뢰 C)과 3축 외 운동은 XP에 반영되지 않아요.</string>
     <string name="activity_other">기타 운동</string>
     <string name="affinity_endurance">지구력형</string>
     <string name="affinity_agility">민첩형</string>

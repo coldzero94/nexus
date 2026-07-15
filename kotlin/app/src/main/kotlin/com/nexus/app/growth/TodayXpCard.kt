@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
+import com.nexus.core.ActivityType
 import com.nexus.core.DayXpExplanation
 import com.nexus.core.XpLine
 
@@ -62,7 +63,15 @@ private fun ExplanationDetail(explanation: DayXpExplanation) {
             CapNotes(explanation)
         }
         Spacer(Modifier.height(4.dp))
-        Text(stringResource(R.string.xp_explain_formula_note), style = MaterialTheme.typography.bodySmall)
+        Text(
+            stringResource(
+                R.string.xp_explain_formula_note,
+                ActivityType.WALKING.pointsPerMinute.trimmedRate(),
+                ActivityType.RUNNING.pointsPerMinute.trimmedRate(),
+                ActivityType.STRENGTH.pointsPerMinute.trimmedRate(),
+            ),
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 
@@ -100,3 +109,6 @@ private fun CapNotes(explanation: DayXpExplanation) {
         Text(stringResource(R.string.xp_explain_hardcap_note), style = MaterialTheme.typography.bodySmall)
     }
 }
+
+/** 분당 포인트 표시용 — 정수 배율은 소수점 없이 (1.0 → "1", 1.5 → "1.5"). */
+private fun Double.trimmedRate(): String = if (this == toLong().toDouble()) toLong().toString() else toString()
