@@ -70,12 +70,18 @@ private fun SummaryRow(label: String, value: String) {
     }
 }
 
-/** 원정 자리 (#32) — 실데이터는 E5(원정 루프)에서. 동기화 지연 흡수 연출의 무대가 될 카드. */
+/** 원정 자리 (#32·#67) — 에너지 잔액 표시, 원정 실데이터는 #34에서. */
 @Composable
-internal fun ExpeditionPlaceholderCard() {
+internal fun ExpeditionPlaceholderCard(energy: Int) {
     Card {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.home_expedition_title), style = MaterialTheme.typography.titleMedium)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(stringResource(R.string.home_expedition_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.home_energy_format, energy),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
             Text(stringResource(R.string.home_expedition_placeholder), style = MaterialTheme.typography.bodySmall)
         }
     }

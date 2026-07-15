@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.character.CharacterComposer
+import com.nexus.app.data.EnergyStore
+import com.nexus.app.data.NexusDatabase
+import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.StepRepository
@@ -34,6 +37,7 @@ import com.nexus.app.settings.RestModeStore
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.core.ConditionEngine
 import com.nexus.core.DialogueSelector
+import com.nexus.core.EnergyEngine
 import com.nexus.core.SessionInput
 import com.nexus.core.XpEngine
 import com.nexus.core.XpExplainer
@@ -56,6 +60,8 @@ internal data class HomeUiState(
     val todayXp: Int,
     val todayActiveMinutes: Int,
     val todaySteps: Long,
+    /** 에너지 잔액 (#67) — 원장 파생 획득 − 소모. 원정(#34)의 재화. */
+    val energy: Int,
 )
 
 internal sealed interface HomeLoad {
@@ -75,11 +81,13 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
     var load by remember { mutableStateOf<HomeLoad?>(null) }
 
     val restStore = remember { RestModeStore(context) }
+    val ledger = remember { RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao()) }
+    val energyStore = remember { EnergyStore(context) }
     LaunchedEffect(exerciseRepo, stepRepo) {
         load = if (exerciseRepo == null || stepRepo == null) {
             HomeLoad.PermissionDenied
         } else {
-            loadHome(exerciseRepo, stepRepo, restStore)
+            loadHome(exerciseRepo, stepRepo, restStore, ledger, energyStore)
         }
     }
 
@@ -112,7 +120,7 @@ private fun HomeContent(state: HomeUiState) {
     DialogueBubble(spriteState)
     ConditionGauge(state.condition)
     TodaySummaryCard(state)
-    ExpeditionPlaceholderCard()
+    ExpeditionPlaceholderCard(state.energy)
     Text(
         text = nextGoalText(state),
         style = MaterialTheme.typography.bodyMedium,
@@ -163,10 +171,15 @@ private suspend fun loadHome(
     exerciseRepo: ExerciseRepository,
     stepRepo: StepRepository,
     restStore: RestModeStore,
+    ledger: RewardLedgerRepository,
+    energyStore: EnergyStore,
 ): HomeLoad = try {
     val zone = ZoneId.systemDefault()
     val today = LocalDate.now(zone)
-    val sessions = exerciseRepo.readRecentSessions(days = CONDITION_WINDOW_DAYS).map {
+    val raw = exerciseRepo.readRecentSessions(days = CONDITION_WINDOW_DAYS)
+    // 홈 로드도 원장을 최신으로(멱등) — 성장 탭·워커와 같은 진입점 (#163)
+    ledger.grantSessions(raw, zone, epochMillis = System.currentTimeMillis())
+    val sessions = raw.map {
         SessionInput(
             type = it.type,
             minutes = it.durationMinutes.toInt(),
@@ -174,26 +187,7 @@ private suspend fun loadHome(
             epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
         )
     }
-    // 컨디션은 코스메틱 — Tier C 포함 기본점수로 일자별 폴드 (ConditionEngine KDoc)
-    val pointsByDay = sessions
-        .filter { it.type != null }
-        .groupBy { it.epochDay }
-        .mapValues { (_, day) -> day.sumOf { XpEngine.baseScore(it.type!!, it.minutes).toDouble() } }
-    val windowDays = (CONDITION_WINDOW_DAYS - 1 downTo 0).map { offset ->
-        pointsByDay[today.minusDays(offset.toLong()).toEpochDay()] ?: 0.0
-    }
-    // 첫 기록일 이전은 "무활동"이 아니라 "데이터 없음" — 거기서부터 폴드해야 신규 사용자가
-    // 빈 창 28일치 하락(≈바닥)으로 시작하지 않는다. 기록이 전혀 없으면 기본값.
-    val firstRecordedIdx = windowDays.indexOfFirst { it > 0.0 }
-    val condition = if (firstRecordedIdx == -1) {
-        ConditionEngine.DEFAULT
-    } else {
-        // 휴식 모드(#31): 휴식 시작일 이후의 날은 하락 면제 — 일자별로 restMode를 넣어 폴드
-        windowDays.withIndex().drop(firstRecordedIdx).fold(ConditionEngine.DEFAULT) { acc, (idx, points) ->
-            val epochDay = today.minusDays((CONDITION_WINDOW_DAYS - 1 - idx).toLong()).toEpochDay()
-            ConditionEngine.nextDay(acc, points, restMode = restStore.isRestDay(epochDay))
-        }
-    }
+    val condition = deriveCondition(sessions, today, restStore)
     val todayEpoch = today.toEpochDay()
     HomeLoad.Success(
         HomeUiState(
@@ -204,6 +198,7 @@ private suspend fun loadHome(
                 .sumOf { it.minutes },
             todaySteps = stepRepo.readDailySteps(days = 1)
                 .firstOrNull { it.date == today }?.steps ?: 0L,
+            energy = EnergyEngine.balance(ledger.cappedTotalXp(), energyStore.totalSpent),
         ),
     )
 } catch (e: CancellationException) {
@@ -223,4 +218,28 @@ private suspend fun loadHome(
 } catch (e: IllegalStateException) {
     Log.w(TAG, "home load state failure", e)
     HomeLoad.Failure
+} catch (e: android.database.SQLException) {
+    Log.w(TAG, "home ledger db failure", e)
+    HomeLoad.Failure
+}
+
+/**
+ * 컨디션 파생 (#32·#31) — Tier C 포함 기본점수(코스메틱, ConditionEngine KDoc)를 일자별 폴드.
+ * 첫 기록일 이전은 "무활동"이 아니라 "데이터 없음" — 거기서부터 폴드해야 신규 사용자가
+ * 빈 창 28일치 하락(≈바닥)으로 시작하지 않는다. 휴식 시작일 이후의 날은 하락 면제.
+ */
+private fun deriveCondition(sessions: List<SessionInput>, today: LocalDate, restStore: RestModeStore): Double {
+    val pointsByDay = sessions
+        .filter { it.type != null }
+        .groupBy { it.epochDay }
+        .mapValues { (_, day) -> day.sumOf { XpEngine.baseScore(it.type!!, it.minutes).toDouble() } }
+    val windowDays = (CONDITION_WINDOW_DAYS - 1 downTo 0).map { offset ->
+        pointsByDay[today.minusDays(offset.toLong()).toEpochDay()] ?: 0.0
+    }
+    val firstRecordedIdx = windowDays.indexOfFirst { it > 0.0 }
+    if (firstRecordedIdx == -1) return ConditionEngine.DEFAULT
+    return windowDays.withIndex().drop(firstRecordedIdx).fold(ConditionEngine.DEFAULT) { acc, (idx, points) ->
+        val epochDay = today.minusDays((CONDITION_WINDOW_DAYS - 1 - idx).toLong()).toEpochDay()
+        ConditionEngine.nextDay(acc, points, restMode = restStore.isRestDay(epochDay))
+    }
 }
