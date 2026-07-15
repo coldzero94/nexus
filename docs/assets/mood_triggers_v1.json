@@ -1,0 +1,63 @@
+{
+  "version": "v1",
+  "issue": 3,
+  "note": "기분 5종 트리거 규칙. E4-4 평가기가 rules를 priority 오름차순으로 평가, 첫 매치 채택. 표만 고치면 코드 수정 없이 반영.",
+  "moods": ["신남", "평온", "뿌듯", "심심", "휴식중"],
+  "inputs": {
+    "daysSinceActivity": "int  마지막 활동 이후 경과일 (0=오늘 활동)",
+    "restMode": "bool  휴식 모드 ON",
+    "todayActiveMin": "int  오늘 총 활동 분",
+    "personalCoef": "float 0.8-1.5  오늘 개인계수",
+    "highIntensity": "bool  러닝/근력 고강도 세션 여부",
+    "leveledUp": "bool", "newBadge": "bool", "weeklyGoalMet": "bool", "newRecord": "bool",
+    "condition": "int 0-100",
+    "returning": "bool  3일+ 공백 후 첫 실행",
+    "timeOfDay": "enum 아침|낮|저녁 (대사 변주용, 선택)"
+  },
+  "specialScene": {
+    "id": "복귀환영",
+    "backlog": "E4-6",
+    "when": "returning == true",
+    "then": "환영 씬 재생 후 신남 또는 뿌듯으로 진입",
+    "lines": ["왔다!! 어디 갔었어~ 보고 싶었잖아 🥹→😆"],
+    "note": "삐짐 1초, 반가움이 주. 처벌 없음."
+  },
+  "rules": [
+    {
+      "priority": 1, "mood": "뿌듯",
+      "when": "leveledUp || newBadge || weeklyGoalMet || newRecord",
+      "face": "proud_sparkle", "conditionEffect": "neutral",
+      "lines": ["봤어 봤어?! 우리 레벨업했어 ✨", "이 배지 내가 딴 거 맞지?! 😤"]
+    },
+    {
+      "priority": 2, "mood": "신남",
+      "when": "todayActiveMin > 0 && (personalCoef >= 1.3 || highIntensity)",
+      "face": "jump_hyped", "conditionEffect": "recover_small",
+      "lines": ["오늘 좀 미쳤는데?! 🔥", "헉헉— 근데 개운해 😆"]
+    },
+    {
+      "priority": 3, "mood": "평온",
+      "when": "todayActiveMin > 0",
+      "face": "calm_smile", "conditionEffect": "hold_or_recover_small",
+      "lines": ["무난하고 좋았어 🙂", "딱 적당했다 그치?"]
+    },
+    {
+      "priority": 4, "mood": "휴식중",
+      "when": "todayActiveMin == 0 && (restMode || plannedRest)",
+      "face": "cozy_roll", "conditionEffect": "no_decay",
+      "lines": ["오늘은 공식 뒹굴데이 🛏️", "쉬는 것도 훈련이라구~ 😏"]
+    },
+    {
+      "priority": 5, "mood": "심심",
+      "when": "todayActiveMin == 0 && !restMode",
+      "face": "bored_lookaround", "conditionEffect": "decay_soft",
+      "lines": ["심심해~ 슬슬 나갈까? 👀", "나 여기서 기다리는 중… 🐾"],
+      "note": "그리움·장난이지 잔소리 아님. 소프트 하락이 유일한 손실 기제."
+    }
+  ],
+  "todo": [
+    "plannedRest 판정 로직 (직전 균형 리듬 기반)",
+    "highIntensity 수치 정의 (러닝 N분/심박존 — XP 산식과 정합)",
+    "표정당 대사 풀 3~5개로 확장 (S4 P-2)"
+  ]
+}
