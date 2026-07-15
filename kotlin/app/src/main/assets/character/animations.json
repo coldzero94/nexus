@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "defaultState": "idle",
+  "states": {
+    "idle": { "frames": 2, "frameDurationMs": 600 },
+    "walk": { "frames": 2, "frameDurationMs": 350 }
+  }
+}
