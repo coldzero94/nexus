@@ -32,6 +32,11 @@
     <string name="settings_title">설정</string>
     <string name="settings_rest_mode">휴식 모드</string>
     <string name="settings_rest_mode_desc">쉬어가는 기간에 켜 두면 컨디션이 내려가지 않아요. 운동하면 회복은 그대로 돼요.</string>
+    <string name="settings_reminder">리마인더 알림</string>
+    <string name="settings_reminder_desc">캐릭터가 하루 최대 2번, 밤 9시~아침 9시는 피해서 살짝 불러요.</string>
+    <string name="notify_channel_name">캐릭터 리마인더</string>
+    <string name="notify_reminder_title">캐릭터가 기다려요</string>
+    <string name="notify_reminder_body">잠깐 걸으면 오늘도 함께 자랄 수 있어요.</string>
     <string name="onboarding_next">다음</string>
     <string name="onboarding_start">시작하기</string>
 
