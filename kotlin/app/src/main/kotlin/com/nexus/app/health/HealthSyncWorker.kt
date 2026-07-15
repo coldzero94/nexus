@@ -45,6 +45,9 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         } catch (e: SecurityException) {
             Log.w(TAG, "health sync permission failure — not retrying", e)
             Result.failure() // 권한 문제는 재시도 무의미
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "health sync invalid-argument failure — not retrying", e)
+            Result.failure() // 인자/레코드 이상은 재시도 무의미 (#130 재감사)
         } catch (e: IllegalStateException) {
             Log.w(TAG, "health sync state failure", e)
             Result.retry()

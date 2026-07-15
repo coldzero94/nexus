@@ -157,6 +157,10 @@ private suspend fun loadActivity(stepRepo: StepRepository, exerciseRepo: Exercis
 } catch (e: SecurityException) {
     Log.w(TAG, "activity load permission failure", e)
     null
+} catch (e: IllegalArgumentException) {
+    // HC ERROR_INVALID_ARGUMENT 또는 서드파티 이상 레코드의 변환 require 실패 (#130 재감사)
+    Log.w(TAG, "activity load invalid-argument failure", e)
+    null
 } catch (e: IllegalStateException) {
     Log.w(TAG, "activity load state failure", e)
     null
