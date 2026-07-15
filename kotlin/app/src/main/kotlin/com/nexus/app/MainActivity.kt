@@ -99,7 +99,7 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
     ) { padding ->
         when (tab) {
             MainTab.HOME -> HomeScreen(manager, Modifier.padding(padding), onReconnect)
-            MainTab.ACTIVITY -> ActivityScreen(manager, Modifier.padding(padding))
+            MainTab.ACTIVITY -> ActivityScreen(manager, Modifier.padding(padding), onReconnect)
             MainTab.GROWTH -> GrowthScreen(manager, Modifier.padding(padding), onReconnect)
         }
     }

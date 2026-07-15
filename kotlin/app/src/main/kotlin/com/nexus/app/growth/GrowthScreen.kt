@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
@@ -33,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.ui.ConnectNotice
 import com.nexus.core.ActivityType
 import com.nexus.core.ClassAffinity
 import com.nexus.core.ClassAffinityCalculator
@@ -102,7 +102,11 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
         when (val current = load) {
             null -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
 
-            GrowthLoad.PermissionDenied -> DemoNotice(onReconnect)
+            GrowthLoad.PermissionDenied ->
+                ConnectNotice(
+                    onReconnect,
+                    body = stringResource(R.string.growth_demo_body, ClassAffinityCalculator.WINDOW_DAYS),
+                )
 
             GrowthLoad.Failure ->
                 Text(stringResource(R.string.growth_error), style = MaterialTheme.typography.bodyMedium)
@@ -174,25 +178,6 @@ private suspend fun loadGrowth(repo: ExerciseRepository): GrowthLoad = try {
 } catch (e: IllegalStateException) {
     Log.w(TAG, "growth load state failure", e)
     GrowthLoad.Failure
-}
-
-/** 미연결 안내 (#144) — 에러가 아니라 "연결하면 자란다"로 유도. 데모 모드 규칙(CLAUDE.md). */
-@Composable
-private fun DemoNotice(onReconnect: (() -> Unit)?) {
-    Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.growth_demo_title), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(R.string.growth_demo_body, ClassAffinityCalculator.WINDOW_DAYS),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            if (onReconnect != null) {
-                Button(onClick = onReconnect) {
-                    Text(stringResource(R.string.action_retry_permission))
-                }
-            }
-        }
-    }
 }
 
 @Composable

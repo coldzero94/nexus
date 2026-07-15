@@ -32,6 +32,7 @@ import com.nexus.app.health.ExerciseSummary
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.StepRepository
 import com.nexus.app.health.TokenStore
+import com.nexus.app.ui.ConnectNotice
 import com.nexus.core.ActivityType
 import com.nexus.core.TrustTier
 import java.io.IOException
@@ -49,34 +50,24 @@ private const val WINDOW_DAYS = 7
  * HC 미가용/오류 시 에러 문구만 — 크래시 없음.
  */
 @Composable
-fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
+fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
     val context = LocalContext.current
     val stepRepo = remember { manager.stepRepositoryOrNull() }
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
     val store = remember { TokenStore(context) }
 
-    var steps by remember { mutableStateOf<List<DailySteps>?>(null) }
-    var sessions by remember { mutableStateOf<List<ExerciseSummary>?>(null) }
-    var manualSteps by remember { mutableStateOf(0L) }
-    var loading by remember { mutableStateOf(true) }
-    var failed by remember { mutableStateOf(false) }
+    var load by remember { mutableStateOf<ActivityLoad?>(null) }
 
     LaunchedEffect(stepRepo, exerciseRepo) {
-        if (stepRepo == null || exerciseRepo == null) {
-            failed = true
-            loading = false
-            return@LaunchedEffect
-        }
-        val data = loadActivity(stepRepo, exerciseRepo)
-        if (data == null) {
-            failed = true
+        // 권한 문제는 실패가 아닌 미연결 안내로 (#152, #144 패턴)
+        load = if (stepRepo == null || exerciseRepo == null) {
+            ActivityLoad.PermissionDenied
         } else {
-            steps = data.steps
-            manualSteps = data.manualSteps
-            sessions = data.sessions
+            loadActivity(stepRepo, exerciseRepo)
         }
-        loading = false
     }
+    val current = load
+    val data = (current as? ActivityLoad.Success)?.data
 
     Column(
         modifier = modifier
@@ -89,21 +80,25 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)
         Spacer(Modifier.height(4.dp))
         Text(stringResource(R.string.steps_subtitle), style = MaterialTheme.typography.bodySmall)
         Spacer(Modifier.height(12.dp))
-        when {
-            loading -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
+        when (current) {
+            null -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
 
-            failed -> Text(stringResource(R.string.steps_error), style = MaterialTheme.typography.bodyMedium)
+            ActivityLoad.PermissionDenied ->
+                ConnectNotice(onReconnect, body = stringResource(R.string.activity_demo_body))
 
-            else -> {
+            ActivityLoad.Failure ->
+                Text(stringResource(R.string.steps_error), style = MaterialTheme.typography.bodyMedium)
+
+            is ActivityLoad.Success -> {
                 val pattern = stringResource(R.string.steps_date_format)
                 val formatter = remember(pattern) { DateTimeFormatter.ofPattern(pattern, Locale.KOREAN) }
-                steps?.asReversed()?.forEach { day ->
+                current.data.steps.asReversed().forEach { day ->
                     StepRow(dateLabel = day.date.format(formatter), steps = day.steps)
                 }
-                if (manualSteps > 0L) {
+                if (current.data.manualSteps > 0L) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = stringResource(R.string.steps_manual_excluded, manualSteps),
+                        text = stringResource(R.string.steps_manual_excluded, current.data.manualSteps),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -115,16 +110,7 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)
         // ── 운동 세션 (#8) ──
         Text(stringResource(R.string.sessions_title), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(12.dp))
-        if (!loading && !failed) {
-            val list = sessions
-            if (list.isNullOrEmpty()) {
-                Text(stringResource(R.string.sessions_empty), style = MaterialTheme.typography.bodyMedium)
-            } else {
-                val dtPattern = stringResource(R.string.session_datetime_format)
-                val dtFormatter = remember(dtPattern) { DateTimeFormatter.ofPattern(dtPattern, Locale.KOREAN) }
-                list.forEach { session -> SessionRow(session, dtFormatter) }
-            }
-        }
+        if (data != null) SessionsSection(data.sessions)
 
         Spacer(Modifier.height(28.dp))
 
@@ -139,31 +125,56 @@ private data class ActivityData(
     val sessions: List<ExerciseSummary>,
 )
 
-/** 활동 데이터 로드 — 실패 시 로그 후 null(#130 침묵 실패 제거, 구체 예외). 복잡도 분리 위해 화면과 분리. */
-private suspend fun loadActivity(stepRepo: StepRepository, exerciseRepo: ExerciseRepository): ActivityData? = try {
-    ActivityData(
-        steps = stepRepo.readDailySteps(WINDOW_DAYS),
-        manualSteps = stepRepo.readManualStepCount(WINDOW_DAYS),
-        sessions = exerciseRepo.readRecentSessions(WINDOW_DAYS),
+/** 활동 로드 결과 (#152) — 권한 문제는 미연결 안내, [Failure]만 steps_error (#144 패턴). */
+private sealed interface ActivityLoad {
+    data class Success(val data: ActivityData) : ActivityLoad
+
+    data object PermissionDenied : ActivityLoad
+
+    data object Failure : ActivityLoad
+}
+
+/**
+ * 활동 데이터 로드 — 실패 시 로그 후 Failure(#130 침묵 실패 제거, 구체 예외).
+ * SecurityException(권한 회수)만 미연결 안내로 라우팅(#152, #144 패턴).
+ */
+private suspend fun loadActivity(stepRepo: StepRepository, exerciseRepo: ExerciseRepository): ActivityLoad = try {
+    ActivityLoad.Success(
+        ActivityData(
+            steps = stepRepo.readDailySteps(WINDOW_DAYS),
+            manualSteps = stepRepo.readManualStepCount(WINDOW_DAYS),
+            sessions = exerciseRepo.readRecentSessions(WINDOW_DAYS),
+        ),
     )
 } catch (e: CancellationException) {
     throw e // 코루틴 취소는 전파
 } catch (e: IOException) {
     Log.w(TAG, "activity load IO failure", e)
-    null
+    ActivityLoad.Failure
 } catch (e: RemoteException) {
     Log.w(TAG, "activity load remote failure", e)
-    null
+    ActivityLoad.Failure
 } catch (e: SecurityException) {
     Log.w(TAG, "activity load permission failure", e)
-    null
+    ActivityLoad.PermissionDenied
 } catch (e: IllegalArgumentException) {
     // HC ERROR_INVALID_ARGUMENT 또는 서드파티 이상 레코드의 변환 require 실패 (#130 재감사)
     Log.w(TAG, "activity load invalid-argument failure", e)
-    null
+    ActivityLoad.Failure
 } catch (e: IllegalStateException) {
     Log.w(TAG, "activity load state failure", e)
-    null
+    ActivityLoad.Failure
+}
+
+@Composable
+private fun SessionsSection(sessions: List<ExerciseSummary>) {
+    if (sessions.isEmpty()) {
+        Text(stringResource(R.string.sessions_empty), style = MaterialTheme.typography.bodyMedium)
+    } else {
+        val dtPattern = stringResource(R.string.session_datetime_format)
+        val dtFormatter = remember(dtPattern) { DateTimeFormatter.ofPattern(dtPattern, Locale.KOREAN) }
+        sessions.forEach { session -> SessionRow(session, dtFormatter) }
+    }
 }
 
 @Composable
