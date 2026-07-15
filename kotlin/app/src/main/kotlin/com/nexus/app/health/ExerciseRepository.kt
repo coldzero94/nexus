@@ -36,14 +36,22 @@ class ExerciseRepository(private val client: HealthConnectClient) {
         require(days >= 1) { "days must be >= 1" }
         val end = Instant.now()
         val start = end.minus(Duration.ofDays(days.toLong()))
-        val response =
-            client.readRecords(
-                ReadRecordsRequest(
-                    recordType = ExerciseSessionRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(start, end),
-                ),
-            )
-        val sessions = response.records.sortedByDescending { it.startTime }
+        // 세션 읽기도 페이지네이션 — 페이지(기본 1000건) 초과분이 로그 없이 잘리는 것을 방지(#140 감사)
+        val records = mutableListOf<ExerciseSessionRecord>()
+        var pageToken: String? = null
+        do {
+            val page =
+                client.readRecords(
+                    ReadRecordsRequest(
+                        recordType = ExerciseSessionRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(start, end),
+                        pageToken = pageToken,
+                    ),
+                )
+            records += page.records
+            pageToken = page.pageToken
+        } while (pageToken != null)
+        val sessions = records.sortedByDescending { it.startTime }
         val heartRates = avgHeartRateBySession(sessions)
         return sessions.map { session ->
             val hr = heartRates[session.metadata.id]
@@ -71,8 +79,8 @@ class ExerciseRepository(private val client: HealthConnectClient) {
      *
      * 샘플 없는 세션 = 맵에 없음(null → Tier B 후보). 조회 "실패"는 삼키지 않고 전파한다(#130) —
      * 실패를 null로 합치면 일시 오류가 Tier 강등으로 굳는다. 의도된 blast radius는 그대로:
-     * 읽기 실패 = 배치 전체 실패(부분 성공으로 잘못된 티어를 만들지 않음). 유일한 호출 경로의
-     * 화면 catch가 에러 표시로 처리한다(코루틴 취소는 자연 전파).
+     * 읽기 실패 = 배치 전체 실패(부분 성공으로 잘못된 티어를 만들지 않음). 모든 호출 경로
+     * (활동·성장 화면)가 #130 catch 계약으로 에러 표시 처리한다(코루틴 취소는 자연 전파).
      *
      * 평균은 샘플 bpm의 산술 평균을 [roundToLong] — HC BPM_AVG와 반올림 단위가 다를 수 있으나
      * 용도가 Tier A 판정(심박 유무)과 표시라 ±1 오차는 무영향.
