@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +18,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.core.ConditionEngine
+import com.nexus.core.EnergyEngine
+import com.nexus.core.ExpeditionState
 import kotlin.math.roundToInt
 
 /** 컨디션 게이지 (#32) — 소프트 손실 게이지(20~100 사이에서 움직임, 소멸 없음). */
@@ -70,11 +73,14 @@ private fun SummaryRow(label: String, value: String) {
     }
 }
 
-/** 원정 자리 (#32·#67) — 에너지 잔액 표시, 원정 실데이터는 #34에서. */
+/**
+ * 원정 카드 (#34·#67) — 출발(에너지 소모)/진행(남은 시간)/개봉. 동기화 지연 흡수 연출의 무대:
+ * "모험에서 돌아오는 중" 프레임(MVP §1 — 실시간 약속 금지). 보상·개봉 연출은 E5-7.
+ */
 @Composable
-internal fun ExpeditionPlaceholderCard(energy: Int) {
+internal fun ExpeditionCard(expedition: ExpeditionState, energy: Int, onDepart: () -> Unit, onOpen: () -> Unit) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(stringResource(R.string.home_expedition_title), style = MaterialTheme.typography.titleMedium)
                 Text(
@@ -82,7 +88,48 @@ internal fun ExpeditionPlaceholderCard(energy: Int) {
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
-            Text(stringResource(R.string.home_expedition_placeholder), style = MaterialTheme.typography.bodySmall)
+            when (expedition) {
+                ExpeditionState.Idle -> {
+                    Text(
+                        stringResource(R.string.expedition_idle_body),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Button(
+                        onClick = onDepart,
+                        enabled = energy >= EnergyEngine.EXPEDITION_COST,
+                    ) {
+                        Text(stringResource(R.string.expedition_depart, EnergyEngine.EXPEDITION_COST))
+                    }
+                }
+
+                is ExpeditionState.InProgress -> Text(
+                    stringResource(R.string.expedition_in_progress, remainingLabel(expedition.remainingMillis)),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+
+                ExpeditionState.ReadyToOpen -> {
+                    Text(
+                        stringResource(R.string.expedition_ready_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Button(onClick = onOpen) {
+                        Text(stringResource(R.string.expedition_open))
+                    }
+                }
+            }
         }
     }
 }
+
+@Composable
+private fun remainingLabel(remainingMillis: Long): String {
+    val totalMinutes = remainingMillis / MILLIS_PER_MINUTE
+    return stringResource(
+        R.string.expedition_remaining_format,
+        totalMinutes / MINUTES_PER_HOUR,
+        totalMinutes % MINUTES_PER_HOUR,
+    )
+}
+
+private const val MILLIS_PER_MINUTE = 60_000L
+private const val MINUTES_PER_HOUR = 60L

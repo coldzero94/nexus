@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,6 +29,7 @@ import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.character.CharacterComposer
 import com.nexus.app.data.EnergyStore
+import com.nexus.app.data.ExpeditionStore
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
@@ -38,6 +40,8 @@ import com.nexus.app.ui.ConnectNotice
 import com.nexus.core.ConditionEngine
 import com.nexus.core.DialogueSelector
 import com.nexus.core.EnergyEngine
+import com.nexus.core.ExpeditionEngine
+import com.nexus.core.ExpeditionState
 import com.nexus.core.SessionInput
 import com.nexus.core.XpEngine
 import com.nexus.core.XpExplainer
@@ -62,6 +66,9 @@ internal data class HomeUiState(
     val todaySteps: Long,
     /** 에너지 잔액 (#67) — 원장 파생 획득 − 소모. 원정(#34)의 재화. */
     val energy: Int,
+    /** 상한 적용 누적 XP — 에너지 소모 판정 입력(#34 trySpend). */
+    val cappedTotalXp: Int,
+    val expedition: ExpeditionState,
 )
 
 internal sealed interface HomeLoad {
@@ -83,11 +90,13 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
     val restStore = remember { RestModeStore(context) }
     val ledger = remember { RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao()) }
     val energyStore = remember { EnergyStore(context) }
-    LaunchedEffect(exerciseRepo, stepRepo) {
+    val expeditionStore = remember { ExpeditionStore(context) }
+    var reloadKey by remember { mutableIntStateOf(0) }
+    LaunchedEffect(exerciseRepo, stepRepo, reloadKey) {
         load = if (exerciseRepo == null || stepRepo == null) {
             HomeLoad.PermissionDenied
         } else {
-            loadHome(exerciseRepo, stepRepo, restStore, ledger, energyStore)
+            loadHome(exerciseRepo, stepRepo, restStore, ledger, energyStore, expeditionStore)
         }
     }
 
@@ -107,20 +116,33 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
             HomeLoad.Failure ->
                 Text(stringResource(R.string.home_error), style = MaterialTheme.typography.bodyMedium)
 
-            is HomeLoad.Success -> HomeContent(current.state)
+            is HomeLoad.Success -> HomeContent(
+                state = current.state,
+                onDepart = {
+                    // 출발 = 에너지 확정 소모(#67) + 시작 시각 기록(#34)
+                    if (energyStore.trySpend(current.state.cappedTotalXp, EnergyEngine.EXPEDITION_COST)) {
+                        expeditionStore.start(System.currentTimeMillis())
+                        reloadKey++
+                    }
+                },
+                onOpen = {
+                    expeditionStore.open() // 보상 지급·연출은 E5-7(#68)에서 이 지점에 연결
+                    reloadKey++
+                },
+            )
         }
     }
 }
 
 @Composable
-private fun HomeContent(state: HomeUiState) {
+private fun HomeContent(state: HomeUiState, onDepart: () -> Unit, onOpen: () -> Unit) {
     // 오늘 움직였으면 걷는 모습 — 데이터가 캐릭터에 그대로 새겨진다는 감각(임시 규칙, 기분 표는 E4-4)
     val spriteState = if (state.todayActiveMinutes > 0) "walk" else "idle"
     CharacterComposer.CharacterSprite(state = spriteState, modifier = Modifier.size(140.dp))
     DialogueBubble(spriteState)
     ConditionGauge(state.condition)
     TodaySummaryCard(state)
-    ExpeditionPlaceholderCard(state.energy)
+    ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)
     Text(
         text = nextGoalText(state),
         style = MaterialTheme.typography.bodyMedium,
@@ -173,6 +195,7 @@ private suspend fun loadHome(
     restStore: RestModeStore,
     ledger: RewardLedgerRepository,
     energyStore: EnergyStore,
+    expeditionStore: ExpeditionStore,
 ): HomeLoad = try {
     val zone = ZoneId.systemDefault()
     val today = LocalDate.now(zone)
@@ -188,6 +211,7 @@ private suspend fun loadHome(
         )
     }
     val condition = deriveCondition(sessions, today, restStore)
+    val cappedTotal = ledger.cappedTotalXp()
     val todayEpoch = today.toEpochDay()
     HomeLoad.Success(
         HomeUiState(
@@ -198,7 +222,9 @@ private suspend fun loadHome(
                 .sumOf { it.minutes },
             todaySteps = stepRepo.readDailySteps(days = 1)
                 .firstOrNull { it.date == today }?.steps ?: 0L,
-            energy = EnergyEngine.balance(ledger.cappedTotalXp(), energyStore.totalSpent),
+            energy = EnergyEngine.balance(cappedTotal, energyStore.totalSpent),
+            cappedTotalXp = cappedTotal,
+            expedition = ExpeditionEngine.stateAt(expeditionStore.startedAtMillis, System.currentTimeMillis()),
         ),
     )
 } catch (e: CancellationException) {
