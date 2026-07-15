@@ -17,8 +17,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -30,11 +32,15 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.growth.GrowthScreen
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
+import com.nexus.app.home.AppOpenTracker
 import com.nexus.app.home.HomeScreen
+import com.nexus.app.home.WelcomeBackScene
 import com.nexus.app.onboarding.OnboardingScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.core.ActivityType
+import com.nexus.core.ReturnWelcomePolicy
 import com.nexus.core.XpEngine
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,6 +62,25 @@ private fun NexusApp(manager: HealthConnectManager) {
     var finished by rememberSaveable { mutableStateOf(false) }
     var connected by rememberSaveable { mutableStateOf(false) }
 
+    // 복귀 환영 (#30): 판정·마커 갱신은 커밋된 컴포지션에서 1회(LaunchedEffect) —
+    // 이니셜라이저 부수효과는 프레임 폐기 시 마커만 소모하고 판정을 잃을 수 있다.
+    // rememberSaveable(-1 = 미판정)이라 회전·프로세스 복원에도 같은 판정이 유지된다.
+    val tracker = remember { AppOpenTracker(context) }
+    var welcomeGapDays by rememberSaveable { mutableStateOf(UNDECIDED_GAP) }
+    LaunchedEffect(Unit) {
+        if (welcomeGapDays == UNDECIDED_GAP) {
+            val today = LocalDate.now().toEpochDay()
+            val last = tracker.lastOpenEpochDay
+            tracker.recordOpen(today)
+            welcomeGapDays =
+                if (ReturnWelcomePolicy.shouldWelcome(last, today)) {
+                    ReturnWelcomePolicy.gapDays(last, today)
+                } else {
+                    0L
+                }
+        }
+    }
+
     if (!finished) {
         OnboardingScreen(manager) { isConnected ->
             connected = isConnected
@@ -63,6 +88,9 @@ private fun NexusApp(manager: HealthConnectManager) {
             // 연결 성공 시 15분 주기 백그라운드 동기화 등록 (#8)
             if (isConnected) HealthSyncWorker.enqueuePeriodic(context)
         }
+    } else if (connected && welcomeGapDays > 0L) {
+        // 3일+ 공백 복귀 → 환영 씬 먼저 (#30, 1급 기능)
+        WelcomeBackScene(gapDays = welcomeGapDays, onContinue = { welcomeGapDays = 0L })
     } else if (connected) {
         // 연결됨 → 홈/활동/성장 3탭 (#23·#32).
         ConnectedTabs(manager, onReconnect = { finished = false })
@@ -73,6 +101,9 @@ private fun NexusApp(manager: HealthConnectManager) {
         )
     }
 }
+
+/** 복귀 판정 전 표식 — 온보딩이 먼저 렌더되므로 사용자에게 보이는 지연은 없다 (#30). */
+private const val UNDECIDED_GAP = -1L
 
 private enum class MainTab(val labelRes: Int) {
     HOME(R.string.tab_home),
