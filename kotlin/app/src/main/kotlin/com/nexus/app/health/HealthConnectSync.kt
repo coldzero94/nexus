@@ -1,5 +1,6 @@
 package com.nexus.app.health
 
+import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.changes.UpsertionChange
@@ -25,6 +26,10 @@ data class SyncOutcome(
  * 폴링 남용 방지: 이 함수는 WorkManager 15분 주기에서만 호출.
  */
 class HealthConnectSync(private val client: HealthConnectClient, private val store: TokenStore) {
+    private companion object {
+        const val TAG = "HealthConnectSync"
+    }
+
     private val recordTypes =
         setOf(
             StepsRecord::class,
@@ -41,6 +46,15 @@ class HealthConnectSync(private val client: HealthConnectClient, private val sto
             val response = client.getChanges(token)
             if (response.changesTokenExpired) {
                 // 30일 만료 폴백: 델타 유실 → 새 토큰 발급 후 종료. 소급 재계산은 E3 파이프라인.
+                // 유실을 무흔적으로 두지 않는다(#141): 리셋 지점에서 직접 로그+마커 영속화 —
+                // 호출자가 outcome.tokenReset을 안 읽어도 E3이 "언제 유실됐는지"를 알 수 있다.
+                val resetAt = System.currentTimeMillis()
+                Log.w(
+                    TAG,
+                    "changes token expired — delta lost since last sync " +
+                        "(lastSync=${store.lastSyncEpochMillis}, resetAt=$resetAt); issuing fresh token",
+                )
+                store.recordTokenReset(resetAt)
                 val fresh = client.getChangesToken(ChangesTokenRequest(recordTypes))
                 store.changesToken = fresh
                 return SyncOutcome(
