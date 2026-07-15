@@ -8,8 +8,16 @@ import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.ChangesTokenRequest
 
-/** 한 번의 동기화 결과. [tokenReset]=만료로 토큰 재발급됨(변경분 유실 → E3 소급 재계산 대상). */
-data class SyncOutcome(val tokenReset: Boolean, val upserts: Int, val deletions: Int)
+/**
+ * 한 번의 동기화 결과. [tokenReset]=만료로 토큰 재발급됨(변경분 유실 → E3 소급 재계산 대상).
+ * [deletedRecordIds]=삭제 감지된 레코드 id — 호출자가 원장 보상 취소(RewardLedger.cancel)로 라우팅.
+ */
+data class SyncOutcome(
+    val tokenReset: Boolean,
+    val upserts: Int,
+    val deletions: Int,
+    val deletedRecordIds: List<String> = emptyList(),
+)
 
 /**
  * Changes API 증분 동기화 (#8). 토큰을 저장해두고 다음 주기에 델타만 읽는다.
@@ -27,7 +35,7 @@ class HealthConnectSync(private val client: HealthConnectClient, private val sto
     suspend fun sync(): SyncOutcome {
         var token = store.changesToken ?: client.getChangesToken(ChangesTokenRequest(recordTypes))
         var upserts = 0
-        var deletions = 0
+        val deletedIds = mutableListOf<String>()
 
         while (true) {
             val response = client.getChanges(token)
@@ -35,18 +43,19 @@ class HealthConnectSync(private val client: HealthConnectClient, private val sto
                 // 30일 만료 폴백: 델타 유실 → 새 토큰 발급 후 종료. 소급 재계산은 E3 파이프라인.
                 val fresh = client.getChangesToken(ChangesTokenRequest(recordTypes))
                 store.changesToken = fresh
-                return SyncOutcome(tokenReset = true, upserts = upserts, deletions = deletions)
+                return SyncOutcome(
+                    tokenReset = true,
+                    upserts = upserts,
+                    deletions = deletedIds.size,
+                    deletedRecordIds = deletedIds.toList(),
+                )
             }
             for (change in response.changes) {
                 when (change) {
-                    is UpsertionChange -> {
-                        upserts++
-                    }
+                    is UpsertionChange -> upserts++
 
-                    is DeletionChange -> {
-                        deletions++
-                        onDeletion(change.recordId)
-                    }
+                    // 삭제 → 보상 취소 대상 id를 수집(드롭 금지). 원장 cancel 라우팅은 호출자.
+                    is DeletionChange -> deletedIds.add(change.recordId)
                 }
             }
             token = response.nextChangesToken
@@ -54,11 +63,11 @@ class HealthConnectSync(private val client: HealthConnectClient, private val sto
         }
 
         store.changesToken = token
-        return SyncOutcome(tokenReset = false, upserts = upserts, deletions = deletions)
-    }
-
-    /** DeletionChange → 보상 이벤트 트리거 연결점. 실제 RewardEvent 원장 append는 E3. */
-    private fun onDeletion(recordId: String) {
-        // TODO(E3): 삭제 감지 시 취소 보상 이벤트를 원장에 append (수정 아닌 append — BACKEND.md §1)
+        return SyncOutcome(
+            tokenReset = false,
+            upserts = upserts,
+            deletions = deletedIds.size,
+            deletedRecordIds = deletedIds.toList(),
+        )
     }
 }
