@@ -18,7 +18,6 @@ class HealthSyncWorker(
     appContext: Context,
     params: WorkerParameters,
 ) : CoroutineWorker(appContext, params) {
-
     override suspend fun doWork(): Result {
         if (HealthConnectClient.getSdkStatus(applicationContext) != HealthConnectClient.SDK_AVAILABLE) {
             return Result.success() // HC 미가용 → 재시도 무의미
@@ -40,10 +39,12 @@ class HealthSyncWorker(
 
         /** 15분 주기 워커 등록(중복 무시). 온보딩 연결 성공 후 호출. */
         fun enqueuePeriodic(context: Context) {
-            val request = PeriodicWorkRequestBuilder<HealthSyncWorker>(15, TimeUnit.MINUTES)
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
-                .build()
-            WorkManager.getInstance(context)
+            val request =
+                PeriodicWorkRequestBuilder<HealthSyncWorker>(15, TimeUnit.MINUTES)
+                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+                    .build()
+            WorkManager
+                .getInstance(context)
                 .enqueueUniquePeriodicWork(UNIQUE_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
         }
     }

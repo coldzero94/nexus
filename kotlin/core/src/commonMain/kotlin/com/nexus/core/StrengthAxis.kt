@@ -6,15 +6,15 @@ package com.nexus.core
  * 인정 경로(Tier A/B/C)는 신뢰 필터(#9)가 담당 — 여기선 근력 XP 산식만.
  */
 object StrengthAxis {
-
     /** 주당 근력 세션 빈도 보너스(꾸준함 보상). n=이번 주 근력 세션 수(이번 세션 포함). */
-    fun weeklyFrequencyBonus(sessionsThisWeek: Int): Double = when {
-        sessionsThisWeek <= 0 -> 0.0
-        sessionsThisWeek == 1 -> 1.0
-        sessionsThisWeek == 2 -> 1.1
-        sessionsThisWeek == 3 -> 1.2
-        else -> 1.3 // 4회+
-    }
+    fun weeklyFrequencyBonus(sessionsThisWeek: Int): Double =
+        when {
+            sessionsThisWeek <= 0 -> 0.0
+            sessionsThisWeek == 1 -> 1.0
+            sessionsThisWeek == 2 -> 1.1
+            sessionsThisWeek == 3 -> 1.2
+            else -> 1.3 // 4회+
+        }
 
     /**
      * 힘 XP = 근력 기본점수(시간) × 주당 빈도 보너스 × 심박존 보정.
@@ -22,7 +22,11 @@ object StrengthAxis {
      * @param sessionsThisWeek 이번 주 근력 세션 수(이번 세션 포함)
      * @param hrCorrection 심박존 보정(#15, 없으면 1.0)
      */
-    fun strengthXp(minutes: Int, sessionsThisWeek: Int, hrCorrection: Double = 1.0): Int {
+    fun strengthXp(
+        minutes: Int,
+        sessionsThisWeek: Int,
+        hrCorrection: Double = 1.0,
+    ): Int {
         require(minutes >= 0) { "minutes must be >= 0" }
         require(hrCorrection >= 0) { "hrCorrection must be >= 0" }
         val base = XpEngine.baseScore(ActivityType.STRENGTH, minutes).toDouble()

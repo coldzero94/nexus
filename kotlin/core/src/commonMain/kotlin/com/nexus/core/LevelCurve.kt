@@ -4,7 +4,10 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 
 /** 레벨업 전이 이벤트 (#18). from < to. */
-data class LevelUp(val from: Int, val to: Int)
+data class LevelUp(
+    val from: Int,
+    val to: Int,
+)
 
 /**
  * 레벨 곡선 (#18, MVP §5): **누적 XP 기준** `레벨 N 도달 = 100 × N^1.5` (#2 확정).
@@ -37,7 +40,10 @@ object LevelCurve {
     }
 
     /** 누적 XP 변화로 레벨업 감지. 레벨 증가 없으면 null. */
-    fun levelUp(prevCumulativeXp: Int, newCumulativeXp: Int): LevelUp? {
+    fun levelUp(
+        prevCumulativeXp: Int,
+        newCumulativeXp: Int,
+    ): LevelUp? {
         val from = levelForXp(prevCumulativeXp)
         val to = levelForXp(newCumulativeXp)
         return if (to > from) LevelUp(from, to) else null

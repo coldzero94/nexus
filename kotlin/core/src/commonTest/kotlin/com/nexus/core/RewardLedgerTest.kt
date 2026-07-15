@@ -6,13 +6,19 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class RewardLedgerTest {
-
     private fun ledger() = RewardLedger()
 
     @Test
     fun grant_appendsAndAccumulates() {
         val l = ledger()
-        val e = l.grant("hc-1", xp = 50, dataOrigin = "com.sec.android.app.shealth", recordingMethod = RecordingMethod.AUTO_RECORDED, epochMillis = 1000)
+        val e =
+            l.grant(
+                "hc-1",
+                xp = 50,
+                dataOrigin = "com.sec.android.app.shealth",
+                recordingMethod = RecordingMethod.AUTO_RECORDED,
+                epochMillis = 1000,
+            )
         assertNotNull(e)
         assertEquals(0L, e.sequence)
         assertEquals(RewardEventType.GRANT, e.type)

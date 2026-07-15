@@ -23,13 +23,14 @@ data class ActivityRecord(
             recordingMethod: RecordingMethod,
             hasHeartRate: Boolean,
             allowlist: DataOriginAllowlist = DataOriginAllowlist.DEFAULT,
-        ): ActivityRecord = ActivityRecord(
-            type = type,
-            minutes = minutes,
-            dataOrigin = dataOrigin,
-            recordingMethod = recordingMethod,
-            hasHeartRate = hasHeartRate,
-            trustTier = TrustPolicy.classify(recordingMethod, dataOrigin, hasHeartRate, allowlist),
-        )
+        ): ActivityRecord =
+            ActivityRecord(
+                type = type,
+                minutes = minutes,
+                dataOrigin = dataOrigin,
+                recordingMethod = recordingMethod,
+                hasHeartRate = hasHeartRate,
+                trustTier = TrustPolicy.classify(recordingMethod, dataOrigin, hasHeartRate, allowlist),
+            )
     }
 }

@@ -1,0 +1,14 @@
+# NEXUS detekt 설정 — 기본 룰셋 위에 최소 조정 (STACK.md §9)
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ["Composable"]
+
+style:
+  MagicNumber:
+    excludes: ["**/commonTest/**", "**/test/**"]
+    ignorePropertyDeclaration: true
+  MaxLineLength:
+    maxLineLength: 120
+complexity:
+  LongParameterList:
+    functionThreshold: 8

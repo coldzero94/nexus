@@ -31,18 +31,20 @@ data class ExerciseSummary(
 )
 
 /** 운동 세션 읽기 (#8) — ExerciseSession 3축 매핑 + 세션 범위 심박 연계. */
-class ExerciseRepository(private val client: HealthConnectClient) {
-
+class ExerciseRepository(
+    private val client: HealthConnectClient,
+) {
     suspend fun readRecentSessions(days: Int = 7): List<ExerciseSummary> {
         require(days >= 1) { "days must be >= 1" }
         val end = Instant.now()
         val start = end.minus(Duration.ofDays(days.toLong()))
-        val response = client.readRecords(
-            ReadRecordsRequest(
-                recordType = ExerciseSessionRecord::class,
-                timeRangeFilter = TimeRangeFilter.between(start, end),
-            ),
-        )
+        val response =
+            client.readRecords(
+                ReadRecordsRequest(
+                    recordType = ExerciseSessionRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(start, end),
+                ),
+            )
         return response.records
             .sortedByDescending { it.startTime }
             .map { session ->
@@ -65,7 +67,10 @@ class ExerciseRepository(private val client: HealthConnectClient) {
     }
 
     /** 세션 범위 심박 평균. 실패/없음 시 null (심박 없는 세션 = Tier B 후보). */
-    private suspend fun avgHeartRate(start: Instant, end: Instant): Long? =
+    private suspend fun avgHeartRate(
+        start: Instant,
+        end: Instant,
+    ): Long? =
         runCatching {
             client.aggregate(
                 AggregateRequest(
@@ -75,12 +80,16 @@ class ExerciseRepository(private val client: HealthConnectClient) {
             )[HeartRateRecord.BPM_AVG]
         }.getOrNull()
 
-    private fun mapType(raw: Int): ActivityType? = when (raw) {
-        ExerciseSessionRecord.EXERCISE_TYPE_WALKING -> ActivityType.WALKING
-        ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
-        ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL,
-        -> ActivityType.RUNNING
-        ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING -> ActivityType.STRENGTH
-        else -> null
-    }
+    private fun mapType(raw: Int): ActivityType? =
+        when (raw) {
+            ExerciseSessionRecord.EXERCISE_TYPE_WALKING -> ActivityType.WALKING
+
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING,
+            ExerciseSessionRecord.EXERCISE_TYPE_RUNNING_TREADMILL,
+            -> ActivityType.RUNNING
+
+            ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING -> ActivityType.STRENGTH
+
+            else -> null
+        }
 }

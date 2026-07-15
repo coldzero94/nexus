@@ -10,6 +10,11 @@ compileSdk = "37"
 minSdk = "34"
 targetSdk = "36"
 
+spotless = "8.8.0"
+detekt = "1.23.8"
+ktlint = "1.8.0"
+composeRules = "0.6.2"
+
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
@@ -22,8 +27,12 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 
+detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

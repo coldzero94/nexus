@@ -5,6 +5,34 @@ plugins {
     alias(libs.plugins.android.kmp.library) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.compose) apply false
+    alias(libs.plugins.spotless)
+    alias(libs.plugins.detekt)
+}
+
+// ── 코드 품질 (E1-7): 로컬 spotlessApply 자동 수정 / CI spotlessCheck·detekt 차단 ──
+spotless {
+    kotlin {
+        target("*/src/**/*.kt", "build-logic/src/**/*.kt")
+        targetExclude("**/build/**")
+        ktlint(libs.versions.ktlint.get())
+    }
+    kotlinGradle {
+        target("*.gradle.kts", "*/*.gradle.kts", "build-logic/**/*.gradle.kts")
+        targetExclude("**/build/**")
+        ktlint(libs.versions.ktlint.get())
+    }
+}
+
+detekt {
+    source.setFrom("core/src", "app/src", "build-logic/src")
+    config.setFrom("detekt.yml")
+    baseline = file("detekt-baseline.xml")
+    buildUponDefaultConfig = true
+    parallel = true
+}
+
+dependencies {
+    detektPlugins(libs.detekt.compose.rules)
 }
 
 tasks.wrapper {

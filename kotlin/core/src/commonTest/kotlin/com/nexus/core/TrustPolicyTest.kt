@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TrustPolicyTest {
-
     private val watch = "com.samsung.android.wear.shealth"
     private val phone = "com.sec.android.app.shealth"
     private val unknown = "com.random.thirdparty"
@@ -19,21 +18,22 @@ class TrustPolicyTest {
         val expected: TrustTier,
     )
 
-    private val cases = listOf(
-        // ① 수기 입력은 소스 무관 무조건 C
-        Case(RecordingMethod.MANUAL_ENTRY, watch, true, TrustTier.C),
-        Case(RecordingMethod.MANUAL_ENTRY, phone, false, TrustTier.C),
-        // ② 워치 소스 + 심박 → A
-        Case(RecordingMethod.ACTIVELY_RECORDED, watch, true, TrustTier.A),
-        // 워치 소스지만 심박 없음 → B
-        Case(RecordingMethod.ACTIVELY_RECORDED, watch, false, TrustTier.B),
-        // 폰 신뢰 앱 → B
-        Case(RecordingMethod.AUTO_RECORDED, phone, false, TrustTier.B),
-        Case(RecordingMethod.ACTIVELY_RECORDED, phone, true, TrustTier.B),
-        // ③ 미상 소스 → C
-        Case(RecordingMethod.AUTO_RECORDED, unknown, true, TrustTier.C),
-        Case(RecordingMethod.UNKNOWN, unknown, false, TrustTier.C),
-    )
+    private val cases =
+        listOf(
+            // ① 수기 입력은 소스 무관 무조건 C
+            Case(RecordingMethod.MANUAL_ENTRY, watch, true, TrustTier.C),
+            Case(RecordingMethod.MANUAL_ENTRY, phone, false, TrustTier.C),
+            // ② 워치 소스 + 심박 → A
+            Case(RecordingMethod.ACTIVELY_RECORDED, watch, true, TrustTier.A),
+            // 워치 소스지만 심박 없음 → B
+            Case(RecordingMethod.ACTIVELY_RECORDED, watch, false, TrustTier.B),
+            // 폰 신뢰 앱 → B
+            Case(RecordingMethod.AUTO_RECORDED, phone, false, TrustTier.B),
+            Case(RecordingMethod.ACTIVELY_RECORDED, phone, true, TrustTier.B),
+            // ③ 미상 소스 → C
+            Case(RecordingMethod.AUTO_RECORDED, unknown, true, TrustTier.C),
+            Case(RecordingMethod.UNKNOWN, unknown, false, TrustTier.C),
+        )
 
     @Test
     fun classify_matchesCaseTable() {

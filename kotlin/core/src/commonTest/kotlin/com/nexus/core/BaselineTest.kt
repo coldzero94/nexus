@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class BaselineTest {
-
     private val delta = 1e-9
 
     @Test

@@ -13,3 +13,7 @@ indent_size = 2
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.{kt,kts}]
+# Compose 관례: @Composable 함수는 PascalCase — ktlint function-naming 예외
+ktlint_function_naming_ignore_when_annotated_with = Composable

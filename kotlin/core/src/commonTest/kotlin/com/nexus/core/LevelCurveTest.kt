@@ -6,16 +6,16 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class LevelCurveTest {
-
     // 레벨 → 도달 필요 누적 XP (100 × N^1.5)
-    private val xpForLevelCases = listOf(
-        0 to 0,
-        1 to 100,
-        2 to 283, // 100×2^1.5 = 282.84
-        4 to 800, // 100×8
-        5 to 1118, // 100×5^1.5 = 1118.03
-        9 to 2700, // 100×27
-    )
+    private val xpForLevelCases =
+        listOf(
+            0 to 0,
+            1 to 100,
+            2 to 283, // 100×2^1.5 = 282.84
+            4 to 800, // 100×8
+            5 to 1118, // 100×5^1.5 = 1118.03
+            9 to 2700, // 100×27
+        )
 
     @Test
     fun xpForLevel_matchesCaseTable() {
@@ -25,14 +25,15 @@ class LevelCurveTest {
     }
 
     // 누적 XP → 도달 레벨
-    private val levelForXpCases = listOf(
-        0 to 0,
-        99 to 0,
-        100 to 1,
-        300 to 2,
-        800 to 4,
-        2700 to 9,
-    )
+    private val levelForXpCases =
+        listOf(
+            0 to 0,
+            99 to 0,
+            100 to 1,
+            300 to 2,
+            800 to 4,
+            2700 to 9,
+        )
 
     @Test
     fun levelForXp_matchesCaseTable() {

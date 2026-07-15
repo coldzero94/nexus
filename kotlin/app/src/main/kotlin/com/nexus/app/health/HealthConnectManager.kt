@@ -13,21 +13,23 @@ import androidx.health.connect.client.records.StepsRecord
  * 데이터 읽기(집계·세션)는 #7·#8에서 이 위에 쌓는다.
  */
 object HealthPermissions {
-    val ALL: Set<String> = setOf(
-        HealthPermission.getReadPermission(StepsRecord::class),
-        HealthPermission.getReadPermission(ExerciseSessionRecord::class),
-        HealthPermission.getReadPermission(HeartRateRecord::class),
-        HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND,
-        HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY,
-    )
+    val ALL: Set<String> =
+        setOf(
+            HealthPermission.getReadPermission(StepsRecord::class),
+            HealthPermission.getReadPermission(ExerciseSessionRecord::class),
+            HealthPermission.getReadPermission(HeartRateRecord::class),
+            HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND,
+            HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY,
+        )
 }
 
 /**
  * Health Connect 접근 래퍼. #6은 '가용성 확인 + 권한 요청'까지만 담당한다.
  * Health Connect는 안드로이드 전용 API라 core(KMP commonMain)가 아니라 app 모듈에 둔다.
  */
-class HealthConnectManager(private val context: Context) {
-
+class HealthConnectManager(
+    private val context: Context,
+) {
     /** SDK_AVAILABLE / SDK_UNAVAILABLE / SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED */
     fun sdkStatus(): Int = HealthConnectClient.getSdkStatus(context)
 
@@ -43,8 +45,7 @@ class HealthConnectManager(private val context: Context) {
     }
 
     /** rememberLauncherForActivityResult에 넘길 권한 요청 컨트랙트. */
-    fun requestPermissionsContract() =
-        PermissionController.createRequestPermissionResultContract()
+    fun requestPermissionsContract() = PermissionController.createRequestPermissionResultContract()
 
     /** 걸음 읽기용 리포지토리 (#7). HC 미가용 시 null → 데모 모드. */
     fun stepRepositoryOrNull(): StepRepository? = clientOrNull()?.let { StepRepository(it) }

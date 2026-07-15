@@ -38,7 +38,7 @@ All Gradle commands run from `kotlin/`. Requires JDK 21 and Android SDK (`kotlin
 - Build APK: `./gradlew :app:assembleDebug` (on this machine use `gradle`, not `./gradlew` — wrapper download is blocked by local TLS interception; CI uses the wrapper fine)
 - Unit tests: `./gradlew :core:jvmTest` (run before every commit that touches `core/`)
 - commonMain purity check: `./gradlew :core:compileKotlinIosArm64` (also runs in CI)
-- Format/static analysis: Spotless(ktlint)+detekt arrive with E1-7 (#107) — until then follow kotlin official style
+- Format: `./gradlew spotlessApply` before every commit (CI runs `spotlessCheck`). Static analysis: `./gradlew detekt` (Compose rules included; legacy findings live in `kotlin/detekt-baseline.xml` — shrink it, never grow it)
 - AGP 9 has built-in Kotlin — never apply `org.jetbrains.kotlin.android`
 
 ## Project management (GitHub)

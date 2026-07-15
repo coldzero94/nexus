@@ -9,7 +9,11 @@ import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.request.ChangesTokenRequest
 
 /** 한 번의 동기화 결과. [tokenReset]=만료로 토큰 재발급됨(변경분 유실 → E3 소급 재계산 대상). */
-data class SyncOutcome(val tokenReset: Boolean, val upserts: Int, val deletions: Int)
+data class SyncOutcome(
+    val tokenReset: Boolean,
+    val upserts: Int,
+    val deletions: Int,
+)
 
 /**
  * Changes API 증분 동기화 (#8). 토큰을 저장해두고 다음 주기에 델타만 읽는다.
@@ -20,11 +24,12 @@ class HealthConnectSync(
     private val client: HealthConnectClient,
     private val store: TokenStore,
 ) {
-    private val recordTypes = setOf(
-        StepsRecord::class,
-        ExerciseSessionRecord::class,
-        HeartRateRecord::class,
-    )
+    private val recordTypes =
+        setOf(
+            StepsRecord::class,
+            ExerciseSessionRecord::class,
+            HeartRateRecord::class,
+        )
 
     suspend fun sync(): SyncOutcome {
         var token = store.changesToken ?: client.getChangesToken(ChangesTokenRequest(recordTypes))
@@ -41,7 +46,10 @@ class HealthConnectSync(
             }
             for (change in response.changes) {
                 when (change) {
-                    is UpsertionChange -> upserts++
+                    is UpsertionChange -> {
+                        upserts++
+                    }
+
                     is DeletionChange -> {
                         deletions++
                         onDeletion(change.recordId)
