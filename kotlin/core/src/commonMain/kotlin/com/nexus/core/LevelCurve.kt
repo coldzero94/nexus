@@ -27,6 +27,12 @@ object LevelCurve {
         return ((cumulativeXp / BASE).pow(1.0 / EXPONENT) + EPS).toInt()
     }
 
+    /**
+     * 표시용 레벨 — **최소 1 바닥값** (#62 라운드 1). 저활동층이 4주 후 레벨 1 미만으로 떨어지는
+     * 부작용 완화(무처벌·무자비 성장 원칙). 내부 계산은 [levelForXp](0부터), 화면엔 이 값을 쓴다.
+     */
+    fun displayLevel(cumulativeXp: Int): Int = maxOf(1, levelForXp(cumulativeXp))
+
     /** 현재 레벨에서 다음 레벨까지 진행률 0.0~1.0 (성장 탭 진행바). */
     fun progressToNextLevel(cumulativeXp: Int): Double {
         val level = levelForXp(cumulativeXp)
