@@ -64,7 +64,7 @@ private fun NexusApp(manager: HealthConnectManager) {
         }
     } else if (connected) {
         // 연결됨 → 활동/성장 2탭 (#23). 홈(캐릭터) 탭은 E4에서 추가.
-        ConnectedTabs(manager)
+        ConnectedTabs(manager, onReconnect = { finished = false })
     } else {
         DemoLanding(
             available = manager.isAvailable(),
@@ -79,7 +79,7 @@ private enum class MainTab(val labelRes: Int) {
 }
 
 @Composable
-private fun ConnectedTabs(manager: HealthConnectManager) {
+private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit) {
     var tab by rememberSaveable { mutableStateOf(MainTab.ACTIVITY) }
     Scaffold(
         bottomBar = {
@@ -97,7 +97,7 @@ private fun ConnectedTabs(manager: HealthConnectManager) {
     ) { padding ->
         when (tab) {
             MainTab.ACTIVITY -> ActivityScreen(manager, Modifier.padding(padding))
-            MainTab.GROWTH -> GrowthScreen(manager, Modifier.padding(padding))
+            MainTab.GROWTH -> GrowthScreen(manager, Modifier.padding(padding), onReconnect)
         }
     }
 }
