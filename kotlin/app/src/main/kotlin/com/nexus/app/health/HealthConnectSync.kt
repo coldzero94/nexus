@@ -54,9 +54,7 @@ class HealthConnectSync(private val client: HealthConnectClient, private val sto
                     "changes token expired — delta lost since last sync " +
                         "(lastSync=${store.lastSyncEpochMillis}, resetAt=$resetAt); issuing fresh token",
                 )
-                store.lastTokenResetEpochMillis = resetAt
-                // 유실 구간 시작 = 이 시점의 lastSync — Worker가 곧 덮어쓰므로 지금 보존해야 한다
-                store.lostDeltaWindowStartEpochMillis = store.lastSyncEpochMillis
+                store.recordTokenReset(resetAt)
                 val fresh = client.getChangesToken(ChangesTokenRequest(recordTypes))
                 store.changesToken = fresh
                 return SyncOutcome(
