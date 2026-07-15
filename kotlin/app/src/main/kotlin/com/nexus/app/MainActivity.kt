@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.growth.GrowthScreen
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
+import com.nexus.app.home.HomeScreen
 import com.nexus.app.onboarding.OnboardingScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.core.ActivityType
@@ -63,7 +64,7 @@ private fun NexusApp(manager: HealthConnectManager) {
             if (isConnected) HealthSyncWorker.enqueuePeriodic(context)
         }
     } else if (connected) {
-        // 연결됨 → 활동/성장 2탭 (#23). 홈(캐릭터) 탭은 E4에서 추가.
+        // 연결됨 → 홈/활동/성장 3탭 (#23·#32).
         ConnectedTabs(manager, onReconnect = { finished = false })
     } else {
         DemoLanding(
@@ -74,13 +75,14 @@ private fun NexusApp(manager: HealthConnectManager) {
 }
 
 private enum class MainTab(val labelRes: Int) {
+    HOME(R.string.tab_home),
     ACTIVITY(R.string.tab_activity),
     GROWTH(R.string.tab_growth),
 }
 
 @Composable
 private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit) {
-    var tab by rememberSaveable { mutableStateOf(MainTab.ACTIVITY) }
+    var tab by rememberSaveable { mutableStateOf(MainTab.HOME) }
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -96,6 +98,7 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
         },
     ) { padding ->
         when (tab) {
+            MainTab.HOME -> HomeScreen(manager, Modifier.padding(padding), onReconnect)
             MainTab.ACTIVITY -> ActivityScreen(manager, Modifier.padding(padding))
             MainTab.GROWTH -> GrowthScreen(manager, Modifier.padding(padding), onReconnect)
         }

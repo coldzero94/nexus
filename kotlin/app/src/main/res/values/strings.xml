@@ -7,6 +7,22 @@
     <string name="onboarding_welcome_body">당신의 걷기·러닝·근력이 이 아이의 능력치로 새겨져요. 체크리스트 없이, 움직이면 알아서 자랍니다.</string>
     <string name="onboarding_character_hint">(임시 그래픽 — 캐릭터 에셋은 #66에서 교체)</string>
     <string name="character_content_desc">내 캐릭터</string>
+    <string name="home_error">홈 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</string>
+    <string name="home_demo_body">Health Connect 권한이 없어 캐릭터가 자랄 수 없어요. 연결하면 운동이 캐릭터에 새겨져요.</string>
+    <string name="home_condition_title">컨디션</string>
+    <string name="home_condition_value">%1$d</string>
+    <string name="home_today_title">오늘</string>
+    <string name="home_today_xp">XP</string>
+    <string name="home_today_xp_value">%1$,d pt</string>
+    <string name="home_today_exercise">운동</string>
+    <string name="home_today_exercise_value">%1$,d분</string>
+    <string name="home_today_steps">걸음</string>
+    <string name="home_today_steps_value">%1$,d</string>
+    <string name="home_expedition_title">원정</string>
+    <string name="home_expedition_placeholder">원정 준비 중 — 캐릭터가 곧 모험을 떠날 수 있어요.</string>
+    <string name="home_goal_move">오늘 %1$d분만 움직이면 컨디션이 올라요</string>
+    <string name="home_goal_recovering">이 리듬이면 컨디션이 곧 회복돼요</string>
+    <string name="home_goal_done">오늘 몫은 충분해요 — 캐릭터가 든든해해요</string>
     <string name="onboarding_next">다음</string>
     <string name="onboarding_start">시작하기</string>
 
@@ -111,6 +127,7 @@
     <string name="stat_recovery">회복</string>
     <string name="stat_focus">집중</string>
     <string name="stat_affinity">친화</string>
+    <string name="tab_home">홈</string>
     <string name="tab_activity">활동</string>
     <string name="tab_growth">성장</string>
 </resources>

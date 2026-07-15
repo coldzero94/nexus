@@ -53,4 +53,11 @@ object ConditionEngine {
             else -> clamped - IDLE_DECAY_AT_MAX * (clamped - SOFT_FLOOR) / (MAX - SOFT_FLOOR)
         }
     }
+
+    /**
+     * 최근 일자별 기본점수(과거→오늘 순)를 [DEFAULT]에서 폴드해 오늘의 컨디션을 파생 (#32).
+     * 원장(Room) 영속화 전의 표시 전용 계산 — 원장 배선 후 저장값 갱신 방식으로 대체.
+     */
+    fun fromDailyPoints(dayPoints: List<Double>, restMode: Boolean = false): Double =
+        dayPoints.fold(DEFAULT) { acc, points -> nextDay(acc, points, restMode) }
 }
