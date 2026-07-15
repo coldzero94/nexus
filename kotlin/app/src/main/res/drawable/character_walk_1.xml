@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- 임시 그래픽 — 캐릭터 에셋은 #66에서 교체. 규약: character_{state}_{frame} (#25) -->
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M48,8a40,40 0 1,0 0,80a40,40 0 1,0 0,-80z" />
+    <path
+        android:fillColor="#3E2723"
+        android:pathData="M34,42a4,4 0 1,0 0,8a4,4 0 1,0 0,-8z M62,42a4,4 0 1,0 0,8a4,4 0 1,0 0,-8z" />
+    <path
+        android:fillColor="#3E2723"
+        android:pathData="M38,64q10,4 20,0" />
+</vector>
