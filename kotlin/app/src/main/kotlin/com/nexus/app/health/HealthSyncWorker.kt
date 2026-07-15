@@ -10,7 +10,12 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.nexus.app.data.NexusDatabase
+import com.nexus.app.data.RewardLedgerRepository
+import com.nexus.core.TrustPolicy
+import com.nexus.core.XpEngine
 import java.io.IOException
+import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -29,10 +34,7 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
             val outcome = HealthConnectSync(client, store).sync()
             store.lastSyncEpochMillis = System.currentTimeMillis()
             store.lastChangeCount = outcome.upserts + outcome.deletions
-            if (outcome.deletedRecordIds.isNotEmpty()) {
-                // #133: 삭제 감지 → 보상 취소 대상. 실제 RewardLedger.cancel() 배선은 원장 영속화(Room) 후.
-                Log.i(TAG, "deleted records to compensate: ${outcome.deletedRecordIds}")
-            }
+            appendToLedger(client, outcome.deletedRecordIds)
             Result.success()
         } catch (e: CancellationException) {
             throw e // 코루틴 취소는 전파(삼키지 않음)
@@ -54,8 +56,39 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         }
     }
 
+    /**
+     * 원장 append (#162): 최근 세션을 멱등 지급하고(이미 지급된 키는 DB가 무시),
+     * 삭제 감지분은 보상 취소(#133). 지급 XP = 기본점수 × 개인 신뢰 계수(무상한 —
+     * 일 상한은 합산 시점 규칙, LedgerMath KDoc). Tier C·3축 외는 지급 제외.
+     */
+    private suspend fun appendToLedger(client: HealthConnectClient, deletedIds: List<String>) {
+        val ledger = RewardLedgerRepository(NexusDatabase.get(applicationContext).rewardEventDao())
+        val zone = ZoneId.systemDefault()
+        val now = System.currentTimeMillis()
+        ExerciseRepository(client).readRecentSessions(days = GRANT_WINDOW_DAYS).forEach { session ->
+            val type = session.type ?: return@forEach
+            if (!TrustPolicy.isXpEligible(session.trustTier)) return@forEach
+            val xp = (
+                XpEngine.baseScore(type, session.durationMinutes.toInt()) *
+                    session.trustTier.personalXpMultiplier
+                ).toInt()
+            ledger.grant(
+                idempotencyKey = session.id,
+                xp = xp,
+                dataOrigin = session.dataOrigin,
+                recordingMethod = session.recordingMethod,
+                epochMillis = now,
+                epochDay = session.start.atZone(zone).toLocalDate().toEpochDay(),
+            )
+        }
+        deletedIds.forEach { id ->
+            if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
+        }
+    }
+
     companion object {
         private const val TAG = "HealthSyncWorker"
+        private const val GRANT_WINDOW_DAYS = 7
         private const val UNIQUE_NAME = "nexus_health_sync"
 
         /** 15분 주기 워커 등록(중복 무시). 온보딩 연결 성공 후 호출. */
