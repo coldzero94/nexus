@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
@@ -52,31 +53,42 @@ import java.time.ZoneId
 private const val TAG = "GrowthScreen"
 
 /** 성장 변화 연출 대상 (#61) — 성장 탭 진입 시 기준점([GrowthStateStore])과의 차이. */
-internal data class GrowthChange(val levelUpTo: Int?, val affinityChangedTo: com.nexus.core.ClassAffinity?)
+internal data class GrowthChange(val levelUpTo: Int?, val affinityChangedTo: ClassAffinity?)
 
 /** 성장 탭 화면 상태 — 요약과 오늘 XP 분해는 같은 세션 스냅샷에서 계산(불일치 방지). */
 internal data class GrowthUiState(val summary: GrowthSummary, val today: DayXpExplanation)
 
+/**
+ * 성장 로드 결과 (#144): 권한 문제는 "실패"가 아니라 미연결 상태 — 에러 문구 대신
+ * 데모 안내로 라우팅한다. [Failure]만 growth_error를 쓴다(#130 catch 경로).
+ */
+internal sealed interface GrowthLoad {
+    data class Success(val state: GrowthUiState) : GrowthLoad
+
+    data object PermissionDenied : GrowthLoad
+
+    data object Failure : GrowthLoad
+}
+
 @Composable
-fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
+fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
     val context = LocalContext.current
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
     val stateStore = remember { GrowthStateStore(context) }
-    var data by remember { mutableStateOf<GrowthUiState?>(null) }
-    var loading by remember { mutableStateOf(true) }
+    var load by remember { mutableStateOf<GrowthLoad?>(null) }
     var change by remember { mutableStateOf<GrowthChange?>(null) }
     var celebrationVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(exerciseRepo) {
-        val loaded = if (exerciseRepo == null) null else loadGrowth(exerciseRepo)
-        data = loaded
-        if (loaded != null) {
-            change = detectChange(stateStore, loaded.summary)
+        // HC 미가용(repo null)과 권한 회수(SecurityException)는 같은 "미연결" 안내로 (#144)
+        val loaded = if (exerciseRepo == null) GrowthLoad.PermissionDenied else loadGrowth(exerciseRepo)
+        load = loaded
+        if (loaded is GrowthLoad.Success) {
+            change = detectChange(stateStore, loaded.state.summary)
             // 기준점 소비는 "확인"(dismiss) 시점 — 감지 시점에 갱신하면 회전·프로세스 사망으로
             // 카드가 영영 소실된다(#61 리뷰). 변화가 없을 때만 여기서 기준점을 세팅(최초 방문 포함).
-            if (change == null) stateStore.recordSeen(loaded.summary.level, loaded.summary.affinity)
+            if (change == null) stateStore.recordSeen(loaded.state.summary.level, loaded.state.summary.affinity)
         }
-        loading = false
     }
 
     Column(
@@ -87,21 +99,24 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(stringResource(R.string.growth_title), style = MaterialTheme.typography.headlineSmall)
-        when {
-            loading -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+        when (val current = load) {
+            null -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
 
-            data == null -> Text(stringResource(R.string.growth_error), style = MaterialTheme.typography.bodyMedium)
+            GrowthLoad.PermissionDenied -> DemoNotice(onReconnect)
 
-            else -> {
+            GrowthLoad.Failure ->
+                Text(stringResource(R.string.growth_error), style = MaterialTheme.typography.bodyMedium)
+
+            is GrowthLoad.Success -> {
                 change?.let { c ->
                     // dismiss는 visible 토글 — 노드를 즉시 제거하면 exit 연출이 생략된다
                     CelebrationCard(c, visible = celebrationVisible) {
                         celebrationVisible = false
                         // 확인한 순간이 기준점 — 재진입 시 같은 변화를 다시 축하하지 않는다
-                        data?.summary?.let { stateStore.recordSeen(it.level, it.affinity) }
+                        stateStore.recordSeen(current.state.summary.level, current.state.summary.affinity)
                     }
                 }
-                GrowthContent(data!!)
+                GrowthContent(current.state)
             }
         }
     }
@@ -120,8 +135,12 @@ private fun detectChange(store: GrowthStateStore, summary: GrowthSummary): Growt
     return GrowthChange(levelUpTo, affinityChangedTo)
 }
 
-/** ActivityScreen.loadActivity와 같은 catch 계약 (#130 — 실패는 드러내고 취소는 전파). */
-private suspend fun loadGrowth(repo: ExerciseRepository): GrowthUiState? = try {
+/**
+ * ActivityScreen.loadActivity와 같은 catch 계약 (#130 — 실패는 드러내고 취소는 전파).
+ * 단 SecurityException은 실패가 아닌 [GrowthLoad.PermissionDenied]로 — 권한 회수는
+ * 데모 안내+재연결 유도가 맞다(#144).
+ */
+private suspend fun loadGrowth(repo: ExerciseRepository): GrowthLoad = try {
     val zone = ZoneId.systemDefault()
     val sessions = repo.readRecentSessions(days = ClassAffinityCalculator.WINDOW_DAYS).map {
         SessionInput(
@@ -132,27 +151,45 @@ private suspend fun loadGrowth(repo: ExerciseRepository): GrowthUiState? = try {
             epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
         )
     }
-    GrowthUiState(
-        summary = GrowthCalculator.compute(sessions),
-        today = XpExplainer.explainDay(sessions, epochDay = LocalDate.now(zone).toEpochDay()),
+    GrowthLoad.Success(
+        GrowthUiState(
+            summary = GrowthCalculator.compute(sessions),
+            today = XpExplainer.explainDay(sessions, epochDay = LocalDate.now(zone).toEpochDay()),
+        ),
     )
 } catch (e: CancellationException) {
     throw e
 } catch (e: IOException) {
     Log.w(TAG, "growth load IO failure", e)
-    null
+    GrowthLoad.Failure
 } catch (e: RemoteException) {
     Log.w(TAG, "growth load remote failure", e)
-    null
+    GrowthLoad.Failure
 } catch (e: SecurityException) {
     Log.w(TAG, "growth load permission failure", e)
-    null
+    GrowthLoad.PermissionDenied
 } catch (e: IllegalArgumentException) {
     Log.w(TAG, "growth load invalid-argument failure", e)
-    null
+    GrowthLoad.Failure
 } catch (e: IllegalStateException) {
     Log.w(TAG, "growth load state failure", e)
-    null
+    GrowthLoad.Failure
+}
+
+/** 미연결 안내 (#144) — 에러가 아니라 "연결하면 자란다"로 유도. 데모 모드 규칙(CLAUDE.md). */
+@Composable
+private fun DemoNotice(onReconnect: (() -> Unit)?) {
+    Card {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.growth_demo_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.growth_demo_body), style = MaterialTheme.typography.bodyMedium)
+            if (onReconnect != null) {
+                Button(onClick = onReconnect) {
+                    Text(stringResource(R.string.action_retry_permission))
+                }
+            }
+        }
+    }
 }
 
 @Composable

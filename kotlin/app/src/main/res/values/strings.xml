@@ -96,6 +96,8 @@
     <string name="celebrate_level_up">🎉 레벨 %1$d 달성!</string>
     <string name="celebrate_affinity_change">클래스 성향이 %1$s(으)로 바뀌었어요</string>
     <string name="celebrate_dismiss">확인</string>
+    <string name="growth_demo_title">연결하면 캐릭터가 자라기 시작해요</string>
+    <string name="growth_demo_body">Health Connect 권한이 없어 성장을 계산할 수 없어요. 연결하면 최근 28일 운동이 소급 반영돼요.</string>
     <string name="affinity_endurance">지구력형</string>
     <string name="affinity_agility">민첩형</string>
     <string name="affinity_strength">힘형</string>
