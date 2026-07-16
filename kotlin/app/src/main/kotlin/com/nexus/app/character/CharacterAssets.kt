@@ -7,6 +7,8 @@ import com.nexus.core.CharacterAnimationSet
 import com.nexus.core.CharacterAssetConvention
 import com.nexus.core.DialoguePool
 import com.nexus.core.DialogueTable
+import com.nexus.core.MoodTable
+import com.nexus.core.MoodTriggerTable
 
 /**
  * 캐릭터 에셋 로더 (#25, E4-1). 컴포저(E4-2)의 유일한 에셋 진입점.
@@ -26,6 +28,11 @@ class CharacterAssets(private val context: Context) {
         DialogueTable.parse(it.readText())
     }
 
+    /** 기분 트리거 표 로드 (#28) — 같은 fail-fast 계약. 임계값·규칙 수정 = JSON만(코드 무수정). */
+    fun loadMoodTable(): MoodTable = context.assets.open(MOOD_PATH).bufferedReader().use {
+        MoodTriggerTable.parse(it.readText())
+    }
+
     /**
      * 규약 이름 → 드로어블 id. 없으면 null(호출자가 기본 상태 프레임으로 폴백).
      * getIdentifier는 규약 기반 동적 조회가 목적이라 의도적 사용 — 에셋 추가에 코드 수정이
@@ -43,5 +50,6 @@ class CharacterAssets(private val context: Context) {
     private companion object {
         const val META_PATH = "character/animations.json"
         const val DIALOGUE_PATH = "character/dialogue.json"
+        const val MOOD_PATH = "character/mood_triggers.json"
     }
 }

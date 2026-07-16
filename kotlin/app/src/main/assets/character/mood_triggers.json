@@ -1,0 +1,47 @@
+{
+  "version": "v1",
+  "note": "기분 5종 트리거 규칙(#3·#65). MoodEvaluator가 priority 오름차순 평가, 첫 매치 채택. 표만 고치면 코드 무수정 반영(#28). 원본: docs/assets/mood_triggers_v1.json",
+  "moods": ["신남", "평온", "뿌듯", "심심", "휴식중"],
+  "rules": [
+    {
+      "priority": 1,
+      "mood": "뿌듯",
+      "when": "leveledUp || newBadge || weeklyGoalMet || newRecord",
+      "face": "proud_sparkle",
+      "conditionEffect": "neutral",
+      "lines": ["봤어 봤어?! 우리 레벨업했어 ✨", "이 배지 내가 딴 거 맞지?! 😤"]
+    },
+    {
+      "priority": 2,
+      "mood": "신남",
+      "when": "todayActiveMin > 0 && (personalCoef >= 1.3 || highIntensity)",
+      "face": "jump_hyped",
+      "conditionEffect": "recover_small",
+      "lines": ["오늘 좀 미쳤는데?! 🔥", "헉헉— 근데 개운해 😆"]
+    },
+    {
+      "priority": 3,
+      "mood": "평온",
+      "when": "todayActiveMin > 0",
+      "face": "calm_smile",
+      "conditionEffect": "hold_or_recover_small",
+      "lines": ["무난하고 좋았어 🙂", "딱 적당했다 그치?"]
+    },
+    {
+      "priority": 4,
+      "mood": "휴식중",
+      "when": "todayActiveMin == 0 && (restMode || plannedRest)",
+      "face": "cozy_roll",
+      "conditionEffect": "no_decay",
+      "lines": ["오늘은 공식 뒹굴데이 🛏️", "쉬는 것도 훈련이라구~ 😏"]
+    },
+    {
+      "priority": 5,
+      "mood": "심심",
+      "when": "todayActiveMin == 0 && !restMode",
+      "face": "bored_lookaround",
+      "conditionEffect": "decay_soft",
+      "lines": ["심심해~ 슬슬 나갈까? 👀", "나 여기서 기다리는 중… 🐾"]
+    }
+  ]
+}
