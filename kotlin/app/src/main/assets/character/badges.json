@@ -1,0 +1,36 @@
+{
+  "version": "v1",
+  "note": "배지 5종 해금 조건(#69, E5-8). BadgeEvaluator가 when(불리언 식)을 평가해 참이면 해금. 조건 수정 = JSON만(코드 무수정). 임계값은 밸런스 튜닝 대상(#77 라운드).",
+  "badges": [
+    {
+      "id": "first_step",
+      "name": "첫걸음",
+      "description": "함께한 첫 활동을 기록했어요.",
+      "when": "activeDaysTotal >= 1"
+    },
+    {
+      "id": "week_streak",
+      "name": "꾸준함의 증표",
+      "description": "7일 연속 함께 움직였어요.",
+      "when": "streakDays >= 7"
+    },
+    {
+      "id": "level_10",
+      "name": "성장의 궤도",
+      "description": "레벨 10에 도달했어요.",
+      "when": "level >= 10"
+    },
+    {
+      "id": "first_expedition",
+      "name": "탐험가",
+      "description": "첫 원정을 완료했어요.",
+      "when": "expeditionsCompleted >= 1"
+    },
+    {
+      "id": "ten_thousand",
+      "name": "만보 주파",
+      "description": "하루 10,000보를 넘겼어요.",
+      "when": "bestDaySteps >= 10000"
+    }
+  ]
+}
