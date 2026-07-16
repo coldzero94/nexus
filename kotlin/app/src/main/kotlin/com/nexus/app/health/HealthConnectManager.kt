@@ -50,4 +50,8 @@ class HealthConnectManager(private val context: Context) {
 
     /** 운동 세션 읽기용 리포지토리 (#8). HC 미가용 시 null. */
     fun exerciseRepositoryOrNull(): ExerciseRepository? = clientOrNull()?.let { ExerciseRepository(it) }
+
+    /** 성장 데이터(롤업·성향) 리포지토리 (#170). HC 미가용 시 null. */
+    fun growthRepositoryOrNull(): GrowthRepository? =
+        clientOrNull()?.let { GrowthRepository(StepRepository(it), ExerciseRepository(it)) }
 }
