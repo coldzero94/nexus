@@ -51,18 +51,15 @@ data class MonthlyBadgeContext(
  */
 object MonthlyBadgeCalendar {
     /** [period]("YYYY-MM")에 활성인(그 달에만 획득 가능한) 배지. */
-    fun activeBadges(table: MonthlyBadgeTable, period: String): List<MonthlyBadge> {
-        return table.badges.filter { it.period == period }
-    }
+    fun activeBadges(table: MonthlyBadgeTable, period: String): List<MonthlyBadge> =
+        table.badges.filter { it.period == period }
 
     /** 현재 달에 활성이고 조건 충족한 배지 id. 지난/다음 달 배지는 제외. */
-    fun unlocked(table: MonthlyBadgeTable, period: String, vars: Map<String, Double>): Set<String> {
-        return activeBadges(table, period).filter { BoolExpr.eval(it.whenExpr, vars) }.map { it.id }.toSet()
-    }
+    fun unlocked(table: MonthlyBadgeTable, period: String, vars: Map<String, Double>): Set<String> =
+        activeBadges(table, period).filter { BoolExpr.eval(it.whenExpr, vars) }.map { it.id }.toSet()
 
-    fun unlocked(table: MonthlyBadgeTable, period: String, context: MonthlyBadgeContext): Set<String> {
-        return unlocked(table, period, context.toVars())
-    }
+    fun unlocked(table: MonthlyBadgeTable, period: String, context: MonthlyBadgeContext): Set<String> =
+        unlocked(table, period, context.toVars())
 
     /** 이전 획득([alreadyEarned]) 대비 이번 달 새로 열린 배지. 배지는 영구 수집 — 차집합만. */
     fun newlyUnlocked(
@@ -70,9 +67,7 @@ object MonthlyBadgeCalendar {
         period: String,
         context: MonthlyBadgeContext,
         alreadyEarned: Set<String>,
-    ): Set<String> {
-        return unlocked(table, period, context) - alreadyEarned
-    }
+    ): Set<String> = unlocked(table, period, context) - alreadyEarned
 }
 
 /** 월 한정 배지 표 파서 — 기분(#28)·배지(#69)와 같은 fail-fast 계약. period 형식도 검증. */
