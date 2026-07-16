@@ -3,6 +3,8 @@ package com.nexus.app.character
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.annotation.DrawableRes
+import com.nexus.core.BadgeTable
+import com.nexus.core.BadgeTableReader
 import com.nexus.core.CharacterAnimationSet
 import com.nexus.core.CharacterAssetConvention
 import com.nexus.core.DialoguePool
@@ -33,6 +35,11 @@ class CharacterAssets(private val context: Context) {
         MoodTriggerTable.parse(it.readText())
     }
 
+    /** 배지 해금 표 로드 (#69, 게임 데이터) — 같은 fail-fast 계약. 배지 추가·조건 수정 = JSON만. */
+    fun loadBadgeTable(): BadgeTable = context.assets.open(BADGE_PATH).bufferedReader().use {
+        BadgeTableReader.parse(it.readText())
+    }
+
     /**
      * 규약 이름 → 드로어블 id. 없으면 null(호출자가 기본 상태 프레임으로 폴백).
      * getIdentifier는 규약 기반 동적 조회가 목적이라 의도적 사용 — 에셋 추가에 코드 수정이
@@ -51,5 +58,6 @@ class CharacterAssets(private val context: Context) {
         const val META_PATH = "character/animations.json"
         const val DIALOGUE_PATH = "character/dialogue.json"
         const val MOOD_PATH = "character/mood_triggers.json"
+        const val BADGE_PATH = "character/badges.json"
     }
 }
