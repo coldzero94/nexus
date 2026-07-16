@@ -156,24 +156,31 @@ private fun tokenize(expr: String): List<Token> {
         val c = expr[i]
         when {
             c.isWhitespace() -> i++
+
             c == '(' -> {
                 out += Token(TokenKind.LPAREN, "(")
                 i++
             }
+
             c == ')' -> {
                 out += Token(TokenKind.RPAREN, ")")
                 i++
             }
+
             i + 1 < expr.length && expr.substring(i, i + 2) in TWO_CHAR_OPS -> {
                 out += Token(TokenKind.OP, expr.substring(i, i + 2))
                 i += 2
             }
+
             c == '!' || c == '>' || c == '<' -> {
                 out += Token(TokenKind.OP, c.toString())
                 i++
             }
+
             isNumberChar(c) -> i = scanWhile(expr, i, out, TokenKind.NUMBER, ::isNumberChar)
+
             isIdentChar(c) -> i = scanWhile(expr, i, out, TokenKind.IDENT, ::isIdentChar)
+
             else -> throw IllegalArgumentException("unexpected char '$c' in \"$expr\"")
         }
     }
@@ -254,14 +261,17 @@ private class Parser(private val tokens: List<Token>, private val vars: Map<Stri
                 expect(TokenKind.RPAREN)
                 v.toFlag()
             }
+
             TokenKind.NUMBER -> {
                 pos++
                 t.text.toDouble()
             }
+
             TokenKind.IDENT -> {
                 pos++
                 atomValue(t.text)
             }
+
             else -> throw IllegalArgumentException("expected a value, got '${t.text}'")
         }
     }
