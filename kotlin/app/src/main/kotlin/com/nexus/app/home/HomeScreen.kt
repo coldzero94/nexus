@@ -34,6 +34,7 @@ import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.health.SleepRepository
 import com.nexus.app.health.StepRepository
 import com.nexus.app.notify.ExpeditionReturnWorker
 import com.nexus.app.settings.RestModeStore
@@ -86,6 +87,7 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
     val context = LocalContext.current
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
     val stepRepo = remember { manager.stepRepositoryOrNull() }
+    val sleepRepo = remember { manager.sleepRepositoryOrNull() }
     var load by remember { mutableStateOf<HomeLoad?>(null) }
 
     val restStore = remember { RestModeStore(context) }
@@ -97,7 +99,7 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
         load = if (exerciseRepo == null || stepRepo == null) {
             HomeLoad.PermissionDenied
         } else {
-            loadHome(exerciseRepo, stepRepo, restStore, ledger, energyStore, expeditionStore)
+            loadHome(exerciseRepo, stepRepo, sleepRepo, restStore, ledger, energyStore, expeditionStore)
         }
     }
 
@@ -195,6 +197,7 @@ private fun DialogueBubble(spriteState: String) {
 private suspend fun loadHome(
     exerciseRepo: ExerciseRepository,
     stepRepo: StepRepository,
+    sleepRepo: SleepRepository?,
     restStore: RestModeStore,
     ledger: RewardLedgerRepository,
     energyStore: EnergyStore,
@@ -213,7 +216,11 @@ private suspend fun loadHome(
             epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
         )
     }
-    val condition = deriveCondition(sessions, today, restStore)
+    // 활동 기반 컨디션에 지난밤 수면을 소프트 보정 (#180) — 수면 없으면 무보정
+    val condition = ConditionEngine.applySleep(
+        deriveCondition(sessions, today, restStore),
+        sleepHoursOrNull(sleepRepo),
+    )
     val cappedTotal = ledger.cappedTotalXp()
     val todayEpoch = today.toEpochDay()
     HomeLoad.Success(
@@ -250,6 +257,28 @@ private suspend fun loadHome(
 } catch (e: android.database.SQLException) {
     Log.w(TAG, "home ledger db failure", e)
     HomeLoad.Failure
+}
+
+/** 수면 읽기는 부가 정보 (#180) — 실패해도 컨디션은 활동 기반으로(무보정). 취소는 전파(#130). */
+private suspend fun sleepHoursOrNull(repo: SleepRepository?): Double? {
+    repo ?: return null
+    return try {
+        repo.lastNightSleepHours()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: IOException) {
+        Log.w(TAG, "sleep read IO failure", e)
+        null
+    } catch (e: RemoteException) {
+        Log.w(TAG, "sleep read remote failure", e)
+        null
+    } catch (e: SecurityException) {
+        Log.w(TAG, "sleep read permission failure", e)
+        null
+    } catch (e: IllegalStateException) {
+        Log.w(TAG, "sleep read state failure", e)
+        null
+    }
 }
 
 /**

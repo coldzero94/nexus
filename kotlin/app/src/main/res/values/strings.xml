@@ -52,7 +52,7 @@
     <string name="permission_rationale_title">건강 데이터 연결이 필요해요</string>
     <string name="permission_rationale_body">캐릭터를 키우려면 Health Connect에서 활동 데이터를 읽어야 해요. 원본 수치는 기기 밖으로 나가지 않아요.</string>
     <string name="permission_read_title">활동 읽기</string>
-    <string name="permission_read_desc">걸음·운동 세션·심박을 읽어 XP로 바꿔요.</string>
+    <string name="permission_read_desc">걸음·운동 세션·심박·수면을 읽어 XP와 컨디션에 반영해요.</string>
     <string name="permission_background_title">백그라운드 읽기</string>
     <string name="permission_background_desc">앱을 안 켜도 운동이 반영되게 해요.</string>
     <string name="permission_history_title">과거 이력</string>
