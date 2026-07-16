@@ -10,12 +10,7 @@ import kotlinx.serialization.json.Json
  * 영구히 남는 수집 자산이라(BENCHMARK.md) 한 번 해금되면 회수 기제가 없다.
  */
 @Serializable
-data class Badge(
-    val id: String,
-    val name: String,
-    val description: String,
-    @SerialName("when") val whenExpr: String,
-)
+data class Badge(val id: String, val name: String, val description: String, @SerialName("when") val whenExpr: String)
 
 /** 배지 표 — 앱 assets JSON에서 로드. 배지 추가·조건 수정 = JSON만(코드 무수정). */
 @Serializable
@@ -69,11 +64,8 @@ object BadgeEvaluator {
     fun unlocked(table: BadgeTable, context: BadgeContext): Set<String> = unlocked(table, context.toVars())
 
     /** 이전 해금 집합([alreadyUnlocked]) 대비 이번 평가에서 새로 해금된 배지. 배지는 회수 없음 — 차집합만. */
-    fun newlyUnlocked(
-        table: BadgeTable,
-        context: BadgeContext,
-        alreadyUnlocked: Set<String>,
-    ): Set<String> = unlocked(table, context) - alreadyUnlocked
+    fun newlyUnlocked(table: BadgeTable, context: BadgeContext, alreadyUnlocked: Set<String>): Set<String> =
+        unlocked(table, context) - alreadyUnlocked
 }
 
 /** 배지 표 파서 — 기분(#28)·대사(#29)와 같은 fail-fast 계약. */
