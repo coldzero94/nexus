@@ -9,6 +9,8 @@ import com.nexus.core.CharacterAnimationSet
 import com.nexus.core.CharacterAssetConvention
 import com.nexus.core.DialoguePool
 import com.nexus.core.DialogueTable
+import com.nexus.core.MonthlyBadgeTable
+import com.nexus.core.MonthlyBadgeTableReader
 import com.nexus.core.MoodTable
 import com.nexus.core.MoodTriggerTable
 
@@ -40,6 +42,11 @@ class CharacterAssets(private val context: Context) {
         BadgeTableReader.parse(it.readText())
     }
 
+    /** 월 한정 배지 캘린더 로드 (#38) — 같은 fail-fast 계약. 새 달 배지 추가 = JSON만. */
+    fun loadMonthlyBadgeTable(): MonthlyBadgeTable = context.assets.open(MONTHLY_BADGE_PATH).bufferedReader().use {
+        MonthlyBadgeTableReader.parse(it.readText())
+    }
+
     /**
      * 규약 이름 → 드로어블 id. 없으면 null(호출자가 기본 상태 프레임으로 폴백).
      * getIdentifier는 규약 기반 동적 조회가 목적이라 의도적 사용 — 에셋 추가에 코드 수정이
@@ -59,5 +66,6 @@ class CharacterAssets(private val context: Context) {
         const val DIALOGUE_PATH = "character/dialogue.json"
         const val MOOD_PATH = "character/mood_triggers.json"
         const val BADGE_PATH = "character/badges.json"
+        const val MONTHLY_BADGE_PATH = "character/monthly_badges.json"
     }
 }
