@@ -23,19 +23,10 @@ data class MoodRule(
  * priority 오름차순으로 평가하고 첫 매치를 채택한다. **표만 고치면 코드 무수정 반영**(E4-4 완료 기준).
  */
 @Serializable
-data class MoodTable(
-    val version: String,
-    val moods: List<String> = emptyList(),
-    val rules: List<MoodRule>,
-)
+data class MoodTable(val version: String, val moods: List<String> = emptyList(), val rules: List<MoodRule>)
 
 /** 평가 결과 — 채택된 규칙의 표시 정보(표정·컨디션 영향·대사 풀). 매치 없으면 호출자가 폴백. */
-data class MoodResult(
-    val mood: String,
-    val face: String,
-    val conditionEffect: String,
-    val lines: List<String>,
-)
+data class MoodResult(val mood: String, val face: String, val conditionEffect: String, val lines: List<String>)
 
 /**
  * 기분 평가 입력 — 표의 `inputs` 어휘와 1:1. [toVars]가 식 변수 맵을 만든다.
@@ -76,20 +67,28 @@ data class MoodContext(
 
         /** 표의 `when`에서 참조 가능한 변수 어휘 — 파서가 이 집합으로 오탈자/미지원 변수를 걸러낸다. */
         val VARS: Set<String> = setOf(
-            "todayActiveMin", "personalCoef", "highIntensity", "restMode", "plannedRest",
-            "leveledUp", "newBadge", "weeklyGoalMet", "newRecord", "daysSinceActivity",
-            "condition", "returning",
+            "todayActiveMin",
+            "personalCoef",
+            "highIntensity",
+            "restMode",
+            "plannedRest",
+            "leveledUp",
+            "newBadge",
+            "weeklyGoalMet",
+            "newRecord",
+            "daysSinceActivity",
+            "condition",
+            "returning",
         )
     }
 }
 
 /** 기분 평가기 (#28, E4-4) — priority 오름차순 첫 매치. 매치 없으면 null. */
 object MoodEvaluator {
-    fun evaluate(table: MoodTable, vars: Map<String, Double>): MoodResult? =
-        table.rules
-            .sortedBy { it.priority }
-            .firstOrNull { BoolExpr.eval(it.whenExpr, vars) }
-            ?.let { MoodResult(it.mood, it.face, it.conditionEffect, it.lines) }
+    fun evaluate(table: MoodTable, vars: Map<String, Double>): MoodResult? = table.rules
+        .sortedBy { it.priority }
+        .firstOrNull { BoolExpr.eval(it.whenExpr, vars) }
+        ?.let { MoodResult(it.mood, it.face, it.conditionEffect, it.lines) }
 
     fun evaluate(table: MoodTable, context: MoodContext): MoodResult? = evaluate(table, context.toVars())
 }
@@ -130,11 +129,10 @@ object BoolExpr {
     fun eval(expr: String, vars: Map<String, Double>): Boolean = Parser(tokenize(expr), vars).evaluate()
 
     /** 식이 참조하는 변수 식별자 집합(true/false 리터럴 제외) — 파서 검증용. */
-    fun identifiers(expr: String): Set<String> =
-        tokenize(expr)
-            .filter { it.kind == TokenKind.IDENT && it.text != LIT_TRUE && it.text != LIT_FALSE }
-            .map { it.text }
-            .toSet()
+    fun identifiers(expr: String): Set<String> = tokenize(expr)
+        .filter { it.kind == TokenKind.IDENT && it.text != LIT_TRUE && it.text != LIT_FALSE }
+        .map { it.text }
+        .toSet()
 }
 
 private const val TRUE_FLAG = 1.0
@@ -158,12 +156,22 @@ private fun tokenize(expr: String): List<Token> {
         val c = expr[i]
         when {
             c.isWhitespace() -> i++
-            c == '(' -> { out += Token(TokenKind.LPAREN, "("); i++ }
-            c == ')' -> { out += Token(TokenKind.RPAREN, ")"); i++ }
-            i + 1 < expr.length && expr.substring(i, i + 2) in TWO_CHAR_OPS -> {
-                out += Token(TokenKind.OP, expr.substring(i, i + 2)); i += 2
+            c == '(' -> {
+                out += Token(TokenKind.LPAREN, "(")
+                i++
             }
-            c == '!' || c == '>' || c == '<' -> { out += Token(TokenKind.OP, c.toString()); i++ }
+            c == ')' -> {
+                out += Token(TokenKind.RPAREN, ")")
+                i++
+            }
+            i + 1 < expr.length && expr.substring(i, i + 2) in TWO_CHAR_OPS -> {
+                out += Token(TokenKind.OP, expr.substring(i, i + 2))
+                i += 2
+            }
+            c == '!' || c == '>' || c == '<' -> {
+                out += Token(TokenKind.OP, c.toString())
+                i++
+            }
             isNumberChar(c) -> i = scanWhile(expr, i, out, TokenKind.NUMBER, ::isNumberChar)
             isIdentChar(c) -> i = scanWhile(expr, i, out, TokenKind.IDENT, ::isIdentChar)
             else -> throw IllegalArgumentException("unexpected char '$c' in \"$expr\"")
@@ -246,8 +254,14 @@ private class Parser(private val tokens: List<Token>, private val vars: Map<Stri
                 expect(TokenKind.RPAREN)
                 v.toFlag()
             }
-            TokenKind.NUMBER -> { pos++; t.text.toDouble() }
-            TokenKind.IDENT -> { pos++; atomValue(t.text) }
+            TokenKind.NUMBER -> {
+                pos++
+                t.text.toDouble()
+            }
+            TokenKind.IDENT -> {
+                pos++
+                atomValue(t.text)
+            }
             else -> throw IllegalArgumentException("expected a value, got '${t.text}'")
         }
     }
@@ -266,8 +280,10 @@ private class Parser(private val tokens: List<Token>, private val vars: Map<Stri
         return false
     }
 
-    private fun peekCmpOp(): String? =
-        tokens.getOrNull(pos)?.takeIf { it.kind == TokenKind.OP && it.text in CMP_OPS }?.text
+    private fun peekCmpOp(): String? {
+        val t = tokens.getOrNull(pos) ?: return null
+        return if (t.kind == TokenKind.OP && t.text in CMP_OPS) t.text else null
+    }
 
     private fun expect(kind: TokenKind) {
         require(pos < tokens.size && tokens[pos].kind == kind) { "expected $kind" }
