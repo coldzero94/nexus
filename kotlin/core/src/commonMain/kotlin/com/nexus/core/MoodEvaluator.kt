@@ -189,6 +189,16 @@ private fun scanWhile(
     return i
 }
 
+private fun evalComparison(l: Double, op: String, r: Double): Boolean = when (op) {
+    ">" -> l > r
+    ">=" -> l >= r
+    "<" -> l < r
+    "<=" -> l <= r
+    "==" -> l == r
+    "!=" -> l != r
+    else -> throw IllegalArgumentException("unknown operator '$op'")
+}
+
 private class Parser(private val tokens: List<Token>, private val vars: Map<String, Double>) {
     private var pos = 0
 
@@ -223,7 +233,7 @@ private class Parser(private val tokens: List<Token>, private val vars: Map<Stri
         val op = peekCmpOp() ?: return left != FALSE_FLAG // 비교 없이 단독 → 참/거짓
         pos++
         val right = parseAtom()
-        return compare(left, op, right)
+        return evalComparison(left, op, right)
     }
 
     private fun parseAtom(): Double {
@@ -246,16 +256,6 @@ private class Parser(private val tokens: List<Token>, private val vars: Map<Stri
         LIT_TRUE -> TRUE_FLAG
         LIT_FALSE -> FALSE_FLAG
         else -> vars[name] ?: throw IllegalArgumentException("unknown variable '$name'")
-    }
-
-    private fun compare(l: Double, op: String, r: Double): Boolean = when (op) {
-        ">" -> l > r
-        ">=" -> l >= r
-        "<" -> l < r
-        "<=" -> l <= r
-        "==" -> l == r
-        "!=" -> l != r
-        else -> throw IllegalArgumentException("unknown operator '$op'")
     }
 
     private fun matchOp(op: String): Boolean {
