@@ -103,7 +103,7 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
         }
         load = loaded
         if (loaded is HomeLoad.Success) {
-            settlementDelta = detectSettlement(settlementStore, loaded.state.cappedTotalXp) ?: settlementDelta
+            settlementDelta = settleOnLoad(settlementStore, loaded.state.cappedTotalXp)
         }
     }
 
@@ -147,6 +147,13 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
             )
         }
     }
+}
+
+/** 로드 시 정산 적용 (#35) — 순수 판정([decideSettlement]) 후 필요 시 기준점 동기화, 카드 차액 반환. */
+private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
+    val decision = decideSettlement(store.lastSeenXp, currentXp)
+    if (decision.syncBaseline) store.markSeen(currentXp)
+    return decision.deltaXp
 }
 
 /** 로드 완료 상태 — 정산 카드(#35)가 있으면 콘텐츠 위에 얹는다. */
@@ -305,23 +312,5 @@ private fun deriveCondition(sessions: List<SessionInput>, today: LocalDate, rest
         )
         prevPoints = points
         next
-    }
-}
-
-/**
- * 정산 감지 (#35): 기준점보다 누적 XP가 크면 차액(개봉 대상), 아니면 null.
- * 최초 방문·원장 취소로 인한 하향은 카드 없이 기준점만 동기화 — 소비는 개봉 시점(#61 패턴).
- */
-private fun detectSettlement(store: SettlementStore, currentXp: Int): Int? {
-    val lastSeen = store.lastSeenXp
-    return when {
-        lastSeen == SettlementStore.UNSET || currentXp < lastSeen -> {
-            store.markSeen(currentXp)
-            null
-        }
-
-        currentXp > lastSeen -> currentXp - lastSeen
-
-        else -> null
     }
 }

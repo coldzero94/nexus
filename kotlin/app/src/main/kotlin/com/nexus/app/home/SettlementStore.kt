@@ -25,3 +25,17 @@ class SettlementStore(context: Context) {
         private const val KEY_LAST_SEEN = "last_seen_xp"
     }
 }
+
+/** 정산 판정 결과 (#35) — [deltaXp]=카드에 띄울 차액(null=카드 없음), [syncBaseline]=기준점 조용한 동기화. */
+internal data class SettlementDecision(val deltaXp: Int?, val syncBaseline: Boolean)
+
+/**
+ * 정산 판정 (#35, 순수 함수): 기준점 대비 상향이면 차액, 최초·하향(원장 취소)이면 무카드+동기화.
+ * 호출자는 매 로드 이 결과로 delta 상태를 **대입**한다 — 기준점이 개봉 전엔 불변이라
+ * 재계산이 항상 진실이고, 이전 delta를 유지하면 취소 하향 시 낡은 값이 남는다(#35 리뷰).
+ */
+internal fun decideSettlement(lastSeenXp: Int, currentXp: Int): SettlementDecision = when {
+    lastSeenXp == SettlementStore.UNSET || currentXp < lastSeenXp -> SettlementDecision(null, syncBaseline = true)
+    currentXp > lastSeenXp -> SettlementDecision(currentXp - lastSeenXp, syncBaseline = false)
+    else -> SettlementDecision(null, syncBaseline = false)
+}
