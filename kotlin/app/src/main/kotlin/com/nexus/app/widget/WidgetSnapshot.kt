@@ -14,7 +14,8 @@ class WidgetSnapshotStore(context: Context) {
 
     fun read(): WidgetSnapshot = WidgetSnapshot(
         level = prefs.getInt(KEY_LEVEL, 1),
-        condition = prefs.getInt(KEY_CONDITION, DEFAULT_CONDITION),
+        // 콜드 기본값은 core와 단일 원천 — 밸런스 튜닝 시 위젯만 어긋나지 않게 (#39 리뷰 N2)
+        condition = prefs.getInt(KEY_CONDITION, com.nexus.core.ConditionEngine.DEFAULT.toInt()),
         todayXp = prefs.getInt(KEY_TODAY_XP, 0),
         spriteState = prefs.getString(KEY_SPRITE, "idle").orEmpty().ifEmpty { "idle" },
     )
@@ -29,8 +30,6 @@ class WidgetSnapshotStore(context: Context) {
     }
 
     private companion object {
-        const val DEFAULT_CONDITION = 70
-
         const val PREFS = "nexus_widget_snapshot"
         const val KEY_LEVEL = "level"
         const val KEY_CONDITION = "condition"
