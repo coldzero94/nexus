@@ -107,8 +107,9 @@ private fun NexusApp(manager: HealthConnectManager) {
         }
     } else if (connected && showInitialLevel) {
         // 최초 연결 직후 1회 — 과거 이력 소급 "이미 이만큼 성장" (#44)
-        InitialLevelScene(manager) {
-            onboarding.initialLevelShown = true
+        InitialLevelScene(manager) { markShown ->
+            // 일시 실패면 기록하지 않아 다음 실행에서 연출 재시도 (#44 리뷰 F1)
+            if (markShown) onboarding.initialLevelShown = true
             showInitialLevel = false
         }
     } else if (connected && welcomeGapDays > 0L) {

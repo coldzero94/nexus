@@ -41,25 +41,26 @@ import java.time.ZoneId
  * 소급 지급은 원장 멱등 진입점(grantSessions) 재사용 — 성장 탭 합계와 어긋날 수 없다.
  */
 @Composable
-fun InitialLevelScene(manager: HealthConnectManager, onDone: () -> Unit) {
+fun InitialLevelScene(manager: HealthConnectManager, onDone: (markShown: Boolean) -> Unit) {
     val context = LocalContext.current
     var result by remember { mutableStateOf<Pair<Int, Int>?>(null) } // (level, totalXp)
 
     LaunchedEffect(Unit) {
         val repo = manager.exerciseRepositoryOrNull()
         if (repo == null) {
-            onDone()
+            onDone(false) // HC 미가용 — 다음 실행에서 재시도(무비용 스킵)
             return@LaunchedEffect
         }
         val ledger = RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao())
         val total = backfillOrNull(repo, ledger)
         if (total == null) {
-            onDone() // 소급 실패는 연출 생략 — 홈이 같은 멱등 경로를 재시도한다 (#163)
+            // 일시 실패 — 연출을 영구 포기하지 않고 다음 실행에서 재시도(#44 리뷰 F1)
+            onDone(false)
             return@LaunchedEffect
         }
         val level = LevelCurve.displayLevel(total)
         if (level < MIN_LEVEL_TO_CELEBRATE) {
-            onDone() // 이력이 적어 레벨 1이면 연출 생략 — "이미 레벨 1"은 자랑이 아니다
+            onDone(true) // 이력이 적어 레벨 1이면 연출 생략 확정 — "이미 레벨 1"은 자랑이 아니다
         } else {
             result = level to total
         }
@@ -92,7 +93,7 @@ fun InitialLevelScene(manager: HealthConnectManager, onDone: () -> Unit) {
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(32.dp))
-            Button(onClick = onDone) {
+            Button(onClick = { onDone(true) }) {
                 Text(stringResource(R.string.initial_level_continue))
             }
         }
