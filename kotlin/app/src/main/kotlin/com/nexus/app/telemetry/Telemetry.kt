@@ -21,7 +21,7 @@ object Telemetry {
     @Volatile
     private var enabled = false
 
-    /** [com.nexus.app.NexusApp]에서 1회 호출. 앱 ID가 없으면 계측 전체가 no-op. */
+    /** [com.nexus.app.NexusApplication]에서 1회 호출. 앱 ID가 없으면 계측 전체가 no-op. */
     fun init(context: Context) {
         val appId = BuildConfig.TELEMETRYDECK_APP_ID
         if (appId.isBlank()) {

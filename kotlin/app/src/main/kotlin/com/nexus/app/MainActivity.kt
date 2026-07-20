@@ -41,6 +41,8 @@ import com.nexus.app.onboarding.OnboardingScreen
 import com.nexus.app.onboarding.OnboardingStore
 import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
+import com.nexus.app.telemetry.Telemetry
+import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.NexusTheme
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
@@ -52,6 +54,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // 시스템바 아이콘 대비를 라이트/다크에 맞게 자동 동기화 (#64 — targetSdk 36 edge-to-edge)
         enableEdgeToEdge()
+        // 앱 열림은 화면 진입에서만 — Application.onCreate는 워커 기동도 지나가 분모가 오염되고,
+        // savedInstanceState 가드가 회전 재생성 중복을 막는다 (#46 리뷰 F1)
+        if (savedInstanceState == null) {
+            Telemetry.record(TelemetryEvent.APP_OPENED)
+        }
         val manager = HealthConnectManager(applicationContext)
         setContent {
             NexusTheme {
