@@ -12,7 +12,8 @@ private const val TAG = "EquipLayers"
 /**
  * 저장된 로드아웃 → 렌더 레이어 (#37) — [baseState] 본체 위에 쌓을 장비 레이어 상태들.
  * 카탈로그·프리퍼런스 로드는 디스크 IO라 [Dispatchers.IO]에서. 부가 정보라 실패는 빈 목록
- * (본체만 그린다 — #130 catch 계약). 홈·기타 렌더 지점이 공유하는 단일 진입점.
+ * (본체만 그린다 — #130 catch 계약). 렌더 전용 지점(홈 등)이 쓴다 — 장착 UI(꾸미기)는
+ * 칩 표시에 카탈로그가 따로 필요해 자체 로드한다.
  */
 suspend fun equipRenderLayers(context: Context, baseState: String): List<String> = try {
     withContext(Dispatchers.IO) {
