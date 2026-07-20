@@ -24,6 +24,11 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.Nexus"
         android:supportsRtl="true">
+        <!-- Sentry 수동 초기화 (#48) — tracing off·PII off를 CrashReporting 코드에서 강제 -->
+        <meta-data
+            android:name="io.sentry.auto-init"
+            android:value="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

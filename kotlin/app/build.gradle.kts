@@ -32,6 +32,12 @@ android {
             "TELEMETRYDECK_APP_ID",
             "\"${providers.gradleProperty("nexus.telemetrydeck.appId").orNull.orEmpty()}\"",
         )
+        // Sentry DSN — 없으면 빈 값 = 크래시 수집 꺼짐 (#48, 동일 패턴)
+        buildConfigField(
+            "String",
+            "SENTRY_DSN",
+            "\"${providers.gradleProperty("nexus.sentry.dsn").orNull.orEmpty()}\"",
+        )
     }
 
     buildFeatures {
@@ -64,6 +70,7 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.glance.appwidget)
     implementation(libs.telemetrydeck.sdk)
+    implementation(libs.sentry.android)
     implementation(libs.kotlinx.serialization.json)
     ksp(libs.room.compiler)
 
