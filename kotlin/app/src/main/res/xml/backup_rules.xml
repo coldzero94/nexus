@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 자동 백업 규칙 (#51, E8-6) — Room 원장·프리퍼런스 포함. 앱은 계산된 XP만 저장하므로
+     (원본 건강 수치는 Health Connect가 소스) 클라우드 백업이 정책상 안전하다(BACKEND.md §3). -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

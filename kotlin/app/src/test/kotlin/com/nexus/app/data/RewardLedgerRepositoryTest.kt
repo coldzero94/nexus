@@ -32,6 +32,8 @@ class RewardLedgerRepositoryTest {
             rows.groupBy { it.epochDay }.map { (day, list) -> DayXpRow(day, list.sumOf { it.xp }.toDouble()) }
 
         override suspend fun count(): Long = rows.size.toLong()
+
+        override suspend fun all(): List<RewardEventEntity> = rows.toList()
     }
 
     private suspend fun RewardLedgerRepository.grantSample(key: String, xp: Int, day: Long = 0L): Boolean = grant(
