@@ -6,11 +6,12 @@ import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 
 /**
- * 온보딩(#6)이 요청하는 Health Connect 권한 5종: 읽기 3 + 백그라운드 + 과거 이력.
- * 데이터 읽기(집계·세션)는 #7·#8에서 이 위에 쌓는다.
+ * 온보딩(#6)이 요청하는 Health Connect 권한: 읽기 4(걸음·운동·심박·수면) + 백그라운드 + 과거 이력.
+ * 수면(#180)은 컨디션 회복 보정용. 데이터 읽기(집계·세션)는 #7·#8·#180에서 이 위에 쌓는다.
  */
 object HealthPermissions {
     val ALL: Set<String> =
@@ -18,6 +19,7 @@ object HealthPermissions {
             HealthPermission.getReadPermission(StepsRecord::class),
             HealthPermission.getReadPermission(ExerciseSessionRecord::class),
             HealthPermission.getReadPermission(HeartRateRecord::class),
+            HealthPermission.getReadPermission(SleepSessionRecord::class),
             HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND,
             HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY,
         )
@@ -50,6 +52,9 @@ class HealthConnectManager(private val context: Context) {
 
     /** 운동 세션 읽기용 리포지토리 (#8). HC 미가용 시 null. */
     fun exerciseRepositoryOrNull(): ExerciseRepository? = clientOrNull()?.let { ExerciseRepository(it) }
+
+    /** 수면 읽기용 리포지토리 (#180) — 컨디션 회복 보정. HC 미가용 시 null. */
+    fun sleepRepositoryOrNull(): SleepRepository? = clientOrNull()?.let { SleepRepository(it) }
 
     /** 성장 데이터(롤업·성향) 리포지토리 (#170). HC 미가용 시 null. */
     fun growthRepositoryOrNull(): GrowthRepository? =

@@ -34,7 +34,9 @@ import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.health.SleepRepository
 import com.nexus.app.health.StepRepository
+import com.nexus.app.health.sleepHoursOrNull
 import com.nexus.app.notify.ExpeditionReturnWorker
 import com.nexus.app.settings.RestModeStore
 import com.nexus.app.ui.ConnectNotice
@@ -89,13 +91,14 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
     val context = LocalContext.current
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
     val stepRepo = remember { manager.stepRepositoryOrNull() }
+    val sleepRepo = remember { manager.sleepRepositoryOrNull() }
     val ui = remember { HomeUiController(HomeStores(context), context) }
     LaunchedEffect(exerciseRepo, stepRepo, ui.reloadKey) {
         ui.onLoaded(
             if (exerciseRepo == null || stepRepo == null) {
                 HomeLoad.PermissionDenied
             } else {
-                loadHome(exerciseRepo, stepRepo, ui.stores)
+                loadHome(exerciseRepo, stepRepo, sleepRepo, ui.stores)
             },
         )
     }
@@ -301,6 +304,7 @@ private fun DialogueBubble(spriteState: String) {
 private suspend fun loadHome(
     exerciseRepo: ExerciseRepository,
     stepRepo: StepRepository,
+    sleepRepo: SleepRepository?,
     stores: HomeStores,
 ): HomeLoad = try {
     val zone = ZoneId.systemDefault()
@@ -316,7 +320,11 @@ private suspend fun loadHome(
             epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
         )
     }
-    val condition = deriveCondition(sessions, today, stores.rest)
+    // 활동 기반 컨디션에 지난밤 수면을 소프트 보정 (#180) — 수면 없으면 무보정
+    val condition = ConditionEngine.applySleep(
+        deriveCondition(sessions, today, stores.rest),
+        sleepHoursOrNull(sleepRepo),
+    )
     val cappedTotal = stores.ledger.cappedTotalXp()
     val todayEpoch = today.toEpochDay()
     HomeLoad.Success(
