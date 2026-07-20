@@ -1,9 +1,13 @@
 package com.nexus.app.health
 
+import android.os.RemoteException
+import android.util.Log
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import kotlinx.coroutines.CancellationException
+import java.io.IOException
 import java.time.Duration
 import java.time.Instant
 
@@ -49,3 +53,27 @@ class SleepRepository(private val client: HealthConnectClient) {
         const val MINUTES_PER_HOUR = 60.0
     }
 }
+
+/** 수면 읽기는 부가 정보 (#180) — 실패해도 컨디션은 활동 기반으로(무보정). 취소는 전파(#130). */
+internal suspend fun sleepHoursOrNull(repo: SleepRepository?): Double? {
+    repo ?: return null
+    return try {
+        repo.lastNightSleepHours()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: IOException) {
+        Log.w(SLEEP_READ_TAG, "sleep read IO failure", e)
+        null
+    } catch (e: RemoteException) {
+        Log.w(SLEEP_READ_TAG, "sleep read remote failure", e)
+        null
+    } catch (e: SecurityException) {
+        Log.w(SLEEP_READ_TAG, "sleep read permission failure", e)
+        null
+    } catch (e: IllegalStateException) {
+        Log.w(SLEEP_READ_TAG, "sleep read state failure", e)
+        null
+    }
+}
+
+private const val SLEEP_READ_TAG = "SleepRepository"

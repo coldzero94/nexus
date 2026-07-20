@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -21,6 +23,90 @@ import com.nexus.core.ConditionEngine
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionState
 import kotlin.math.roundToInt
+
+/**
+ * 오늘의 모험 일지 (#70, E5-9) — 저녁에 하루를 서사로 닫는 카드(Pikmin 일기 패턴).
+ * 활동이 있으면 성장 서사, 없으면 쉼 서사(무처벌).
+ */
+@Composable
+internal fun EveningJournalCard(state: HomeUiState, onDismiss: () -> Unit) {
+    Card {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.journal_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (state.todayXp > 0) {
+                    stringResource(
+                        R.string.journal_body_active,
+                        state.todayActiveMinutes,
+                        state.todaySteps,
+                        state.todayXp,
+                    )
+                } else {
+                    stringResource(R.string.journal_body_rest)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.journal_dismiss))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 아침 요약 카드 (#36, E5-3) — "간밤의 회복 + 어제의 성장", 하루 1회.
+ * 무활동이었던 어제는 꾸짖지 않는다(무처벌) — 쉼도 리듬으로 프레이밍.
+ */
+@Composable
+internal fun MorningCard(state: HomeUiState, onDismiss: () -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.morning_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                // XP 기준 분기 — 수기(Tier C)만 있던 어제는 "+0 XP" 병치 대신 쉼 프레이밍(#36 리뷰 N2)
+                if (state.yesterdayXp > 0) {
+                    stringResource(R.string.morning_body_active, state.yesterdayXp, state.yesterdayActiveMinutes)
+                } else {
+                    stringResource(R.string.morning_body_rest)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                stringResource(R.string.morning_condition, state.condition.roundToInt()),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.morning_dismiss))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 정산 개봉 카드 (#35, E5-2) — "새 활동 반영 시 XP 정산 의식"(코어 루프 3단계).
+ * 동기화 지연으로 늦게 도착한 성장을 문제 대신 선물로 프레이밍한다.
+ */
+@Composable
+internal fun SettlementCard(deltaXp: Int, onOpen: () -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.settlement_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.settlement_body, deltaXp),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onOpen) {
+                    Text(stringResource(R.string.settlement_open))
+                }
+            }
+        }
+    }
+}
 
 /** 컨디션 게이지 (#32) — 소프트 손실 게이지(20~100 사이에서 움직임, 소멸 없음). */
 @Composable
