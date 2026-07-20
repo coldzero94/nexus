@@ -8,8 +8,6 @@ import io.sentry.android.core.SentryAndroid
 
 private const val TAG = "CrashReporting"
 
-private val DIGITS = Regex("""\d+""")
-
 /**
  * Sentry 래퍼 (#48, E8-3) — 앱 코드는 SDK를 직접 만지지 않는다(detekt ForbiddenImport 강제,
  * #46 Telemetry와 동일 패턴). 무료 티어 계약(STACK.md): **tracing off · PII off**.
@@ -35,10 +33,10 @@ object CrashReporting {
             options.isAttachScreenshot = false // 화면에 건강 파생 표시값이 있다 — 첨부 금지
             options.isAttachViewHierarchy = false
             options.environment = if (BuildConfig.DEBUG) "debug" else "release"
-            // 방어 심화 — 미래에 값 보간 예외 메시지("steps=8432")가 생겨도 수치는 안 나간다
+            // 방어 심화 — 미래에 값 보간 예외 메시지("steps=8432")가 생겨도 수치는 안 나간다([CrashScrubber])
             options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
-                event.exceptions?.forEach { ex -> ex.value = ex.value?.replace(DIGITS, "#") }
-                event.message?.let { it.formatted = it.formatted?.replace(DIGITS, "#") }
+                event.exceptions?.forEach { ex -> ex.value = CrashScrubber.scrub(ex.value) }
+                event.message?.let { it.formatted = CrashScrubber.scrub(it.formatted) }
                 event
             }
         }
