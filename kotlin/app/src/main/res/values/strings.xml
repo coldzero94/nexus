@@ -29,6 +29,11 @@
     <string name="settlement_title">🎁 새 성장이 도착했어요</string>
     <string name="settlement_body">그동안의 움직임이 +%1$,d XP로 새겨졌어요.</string>
     <string name="settlement_open">확인</string>
+    <string name="morning_title">☀️ 좋은 아침이에요</string>
+    <string name="morning_body_active">어제는 %2$d분 움직여서 +%1$,d XP 자랐어요.</string>
+    <string name="morning_body_rest">어제는 푹 쉬었어요 — 쉼도 리듬이에요. 오늘 가볍게 시작해요.</string>
+    <string name="morning_condition">컨디션 %1$d(으)로 하루를 시작해요.</string>
+    <string name="morning_dismiss">좋아요</string>
     <string name="home_goal_move">오늘 %1$d분만 움직이면 컨디션이 올라요</string>
     <string name="home_goal_recovering">이 리듬이면 컨디션이 곧 회복돼요</string>
     <string name="home_goal_done">오늘 몫은 충분해요 — 캐릭터가 든든해해요</string>

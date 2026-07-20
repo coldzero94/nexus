@@ -25,6 +25,36 @@ import com.nexus.core.ExpeditionState
 import kotlin.math.roundToInt
 
 /**
+ * 아침 요약 카드 (#36, E5-3) — "간밤의 회복 + 어제의 성장", 하루 1회.
+ * 무활동이었던 어제는 꾸짖지 않는다(무처벌) — 쉼도 리듬으로 프레이밍.
+ */
+@Composable
+internal fun MorningCard(state: HomeUiState, onDismiss: () -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.morning_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (state.yesterdayActiveMinutes > 0) {
+                    stringResource(R.string.morning_body_active, state.yesterdayXp, state.yesterdayActiveMinutes)
+                } else {
+                    stringResource(R.string.morning_body_rest)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                stringResource(R.string.morning_condition, state.condition.roundToInt()),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.morning_dismiss))
+                }
+            }
+        }
+    }
+}
+
+/**
  * 정산 개봉 카드 (#35, E5-2) — "새 활동 반영 시 XP 정산 의식"(코어 루프 3단계).
  * 동기화 지연으로 늦게 도착한 성장을 문제 대신 선물로 프레이밍한다.
  */

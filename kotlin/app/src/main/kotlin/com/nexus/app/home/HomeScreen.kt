@@ -70,6 +70,9 @@ internal data class HomeUiState(
     /** 상한 적용 누적 XP — 에너지 소모 판정 입력(#34 trySpend). */
     val cappedTotalXp: Int,
     val expedition: ExpeditionState,
+    /** 어제의 성장 (#36 아침 카드) — 어제 일자 상한 적용 XP·활동 분. */
+    val yesterdayXp: Int,
+    val yesterdayActiveMinutes: Int,
 )
 
 internal sealed interface HomeLoad {
@@ -86,25 +89,15 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
     val context = LocalContext.current
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
     val stepRepo = remember { manager.stepRepositoryOrNull() }
-    var load by remember { mutableStateOf<HomeLoad?>(null) }
-
-    val restStore = remember { RestModeStore(context) }
-    val ledger = remember { RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao()) }
-    val energyStore = remember { EnergyStore(context) }
-    val expeditionStore = remember { ExpeditionStore(context) }
-    val settlementStore = remember { SettlementStore(context) }
-    var reloadKey by remember { mutableIntStateOf(0) }
-    var settlementDelta by remember { mutableStateOf<Int?>(null) }
-    LaunchedEffect(exerciseRepo, stepRepo, reloadKey) {
-        val loaded = if (exerciseRepo == null || stepRepo == null) {
-            HomeLoad.PermissionDenied
-        } else {
-            loadHome(exerciseRepo, stepRepo, restStore, ledger, energyStore, expeditionStore)
-        }
-        load = loaded
-        if (loaded is HomeLoad.Success) {
-            settlementDelta = settleOnLoad(settlementStore, loaded.state.cappedTotalXp)
-        }
+    val ui = remember { HomeUiController(HomeStores(context), context) }
+    LaunchedEffect(exerciseRepo, stepRepo, ui.reloadKey) {
+        ui.onLoaded(
+            if (exerciseRepo == null || stepRepo == null) {
+                HomeLoad.PermissionDenied
+            } else {
+                loadHome(exerciseRepo, stepRepo, ui.stores)
+            },
+        )
     }
 
     Column(
@@ -115,7 +108,7 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        when (val current = load) {
+        when (val current = ui.load) {
             null -> CircularProgressIndicator()
 
             HomeLoad.PermissionDenied -> ConnectNotice(onReconnect)
@@ -125,29 +118,79 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
 
             is HomeLoad.Success -> HomeLoaded(
                 state = current.state,
-                settlementDelta = settlementDelta,
-                onSettlementOpen = {
-                    // 개봉한 순간이 기준점 — 확인 전 재진입엔 다시 뜬다 (#61 패턴)
-                    settlementStore.markSeen(current.state.cappedTotalXp)
-                    settlementDelta = null
-                },
-                onDepart = {
-                    // 출발 = 에너지 확정 소모(#67) + 시작 시각 기록(#34) + 완료 알림 예약(#71)
-                    if (energyStore.trySpend(current.state.cappedTotalXp, EnergyEngine.EXPEDITION_COST)) {
-                        expeditionStore.start(System.currentTimeMillis())
-                        ExpeditionReturnWorker.scheduleFor(context)
-                        reloadKey++
-                    }
-                },
-                onOpen = {
-                    expeditionStore.open() // 보상 지급·연출은 E5-7(#68)에서 이 지점에 연결
-                    ExpeditionReturnWorker.cancel(context) // 이미 확인한 원정은 알리지 않는다 (#71)
-                    reloadKey++
-                },
+                morningVisible = ui.morningVisible,
+                onMorningDismiss = ui::dismissMorning,
+                settlementDelta = ui.settlementDelta,
+                onSettlementOpen = { ui.openSettlement(current.state.cappedTotalXp) },
+                onDepart = { ui.depart(current.state.cappedTotalXp) },
+                onOpen = ui::openExpedition,
             )
         }
     }
 }
+
+/**
+ * 홈 카드 상태·행위 홀더 (#35·#36) — 카드가 늘 때 화면 함수가 길어지지 않게 콜백을 메서드로.
+ * Compose 상태는 프로퍼티 델리게이트로 소유(리컴포지션 트리거 유지).
+ */
+private class HomeUiController(val stores: HomeStores, private val context: android.content.Context) {
+    var load by mutableStateOf<HomeLoad?>(null)
+        private set
+    var reloadKey by mutableIntStateOf(0)
+        private set
+    var settlementDelta by mutableStateOf<Int?>(null)
+        private set
+    var morningVisible by mutableStateOf(false)
+        private set
+
+    fun onLoaded(loaded: HomeLoad) {
+        load = loaded
+        if (loaded is HomeLoad.Success) {
+            settlementDelta = settleOnLoad(stores.settlement, loaded.state.cappedTotalXp)
+            morningVisible = shouldShowMorningCard(stores.morning)
+        }
+    }
+
+    fun dismissMorning() {
+        stores.morning.markShown(LocalDate.now().toEpochDay())
+        morningVisible = false
+    }
+
+    /** 개봉한 순간이 기준점 — 확인 전 재진입엔 다시 뜬다 (#61 패턴). */
+    fun openSettlement(currentXp: Int) {
+        stores.settlement.markSeen(currentXp)
+        settlementDelta = null
+    }
+
+    /** 출발 = 에너지 확정 소모(#67) + 시작 시각 기록(#34) + 완료 알림 예약(#71). */
+    fun depart(currentXp: Int) {
+        if (stores.energy.trySpend(currentXp, EnergyEngine.EXPEDITION_COST)) {
+            stores.expedition.start(System.currentTimeMillis())
+            ExpeditionReturnWorker.scheduleFor(context)
+            reloadKey++
+        }
+    }
+
+    fun openExpedition() {
+        stores.expedition.open() // 보상 지급·연출은 E5-7(#68)에서 이 지점에 연결
+        ExpeditionReturnWorker.cancel(context) // 이미 확인한 원정은 알리지 않는다 (#71)
+        reloadKey++
+    }
+}
+
+/** 홈이 쓰는 로컬 스토어 묶음 — 화면당 1회 생성(remember). 카드가 늘 때 파라미터 폭발 방지. */
+private class HomeStores(context: android.content.Context) {
+    val rest = RestModeStore(context)
+    val ledger = RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao())
+    val energy = EnergyStore(context)
+    val expedition = ExpeditionStore(context)
+    val settlement = SettlementStore(context)
+    val morning = MorningCardStore(context)
+}
+
+/** 아침 카드 노출 판정 (#36) — 오늘 아직 확인 안 했으면 노출. 소비는 확인 시점(#61 패턴). */
+private fun shouldShowMorningCard(store: MorningCardStore): Boolean =
+    store.lastShownEpochDay != LocalDate.now().toEpochDay()
 
 /** 로드 시 정산 적용 (#35) — 순수 판정([decideSettlement]) 후 필요 시 기준점 동기화, 카드 차액 반환. */
 private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
@@ -160,11 +203,14 @@ private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
 @Composable
 private fun HomeLoaded(
     state: HomeUiState,
+    morningVisible: Boolean,
+    onMorningDismiss: () -> Unit,
     settlementDelta: Int?,
     onSettlementOpen: () -> Unit,
     onDepart: () -> Unit,
     onOpen: () -> Unit,
 ) {
+    if (morningVisible) MorningCard(state, onDismiss = onMorningDismiss)
     settlementDelta?.let { delta -> SettlementCard(deltaXp = delta, onOpen = onSettlementOpen) }
     HomeContent(state = state, onDepart = onDepart, onOpen = onOpen)
 }
@@ -227,16 +273,13 @@ private fun DialogueBubble(spriteState: String) {
 private suspend fun loadHome(
     exerciseRepo: ExerciseRepository,
     stepRepo: StepRepository,
-    restStore: RestModeStore,
-    ledger: RewardLedgerRepository,
-    energyStore: EnergyStore,
-    expeditionStore: ExpeditionStore,
+    stores: HomeStores,
 ): HomeLoad = try {
     val zone = ZoneId.systemDefault()
     val today = LocalDate.now(zone)
     val raw = exerciseRepo.readRecentSessions(days = CONDITION_WINDOW_DAYS)
     // 홈 로드도 원장을 최신으로(멱등) — 성장 탭·워커와 같은 진입점 (#163)
-    ledger.grantSessions(raw, zone, epochMillis = System.currentTimeMillis())
+    stores.ledger.grantSessions(raw, zone, epochMillis = System.currentTimeMillis())
     val sessions = raw.map {
         SessionInput(
             type = it.type,
@@ -245,8 +288,8 @@ private suspend fun loadHome(
             epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
         )
     }
-    val condition = deriveCondition(sessions, today, restStore)
-    val cappedTotal = ledger.cappedTotalXp()
+    val condition = deriveCondition(sessions, today, stores.rest)
+    val cappedTotal = stores.ledger.cappedTotalXp()
     val todayEpoch = today.toEpochDay()
     HomeLoad.Success(
         HomeUiState(
@@ -257,9 +300,13 @@ private suspend fun loadHome(
                 .sumOf { it.minutes },
             todaySteps = stepRepo.readDailySteps(days = 1)
                 .firstOrNull { it.date == today }?.steps ?: 0L,
-            energy = EnergyEngine.balance(cappedTotal, energyStore.totalSpent),
+            energy = EnergyEngine.balance(cappedTotal, stores.energy.totalSpent),
             cappedTotalXp = cappedTotal,
-            expedition = ExpeditionEngine.stateAt(expeditionStore.startedAtMillis, System.currentTimeMillis()),
+            expedition = ExpeditionEngine.stateAt(stores.expedition.startedAtMillis, System.currentTimeMillis()),
+            yesterdayXp = stores.ledger.cappedXpOn(todayEpoch - 1),
+            yesterdayActiveMinutes = sessions
+                .filter { it.epochDay == todayEpoch - 1 && it.type != null }
+                .sumOf { it.minutes },
         ),
     )
 } catch (e: CancellationException) {
