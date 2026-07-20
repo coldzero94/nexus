@@ -1,0 +1,8 @@
+{
+  "version": "v1",
+  "note": "장비 카탈로그(#37, E5-4). layerState는 캐릭터 레이어 규약 character_{layerState}_0. 임시 그래픽 — 실제 에셋은 #76(슬롯 2×4종)에서 교체. 아이템 추가 = 여기 + 드로어블만(코드 무수정).",
+  "items": [
+    { "id": "straw_hat", "slot": "HEAD", "layerState": "hat_straw", "name": "밀짚모자" },
+    { "id": "red_scarf", "slot": "ACCESSORY", "layerState": "scarf_red", "name": "빨간 목도리" }
+  ]
+}

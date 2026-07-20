@@ -127,6 +127,8 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
                     }
                 }
                 GrowthContent(current.state)
+                // 오늘 성장이 있으면 걷는 모습으로 미리보기 — 홈 캐릭터와 같은 감각 (#37)
+                EquipmentCard(spriteState = if (current.state.today.cappedXp > 0) "walk" else "idle")
                 badges?.let { BadgesCard(it) }
             }
         }
