@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -66,6 +67,31 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         }
         ReminderCard()
         WeeklyGoalCard()
+        WidgetPinCard()
+    }
+}
+
+/** 위젯 추가 유도 (#40) — 런처 핀 요청. 위젯은 최상위 리텐션 표면(Finch 4대 장치). */
+@Composable
+private fun WidgetPinCard() {
+    val context = LocalContext.current
+    Card {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.settings_widget), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_widget_desc), style = MaterialTheme.typography.bodySmall)
+            Button(onClick = {
+                val manager = android.appwidget.AppWidgetManager.getInstance(context)
+                val provider = android.content.ComponentName(
+                    context,
+                    com.nexus.app.widget.NexusWidgetReceiver::class.java,
+                )
+                if (manager.isRequestPinAppWidgetSupported) {
+                    manager.requestPinAppWidget(provider, null, null)
+                }
+            }) {
+                Text(stringResource(R.string.settings_widget_add))
+            }
+        }
     }
 }
 

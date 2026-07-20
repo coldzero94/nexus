@@ -12,7 +12,9 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
+import com.nexus.app.widget.WidgetUpdater
 import java.io.IOException
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
@@ -65,14 +67,23 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
     private suspend fun appendToLedger(client: HealthConnectClient, deletedIds: List<String>) {
         val ledger = RewardLedgerRepository(NexusDatabase.get(applicationContext).rewardEventDao())
         val now = System.currentTimeMillis()
-        ledger.grantSessions(
-            sessions = ExerciseRepository(client).readRecentSessions(days = GRANT_WINDOW_DAYS),
-            zone = ZoneId.systemDefault(),
-            epochMillis = now,
-        )
+        val zone = ZoneId.systemDefault()
+        val sessions = ExerciseRepository(client).readRecentSessions(days = GRANT_WINDOW_DAYS)
+        ledger.grantSessions(sessions, zone, epochMillis = now)
         deletedIds.forEach { id ->
             if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
         }
+        // 위젯 갱신 (#40): 동기화가 위젯의 유일한 백그라운드 갱신원 — 15분 준실시간 한계
+        val todayEpoch = LocalDate.now(zone).toEpochDay()
+        WidgetUpdater.update(
+            context = applicationContext,
+            cappedTotalXp = ledger.cappedTotalXp(),
+            todayXp = ledger.cappedXpOn(todayEpoch),
+            todayActive = sessions.any {
+                it.type != null &&
+                    it.start.atZone(zone).toLocalDate().toEpochDay() == todayEpoch
+            },
+        )
     }
 
     companion object {

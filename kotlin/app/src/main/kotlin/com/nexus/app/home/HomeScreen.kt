@@ -40,6 +40,7 @@ import com.nexus.app.health.sleepHoursOrNull
 import com.nexus.app.notify.ExpeditionReturnWorker
 import com.nexus.app.settings.RestModeStore
 import com.nexus.app.ui.ConnectNotice
+import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.ConditionEngine
 import com.nexus.core.DialogueSelector
 import com.nexus.core.EnergyEngine
@@ -54,6 +55,7 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 private const val TAG = "HomeScreen"
@@ -143,9 +145,17 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
     /** 카드가 "어느 날"의 것인지 — dismiss가 노출 판정과 같은 날짜를 소비(자정 경계, #70 리뷰 N3). */
     private var cardEpochDay = 0L
 
-    fun onLoaded(loaded: HomeLoad) {
+    suspend fun onLoaded(loaded: HomeLoad) {
         load = loaded
         if (loaded is HomeLoad.Success) {
+            // 위젯 갱신 (#40) — 앱 사용 시 즉시, 컨디션 실값 포함(워커는 컨디션 미갱신)
+            WidgetUpdater.update(
+                context = context,
+                cappedTotalXp = loaded.state.cappedTotalXp,
+                todayXp = loaded.state.todayXp,
+                todayActive = loaded.state.todayActiveMinutes > 0,
+                condition = loaded.state.condition.roundToInt(),
+            )
             val now = java.time.LocalDateTime.now()
             cardEpochDay = now.toLocalDate().toEpochDay()
             settlementDelta = settleOnLoad(stores.settlement, loaded.state.cappedTotalXp)
