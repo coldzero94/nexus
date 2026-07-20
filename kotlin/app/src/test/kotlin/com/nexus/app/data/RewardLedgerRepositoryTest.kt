@@ -87,4 +87,16 @@ class RewardLedgerRepositoryTest {
         repo.grantSample("c", xp = 100, day = 1L)
         assertEquals(400, repo.cappedTotalXp()) // 300(캡) + 100
     }
+
+    @Test
+    fun cappedXpOn_singleDay_withCancellation() = runTest {
+        val repo = RewardLedgerRepository(FakeDao())
+        repo.grantSample("a", xp = 400, day = 3L) // 상한: 200 + 100 = 300
+        repo.grantSample("b", xp = 50, day = 4L)
+        repo.grantSample("c", xp = 60, day = 3L)
+        repo.cancel("c", epochMillis = 9L) // 취소가 지급일(3)로 상쇄
+        assertEquals(300, repo.cappedXpOn(3L)) // 400+60-60=400 → 캡 300
+        assertEquals(50, repo.cappedXpOn(4L))
+        assertEquals(0, repo.cappedXpOn(99L)) // 무기록 일자
+    }
 }

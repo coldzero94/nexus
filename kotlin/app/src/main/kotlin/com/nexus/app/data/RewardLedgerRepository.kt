@@ -76,6 +76,10 @@ class RewardLedgerRepository(private val dao: RewardEventDao) {
         }
     }
 
+    /** 특정 일자의 상한 적용 XP (#36 아침 카드 "어제의 성장"). */
+    suspend fun cappedXpOn(epochDay: Long): Int =
+        LedgerMath.cappedTotalXp(dao.xpByDay().filter { it.epochDay == epochDay }.associate { it.epochDay to it.xp })
+
     /** 표시용 누적 XP — 일 상한 적용(core LedgerMath). */
     suspend fun cappedTotalXp(): Int = LedgerMath.cappedTotalXp(dao.xpByDay().associate { it.epochDay to it.xp })
 }
