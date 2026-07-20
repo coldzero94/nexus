@@ -24,10 +24,18 @@ android {
                 .toInt()
         versionCode = 1
         versionName = "0.1.0"
+
+        // TelemetryDeck 앱 ID — gradle.properties(로컬/CI 시크릿)에서 주입, 없으면 빈 값 = 계측 꺼짐 (#46)
+        buildConfigField(
+            "String",
+            "TELEMETRYDECK_APP_ID",
+            "\"${providers.gradleProperty("nexus.telemetrydeck.appId").orNull.orEmpty()}\"",
+        )
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     // Room 스키마 export — 마이그레이션 검증의 기준(#162). schemas/는 커밋 대상.
@@ -54,6 +62,7 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.glance.appwidget)
+    implementation(libs.telemetrydeck.sdk)
     ksp(libs.room.compiler)
 
     testImplementation(libs.kotlin.test.junit)
