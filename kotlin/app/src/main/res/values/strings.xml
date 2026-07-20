@@ -54,6 +54,7 @@
     <string name="settings_widget_add">위젯 추가</string>
     <string name="widget_expedition_ready">🎁 원정에서 돌아왔어요!</string>
     <string name="widget_expedition_progress">🧭 모험 중 — 약 %1$d시간 남음</string>
+    <string name="widget_expedition_soon">🧭 곧 돌아와요!</string>
     <string name="widget_journal_pending">🌙 오늘의 일지가 기다려요</string>
     <string name="widget_morning_pending">☀️ 아침 카드가 도착했어요</string>
     <string name="widget_level_format">Lv.%1$d</string>

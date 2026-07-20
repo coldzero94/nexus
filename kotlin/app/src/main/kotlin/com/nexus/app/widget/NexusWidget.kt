@@ -115,7 +115,8 @@ private fun statusLine(context: Context, snapshot: WidgetSnapshot): String? {
         ExpeditionState.ReadyToOpen -> return context.getString(R.string.widget_expedition_ready)
 
         is ExpeditionState.InProgress -> {
-            val hours = state.remainingMillis / MILLIS_PER_HOUR
+            val hours = remainingDisplayHours(state.remainingMillis)
+                ?: return context.getString(R.string.widget_expedition_soon)
             return context.getString(R.string.widget_expedition_progress, hours)
         }
 
@@ -126,6 +127,16 @@ private fun statusLine(context: Context, snapshot: WidgetSnapshot): String? {
         snapshot.morningPending -> context.getString(R.string.widget_morning_pending)
         else -> null
     }
+}
+
+/**
+ * 잔여 표기 시간 — "약 N시간"엔 floor보다 반올림이 정확하고, 1시간 미만은 null
+ * ("곧 돌아와요" 분기 — 매 원정 마지막 1시간의 "약 0시간 남음" 방지, #72 리뷰).
+ */
+internal fun remainingDisplayHours(remainingMillis: Long): Long? = if (remainingMillis < MILLIS_PER_HOUR) {
+    null
+} else {
+    (remainingMillis + MILLIS_PER_HOUR / 2) / MILLIS_PER_HOUR
 }
 
 private const val MILLIS_PER_HOUR = 3_600_000L
