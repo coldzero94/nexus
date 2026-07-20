@@ -106,7 +106,9 @@ private fun NexusApp(manager: HealthConnectManager) {
             finished = true
             onboarding.completed = true
             onboarding.connected = isConnected
+            Telemetry.recordOnce(context, TelemetryEvent.ONBOARDING_COMPLETED)
             if (isConnected) {
+                Telemetry.recordOnce(context, TelemetryEvent.PERMISSION_GRANTED)
                 // 연결 성공 시 15분 주기 백그라운드 동기화 등록 (#8) + 초기 레벨 연출 (#44)
                 HealthSyncWorker.enqueuePeriodic(context)
                 showInitialLevel = !onboarding.initialLevelShown

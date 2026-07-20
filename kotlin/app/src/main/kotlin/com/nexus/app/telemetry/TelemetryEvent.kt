@@ -11,4 +11,21 @@ package com.nexus.app.telemetry
 enum class TelemetryEvent(val signal: String) {
     /** 앱 열림 — 리텐션 분모. */
     APP_OPENED("app.opened"),
+
+    // 퍼널 (#47, E8-2) — 온보딩 → 권한 → 첫 XP → 위젯 → 원정. 아래 4종은 사용자당 1회([Telemetry.recordOnce]).
+
+    /** 온보딩 완료(연결 여부 무관). */
+    ONBOARDING_COMPLETED("funnel.onboardingCompleted"),
+
+    /** Health Connect 권한 연결 성공. */
+    PERMISSION_GRANTED("funnel.permissionGranted"),
+
+    /** 원장에 첫 XP 적립 확인 — 수치가 아니라 발생 사실만. */
+    FIRST_XP("funnel.firstXp"),
+
+    /** 홈 위젯 최초 설치. */
+    WIDGET_INSTALLED("funnel.widgetInstalled"),
+
+    /** 원정 개봉 — 반복 발생(참여 지표 겸용). */
+    EXPEDITION_OPENED("funnel.expeditionOpened"),
 }

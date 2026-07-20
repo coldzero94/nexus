@@ -26,6 +26,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.nexus.app.R
 import com.nexus.app.character.CharacterComposer
+import com.nexus.app.telemetry.Telemetry
+import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.core.ExpeditionEngine
 import com.nexus.core.ExpeditionState
 import com.nexus.core.XpEngine
@@ -143,4 +145,10 @@ private const val MILLIS_PER_HOUR = 3_600_000L
 
 class NexusWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = NexusWidget()
+
+    override fun onEnabled(context: Context) {
+        super.onEnabled(context)
+        // 위젯 0→1 설치 시점 — 퍼널 (#47). 재설치 반복 집계는 recordOnce가 막는다.
+        Telemetry.recordOnce(context, TelemetryEvent.WIDGET_INSTALLED)
+    }
 }

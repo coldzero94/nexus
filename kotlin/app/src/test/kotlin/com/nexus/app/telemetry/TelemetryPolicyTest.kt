@@ -50,7 +50,14 @@ class TelemetryPolicyTest {
     @Test
     fun signalAllowlistIsPinned() {
         // 새 이벤트 추가 시 이 목록도 함께 갱신해야 한다 — 리뷰를 강제하는 이중 장부
-        val pinned = setOf("app.opened")
+        val pinned = setOf(
+            "app.opened",
+            "funnel.onboardingCompleted",
+            "funnel.permissionGranted",
+            "funnel.firstXp",
+            "funnel.widgetInstalled",
+            "funnel.expeditionOpened",
+        )
         assertEquals(pinned, TelemetryEvent.entries.map { it.signal }.toSet())
     }
 }
