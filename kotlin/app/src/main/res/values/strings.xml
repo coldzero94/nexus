@@ -52,6 +52,10 @@
     <string name="settings_widget">홈 화면 위젯</string>
     <string name="settings_widget_desc">홈 화면에서 캐릭터의 오늘을 바로 봐요. 반영은 동기화 주기(최대 15분+)를 따라요.</string>
     <string name="settings_widget_add">위젯 추가</string>
+    <string name="widget_expedition_ready">🎁 원정에서 돌아왔어요!</string>
+    <string name="widget_expedition_progress">🧭 모험 중 — 약 %1$d시간 남음</string>
+    <string name="widget_journal_pending">🌙 오늘의 일지가 기다려요</string>
+    <string name="widget_morning_pending">☀️ 아침 카드가 도착했어요</string>
     <string name="widget_level_format">Lv.%1$d</string>
     <string name="widget_condition_format">컨디션 %1$d</string>
     <string name="widget_today_format">오늘 +%1$,d XP</string>
