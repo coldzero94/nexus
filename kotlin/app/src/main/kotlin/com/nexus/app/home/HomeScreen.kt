@@ -39,6 +39,8 @@ import com.nexus.app.health.StepRepository
 import com.nexus.app.health.sleepHoursOrNull
 import com.nexus.app.notify.ExpeditionReturnWorker
 import com.nexus.app.settings.RestModeStore
+import com.nexus.app.telemetry.Telemetry
+import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.ConditionEngine
@@ -156,6 +158,10 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
                 todayActive = loaded.state.todayActiveMinutes > 0,
                 condition = loaded.state.condition.roundToInt(),
             )
+            // 첫 XP 퍼널 (#47) — 원장에 무언가 적립된 사실만, 수치는 싣지 않는다
+            if (loaded.state.cappedTotalXp > 0) {
+                Telemetry.recordOnce(context, TelemetryEvent.FIRST_XP)
+            }
             val now = java.time.LocalDateTime.now()
             cardEpochDay = now.toLocalDate().toEpochDay()
             settlementDelta = settleOnLoad(stores.settlement, loaded.state.cappedTotalXp)
@@ -192,6 +198,7 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
     fun openExpedition() {
         stores.expedition.open() // 보상 지급·연출은 E5-7(#68)에서 이 지점에 연결
         ExpeditionReturnWorker.cancel(context) // 이미 확인한 원정은 알리지 않는다 (#71)
+        Telemetry.record(TelemetryEvent.EXPEDITION_OPENED) // 반복 참여 지표 겸 퍼널 종점 (#47)
         reloadKey++
     }
 }

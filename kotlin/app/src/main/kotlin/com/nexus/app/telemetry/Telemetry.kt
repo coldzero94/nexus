@@ -47,7 +47,22 @@ object Telemetry {
             Log.w(TAG, "event dropped by policy: ${event.signal} $violations")
             return
         }
+        // 발생 사실만 로그 — QA가 앱 ID 없이도 콜사이트를 검증하는 통로 (#47)
+        Log.i(TAG, "signal: ${event.signal}")
         if (!enabled) return
         TelemetryDeck.getInstance()?.signal(event.signal, params, null, null)
     }
+
+    /**
+     * 사용자당 1회 이벤트(퍼널 전환점, #47). 마킹은 **실제 전송된 때만** — 앱 ID 없이 발생한
+     * 전환이 영구 소실되지 않고, ID가 켜진 뒤 첫 재발생 때 전송된다.
+     */
+    fun recordOnce(context: Context, event: TelemetryEvent) {
+        val prefs = context.getSharedPreferences(FIRSTS_PREFS, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(event.signal, false)) return
+        record(event)
+        if (enabled) prefs.edit().putBoolean(event.signal, true).apply()
+    }
+
+    private const val FIRSTS_PREFS = "nexus_telemetry_firsts"
 }
