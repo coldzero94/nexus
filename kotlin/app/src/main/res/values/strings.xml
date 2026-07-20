@@ -136,6 +136,8 @@
     <string name="growth_stat_value_format">%1$,d</string>
     <string name="growth_stat_locked_format">%1$s — 잠김 (후속 해금)</string>
     <string name="growth_scope_note">최근 %1$d일 운동 세션 기준 · 걸음 XP는 원장 배선 후 합산</string>
+    <string name="growth_badges_title">배지 %1$d / %2$d</string>
+    <string name="growth_badge_locked">%1$s · 잠김</string>
     <string name="xp_explain_today_format">오늘 XP %1$,d pt</string>
     <string name="xp_explain_show">환산 설명</string>
     <string name="xp_explain_hide">접기</string>

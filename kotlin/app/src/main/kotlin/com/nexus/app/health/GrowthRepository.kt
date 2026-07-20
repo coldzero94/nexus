@@ -14,6 +14,9 @@ import java.time.ZoneId
 /** 성장 화면(#23)이 읽는 실데이터 묶음 (#170). */
 data class GrowthData(val rollup: GrowthRollup, val affinity: ClassAffinity)
 
+/** 배지 해금 신호 입력 (#175) — 일별 활동(오래된→최신)과 창 내 하루 최대 걸음. */
+data class BadgeInputs(val dailyActive: List<Boolean>, val bestDaySteps: Int)
+
 /**
  * 엔진 실데이터 통합 (#170): HC 걸음(#7)·운동세션(#8) → 일별 기본점수 → dailyXp → 롤업 + 클래스 성향.
  * 걷기는 걸음 수로만 계산(세션 '걷기'는 이중계산 방지로 제외). 신뢰 계수는 개인 레벨상 A·B=1.0(#62).
@@ -29,6 +32,20 @@ class GrowthRepository(private val stepRepo: StepRepository, private val exercis
         val rollup = RollupPrecompute.compute(dailyXps)
         val affinity = computeAffinity(steps.sumOf { StepConversion.walkingBase(it.steps) }, sessions)
         return GrowthData(rollup, affinity)
+    }
+
+    /**
+     * 배지 신호 입력 산출 (#175) — 일별 활동 여부(dailyXp>0)와 하루 최대 걸음. 누적 XP·레벨은
+     * 원장 기준이라 여기서 내지 않는다(호출자가 [com.nexus.core.BadgeSignals.build]에 원장값을 전달).
+     */
+    suspend fun computeBadgeInputs(days: Int = WINDOW_DAYS): BadgeInputs {
+        val steps = stepRepo.readDailySteps(days)
+        val sessions = exerciseRepo.readRecentSessions(days)
+        val sessionBaseByDate = sessionBaseByDate(sessions)
+        val dailyBases = steps.map { StepConversion.walkingBase(it.steps) + (sessionBaseByDate[it.date] ?: 0.0) }
+        val dailyActive = dailyXpSeries(dailyBases).map { it > 0 }
+        val bestDaySteps = steps.maxOfOrNull { it.steps }?.toInt() ?: 0
+        return BadgeInputs(dailyActive = dailyActive, bestDaySteps = bestDaySteps)
     }
 
     /** 러닝·근력 세션의 날짜별 기본점수 합(걷기 세션은 제외 — 걸음으로 계산). */

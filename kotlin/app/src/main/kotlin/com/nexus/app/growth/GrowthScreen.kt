@@ -80,6 +80,7 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
     val stateStore = remember { GrowthStateStore(context) }
     var load by remember { mutableStateOf<GrowthLoad?>(null) }
     var change by remember { mutableStateOf<GrowthChange?>(null) }
+    var badges by remember { mutableStateOf<BadgeState?>(null) }
     var celebrationVisible by remember { mutableStateOf(true) }
 
     LaunchedEffect(exerciseRepo) {
@@ -91,6 +92,8 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
             // 기준점 소비는 "확인"(dismiss) 시점 — 감지 시점에 갱신하면 회전·프로세스 사망으로
             // 카드가 영영 소실된다(#61 리뷰). 변화가 없을 때만 여기서 기준점을 세팅(최초 방문 포함).
             if (change == null) stateStore.recordSeen(loaded.state.summary.level, loaded.state.summary.affinity)
+            // 배지는 부가 정보 — 실패해도 성장 화면은 그대로(loadBadges가 null 반환) (#175)
+            badges = loadBadges(context, manager, cumulativeXp = loaded.state.summary.totalXp)
         }
     }
 
@@ -124,6 +127,7 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
                     }
                 }
                 GrowthContent(current.state)
+                badges?.let { BadgesCard(it) }
             }
         }
     }
