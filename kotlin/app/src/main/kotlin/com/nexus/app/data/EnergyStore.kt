@@ -13,6 +13,11 @@ class EnergyStore(context: Context) {
     val totalSpent: Int
         get() = prefs.getInt(KEY_SPENT, 0)
 
+    /** 백업 복원 전용 (#51) — 일반 경로는 [trySpend]만 쓴다. */
+    fun restoreTotalSpent(value: Int) {
+        prefs.edit().putInt(KEY_SPENT, value).apply()
+    }
+
     /** [cost] 소모 시도 — 잔액 부족이면 false(차감 없음). */
     fun trySpend(cappedTotalXp: Int, cost: Int): Boolean {
         if (!EnergyEngine.canSpend(cappedTotalXp, totalSpent, cost)) return false

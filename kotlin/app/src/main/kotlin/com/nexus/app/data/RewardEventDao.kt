@@ -19,6 +19,10 @@ interface RewardEventDao {
 
     @Query("SELECT COUNT(*) FROM reward_events")
     suspend fun count(): Long
+
+    /** 백업 내보내기용 전체 원장 (#51) — sequence 순서 유지. */
+    @Query("SELECT * FROM reward_events ORDER BY sequence")
+    suspend fun all(): List<RewardEventEntity>
 }
 
 /** 일자 합산 행 (xpByDay). */

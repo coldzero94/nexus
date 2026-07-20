@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 자동 백업 규칙 (#51, E8-6) — Room 원장·프리퍼런스 포함. 원본 건강 "수치"는 앱에 없고
+     (Health Connect가 소스), 원장의 idempotencyKey(HC 레코드 UUID 참조)는 본인 계정 백업에
+     한해 명시적 예외로 허용 — 근거·해시화 후속은 BACKEND.md §3 (#51 결정). -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>

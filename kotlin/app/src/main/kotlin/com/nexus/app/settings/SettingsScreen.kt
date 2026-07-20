@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,11 +36,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.nexus.app.R
+import com.nexus.app.backup.BackupManager
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.notify.NotificationSettings
 import com.nexus.app.notify.ReminderWorker
 import com.nexus.app.ui.GoalDayChooser
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import java.io.IOException
 
 private const val TAG = "SettingsScreen"
@@ -82,7 +85,57 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
         ReminderCard()
         WeeklyGoalCard()
         WidgetPinCard()
+        BackupCard()
         DeleteDataCard()
+    }
+}
+
+/**
+ * 수동 백업 (#51, E8-6) — SAF로 JSON 내보내기/가져오기. 계산된 원장만 담는다
+ * ([com.nexus.app.backup.BackupCodec] — 원본 건강 수치 배제).
+ */
+@Composable
+private fun BackupCard() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    fun toast(resId: Int) = android.widget.Toast.makeText(context, resId, android.widget.Toast.LENGTH_SHORT).show()
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val ok = BackupManager.exportTo(context, it)
+                toast(if (ok) R.string.backup_export_done else R.string.backup_export_failed)
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val ok = BackupManager.importFrom(context, it)
+                toast(if (ok) R.string.backup_import_done else R.string.backup_import_failed)
+            }
+        }
+    }
+
+    Card {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.settings_backup_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_backup_desc), style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { exportLauncher.launch("nexus-backup.json") }) {
+                    Text(stringResource(R.string.backup_export))
+                }
+                val importTypes = arrayOf("application/json", "application/octet-stream")
+                TextButton(onClick = { importLauncher.launch(importTypes) }) {
+                    Text(stringResource(R.string.backup_import))
+                }
+            }
+        }
     }
 }
 

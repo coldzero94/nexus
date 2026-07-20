@@ -2,6 +2,7 @@ plugins {
     // AGP 9.0+는 Kotlin 지원이 내장이라 org.jetbrains.kotlin.android를 적용하지 않는다
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
 
@@ -63,6 +64,7 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.glance.appwidget)
     implementation(libs.telemetrydeck.sdk)
+    implementation(libs.kotlinx.serialization.json)
     ksp(libs.room.compiler)
 
     testImplementation(libs.kotlin.test.junit)
