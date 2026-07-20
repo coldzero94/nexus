@@ -23,10 +23,12 @@ style:
   ForbiddenImport:
     active: true
     # SDK 직접 호출은 allowlist 정책(TelemetryPolicy)을 통째로 우회한다 — 래퍼 밖 사용 금지 (#46)
-    excludes: ["**/com/nexus/app/telemetry/**"]
+    excludes: ["**/com/nexus/app/telemetry/**", "**/com/nexus/app/crash/**"]
     imports:
       - value: "com.telemetrydeck.*"
         reason: "계측은 com.nexus.app.telemetry.Telemetry 래퍼로만 — 이벤트 allowlist 강제 (#46)"
+      - value: "io.sentry.*"
+        reason: "크래시 수집은 com.nexus.app.crash.CrashReporting 래퍼로만 — tracing/PII off 계약 (#48)"
 
 complexity:
   LongParameterList:
