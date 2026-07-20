@@ -38,6 +38,7 @@ import com.nexus.app.home.WelcomeBackScene
 import com.nexus.app.onboarding.OnboardingScreen
 import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
+import com.nexus.app.ui.NexusTheme
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
 import com.nexus.core.XpEngine
@@ -48,7 +49,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val manager = HealthConnectManager(applicationContext)
         setContent {
-            MaterialTheme {
+            NexusTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     NexusApp(manager)
                 }
