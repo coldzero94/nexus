@@ -75,6 +75,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun WidgetPinCard() {
     val context = LocalContext.current
+    val pinSupported = remember {
+        android.appwidget.AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported
+    }
+    if (!pinSupported) return // 미지원 런처 — 무반응 버튼 대신 카드 자체를 숨김 (#40 리뷰 N1)
     Card {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.settings_widget), style = MaterialTheme.typography.titleMedium)

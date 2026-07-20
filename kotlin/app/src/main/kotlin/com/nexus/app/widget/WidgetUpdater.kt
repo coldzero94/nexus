@@ -12,6 +12,7 @@ import com.nexus.core.LevelCurve
  */
 object WidgetUpdater {
 
+    @Suppress("TooGenericExceptionCaught")
     suspend fun update(
         context: Context,
         cappedTotalXp: Int,
@@ -19,16 +20,27 @@ object WidgetUpdater {
         todayActive: Boolean,
         condition: Int? = null,
     ) {
-        val store = WidgetSnapshotStore(context)
-        val previous = store.read()
-        store.write(
-            WidgetSnapshot(
-                level = LevelCurve.displayLevel(cappedTotalXp),
-                condition = condition ?: previous.condition,
-                todayXp = todayXp,
-                spriteState = if (todayActive) "walk" else "idle",
-            ),
-        )
-        NexusWidget().updateAll(context)
+        // best-effort 격리 (#40 리뷰 F1): 위젯은 코스메틱 부수효과 — 갱신 실패가
+        // 홈 컴포지션을 죽이거나 성공한 동기화를 실패로 뒤집으면 안 된다. 광범위 catch는
+        // 이 경계에서만 의도적(#130의 "삼킴 금지"는 임계 경로 대상 — 여기서는 로그로 드러냄).
+        try {
+            val store = WidgetSnapshotStore(context)
+            val previous = store.read()
+            store.write(
+                WidgetSnapshot(
+                    level = LevelCurve.displayLevel(cappedTotalXp),
+                    condition = condition ?: previous.condition,
+                    todayXp = todayXp,
+                    spriteState = if (todayActive) "walk" else "idle",
+                ),
+            )
+            NexusWidget().updateAll(context)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "widget update failed — cosmetic, skipping", e)
+        }
     }
+
+    private const val TAG = "WidgetUpdater"
 }
