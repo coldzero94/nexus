@@ -42,6 +42,12 @@
     <string name="initial_level_title">이미 레벨 %1$d이에요!</string>
     <string name="initial_level_body">지난 4주의 움직임이 %1$,d XP로 새겨져 있었어요. 캐릭터는 처음부터 당신과 함께였어요.</string>
     <string name="initial_level_continue">만나러 가기</string>
+    <string name="onboarding_goal_title">일주일에 며칠 움직일까요?</string>
+    <string name="onboarding_goal_body">부담 없는 약속이면 충분해요 — 주 4일이면 균형 보너스도 챙겨요. 설정에서 언제든 바꿀 수 있어요.</string>
+    <string name="onboarding_goal_confirm">이 정도로 할게요</string>
+    <string name="goal_days_format">주 %1$d일</string>
+    <string name="settings_goal">주간 목표</string>
+    <string name="settings_goal_desc">일주일에 움직일 날 수 — 개인 기준 성장의 약속이에요.</string>
     <string name="home_goal_move">오늘 %1$d분만 움직이면 컨디션이 올라요</string>
     <string name="home_goal_recovering">이 리듬이면 컨디션이 곧 회복돼요</string>
     <string name="home_goal_done">오늘 몫은 충분해요 — 캐릭터가 든든해해요</string>
