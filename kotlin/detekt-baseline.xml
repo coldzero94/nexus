@@ -3,23 +3,5 @@
   <ManuallySuppressedIssues/>
   <CurrentIssues>
     <ID>LongMethod:ActivityScreen.kt$@Composable fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier)</ID>
-    <ID>MagicNumber:HealthSyncWorker.kt$HealthSyncWorker.Companion$15</ID>
-    <ID>MagicNumber:HealthSyncWorker.kt$HealthSyncWorker.Companion$30</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z1$0.50</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z1$0.8</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z2$0.60</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z2$0.9</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z3$0.70</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z4$0.80</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z4$1.1</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z5$0.90</ID>
-    <ID>MagicNumber:HeartRateIntensity.kt$HrZone.Z5$1.2</ID>
-    <ID>MagicNumber:StrengthAxis.kt$StrengthAxis$1.1</ID>
-    <ID>MagicNumber:StrengthAxis.kt$StrengthAxis$1.2</ID>
-    <ID>MagicNumber:StrengthAxis.kt$StrengthAxis$1.3</ID>
-    <ID>MagicNumber:StrengthAxis.kt$StrengthAxis$1e-9</ID>
-    <ID>MagicNumber:StrengthAxis.kt$StrengthAxis$3</ID>
-    <ID>MagicNumber:Trust.kt$TrustTier.B$0.85</ID>
-    <ID>MagicNumber:XpEngine.kt$ActivityType.STRENGTH$1.5</ID>
   </CurrentIssues>
 </SmellBaseline>

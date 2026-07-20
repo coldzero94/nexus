@@ -18,6 +18,8 @@ style:
     # 주의: excludes는 기본값에 병합이 아니라 "대체"됨 — 테스트 소스셋을 직접 전부 나열
     excludes: ["**/commonTest/**", "**/jvmTest/**", "**/androidHostTest/**", "**/test/**"]
     ignorePropertyDeclaration: true
+    # enum 생성자 인자는 "표"다 — 상수 이름이 enum 항목명 자체라 인라인이 더 명확 (#208)
+    ignoreEnums: true
   MaxLineLength:
     maxLineLength: 120  # .editorconfig max_line_length와 동기 — 한쪽만 바꾸지 말 것
   ForbiddenImport:
