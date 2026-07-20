@@ -3,9 +3,12 @@ package com.nexus.app.crash
 import android.content.Context
 import android.util.Log
 import com.nexus.app.BuildConfig
+import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroid
 
 private const val TAG = "CrashReporting"
+
+private val DIGITS = Regex("""\d+""")
 
 /**
  * Sentry 래퍼 (#48, E8-3) — 앱 코드는 SDK를 직접 만지지 않는다(detekt ForbiddenImport 강제,
@@ -32,6 +35,12 @@ object CrashReporting {
             options.isAttachScreenshot = false // 화면에 건강 파생 표시값이 있다 — 첨부 금지
             options.isAttachViewHierarchy = false
             options.environment = if (BuildConfig.DEBUG) "debug" else "release"
+            // 방어 심화 — 미래에 값 보간 예외 메시지("steps=8432")가 생겨도 수치는 안 나간다
+            options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
+                event.exceptions?.forEach { ex -> ex.value = ex.value?.replace(DIGITS, "#") }
+                event.message?.let { it.formatted = it.formatted?.replace(DIGITS, "#") }
+                event
+            }
         }
     }
 }

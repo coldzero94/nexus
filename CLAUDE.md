@@ -20,6 +20,7 @@ Decisions and their rationale live in `docs/` (written in Korean), not in code. 
 - `docs/ARCHITECTURE.md` — monorepo layout (android/ · web/ · supabase/), CI strategy
 - `docs/BACKEND.md` — server-readiness contracts, backup, phase-2 architecture
 - `docs/WORKFLOW.md` — collaboration process / `docs/RESEARCH.md`, `docs/BENCHMARK.md` — market evidence
+- `docs/OPS.md` — crash/stability weekly ops (Sentry free tier, Play vitals thresholds)
 
 **When a decision changes, update the affected doc in the same commit and record the rationale as a comment on the related issue.**
 
