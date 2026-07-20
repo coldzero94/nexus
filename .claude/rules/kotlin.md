@@ -18,5 +18,5 @@ paths:
 
 ## Testing
 
-- `core/` logic requires case-table tests (input → expected XP) — the same table as the balance spreadsheet.
+- `core/` logic requires case-table tests (input → expected XP) — the same table as the balance spreadsheet. **`core/src/jvmTest/resources/balance/*.csv` is the single source for balance tables** (spreadsheet export → commit CSV, no code edit; CI enforces parity via BalanceCsvHarnessTest).
 - Seed synthetic data with Health Connect Toolbox on emulators. Mark items needing a physical Galaxy device with a `실기기` note in the issue.

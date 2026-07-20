@@ -59,6 +59,7 @@ All Gradle commands run from `kotlin/`. Requires JDK 21 and Android SDK (`kotlin
 - Every PR body must include a screenshot or screen recording, plus `Closes #N` (one issue per PR by default; list each if several). Merging then auto-closes the issue → board Done → milestone progress.
 - Merges are **squash-only**, the PR title becomes the main commit (repo setting), and branches auto-delete.
 - PR bodies must follow `.github/pull_request_template.md` — never skip the "확인 방법" section (reviews don't start without it). Update the description before merge if the code changed during review.
+- **Agent review before every PR**: run `/pr-review-toolkit:review-pr` (code-reviewer always; add pr-test-analyzer for new tests, silent-failure-hunter for error-handling changes) and address Critical/Important findings before opening the PR. The plugin auto-installs from `.claude/settings.json` (`pr-review-toolkit@claude-plugins-official`) when you trust this repo — accept the install prompt on first session. Cross-review of a teammate's PR follows the same flow, posting findings as PR comments.
 - Write PR titles/descriptions in product language (Korean, readable by a non-engineer).
 - Never `git add -A` / `git add .` — stage explicit paths only. (A `git add -A` on a branch without .gitignore once committed 1,500 build-cache files to main.)
 - No direct pushes to main for code — branch + PR. (Docs-only changes may commit to main directly.)
