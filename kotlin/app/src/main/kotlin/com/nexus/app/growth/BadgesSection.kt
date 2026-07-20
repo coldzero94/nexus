@@ -22,6 +22,8 @@ import com.nexus.core.BadgeEvaluator
 import com.nexus.core.BadgeSignals
 import com.nexus.core.BadgeTable
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.IOException
 
 private const val TAG = "BadgesSection"
@@ -37,18 +39,22 @@ internal data class BadgeState(val table: BadgeTable, val unlocked: Set<String>,
 internal suspend fun loadBadges(context: Context, manager: HealthConnectManager, cumulativeXp: Int): BadgeState? = try {
     val repo = manager.growthRepositoryOrNull() ?: return null
     val inputs = repo.computeBadgeInputs()
-    val table = CharacterAssets(context).loadBadgeTable()
+    // 에셋 파싱·프리퍼런스 최초 로드는 디스크 IO — 메인 밖에서 (#177 리뷰)
+    val (table, store) = withContext(Dispatchers.IO) {
+        CharacterAssets(context).loadBadgeTable() to BadgeProgressStore(context)
+    }
     val signals = BadgeSignals.build(
         cumulativeXp = cumulativeXp,
         dailyActive = inputs.dailyActive,
         bestDaySteps = inputs.bestDaySteps,
         expeditionsCompleted = 0,
     )
-    val unlocked = BadgeEvaluator.unlocked(table, signals)
-    val store = BadgeProgressStore(context)
-    val newly = unlocked - store.earned
-    store.addEarned(unlocked)
-    BadgeState(table = table, unlocked = unlocked, newlyUnlocked = newly)
+    val currently = BadgeEvaluator.unlocked(table, signals)
+    val newly = currently - store.earned
+    withContext(Dispatchers.IO) { store.addEarned(currently) }
+    // 표시는 영속 합집합 — 조건이 다시 거짓이 돼도(창 이탈·스트릭 끊김) 획득 배지는 잠기지 않는다
+    // (#177 리뷰 Critical: 불퇴행 불변식)
+    BadgeState(table = table, unlocked = store.earned + currently, newlyUnlocked = newly)
 } catch (e: CancellationException) {
     throw e
 } catch (e: IOException) {
