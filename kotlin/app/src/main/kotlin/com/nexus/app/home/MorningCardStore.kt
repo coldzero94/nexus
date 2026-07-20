@@ -9,15 +9,18 @@ import android.content.Context
 class MorningCardStore(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
+    /** 0 = 최초(카드 없이 오늘로 기준점만 설정 — 정산 카드와 대칭, #36 리뷰 P1). */
     val lastShownEpochDay: Long
-        get() = prefs.getLong(KEY_LAST_SHOWN, 0L)
+        get() = prefs.getLong(KEY_LAST_SHOWN, UNSET)
 
     fun markShown(epochDay: Long) {
         prefs.edit().putLong(KEY_LAST_SHOWN, epochDay).apply()
     }
 
-    private companion object {
-        const val PREFS = "nexus_morning_card"
-        const val KEY_LAST_SHOWN = "last_shown_epoch_day"
+    companion object {
+        const val UNSET = 0L
+
+        private const val PREFS = "nexus_morning_card"
+        private const val KEY_LAST_SHOWN = "last_shown_epoch_day"
     }
 }

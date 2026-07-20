@@ -34,7 +34,8 @@ internal fun MorningCard(state: HomeUiState, onDismiss: () -> Unit) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.morning_title), style = MaterialTheme.typography.titleMedium)
             Text(
-                if (state.yesterdayActiveMinutes > 0) {
+                // XP 기준 분기 — 수기(Tier C)만 있던 어제는 "+0 XP" 병치 대신 쉼 프레이밍(#36 리뷰 N2)
+                if (state.yesterdayXp > 0) {
                     stringResource(R.string.morning_body_active, state.yesterdayXp, state.yesterdayActiveMinutes)
                 } else {
                     stringResource(R.string.morning_body_rest)

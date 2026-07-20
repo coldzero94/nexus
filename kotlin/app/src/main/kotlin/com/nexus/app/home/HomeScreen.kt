@@ -188,9 +188,18 @@ private class HomeStores(context: android.content.Context) {
     val morning = MorningCardStore(context)
 }
 
-/** 아침 카드 노출 판정 (#36) — 오늘 아직 확인 안 했으면 노출. 소비는 확인 시점(#61 패턴). */
-private fun shouldShowMorningCard(store: MorningCardStore): Boolean =
-    store.lastShownEpochDay != LocalDate.now().toEpochDay()
+/**
+ * 아침 카드 노출 판정 (#36) — 오늘 아직 확인 안 했으면 노출. 소비는 확인 시점(#61 패턴).
+ * 최초 실행은 카드 없이 오늘로 기준점만 설정(온보딩 직후 낮의 "좋은 아침" 방지 — 정산과 대칭).
+ */
+private fun shouldShowMorningCard(store: MorningCardStore): Boolean {
+    val today = LocalDate.now().toEpochDay()
+    if (store.lastShownEpochDay == MorningCardStore.UNSET) {
+        store.markShown(today)
+        return false
+    }
+    return store.lastShownEpochDay != today
+}
 
 /** 로드 시 정산 적용 (#35) — 순수 판정([decideSettlement]) 후 필요 시 기준점 동기화, 카드 차액 반환. */
 private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
