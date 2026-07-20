@@ -25,6 +25,37 @@ import com.nexus.core.ExpeditionState
 import kotlin.math.roundToInt
 
 /**
+ * 오늘의 모험 일지 (#70, E5-9) — 저녁에 하루를 서사로 닫는 카드(Pikmin 일기 패턴).
+ * 활동이 있으면 성장 서사, 없으면 쉼 서사(무처벌).
+ */
+@Composable
+internal fun EveningJournalCard(state: HomeUiState, onDismiss: () -> Unit) {
+    Card {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.journal_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (state.todayXp > 0) {
+                    stringResource(
+                        R.string.journal_body_active,
+                        state.todayActiveMinutes,
+                        state.todaySteps,
+                        state.todayXp,
+                    )
+                } else {
+                    stringResource(R.string.journal_body_rest)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.journal_dismiss))
+                }
+            }
+        }
+    }
+}
+
+/**
  * 아침 요약 카드 (#36, E5-3) — "간밤의 회복 + 어제의 성장", 하루 1회.
  * 무활동이었던 어제는 꾸짖지 않는다(무처벌) — 쉼도 리듬으로 프레이밍.
  */
