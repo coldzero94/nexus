@@ -3,6 +3,7 @@ package com.nexus.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -38,6 +39,7 @@ import com.nexus.app.home.WelcomeBackScene
 import com.nexus.app.onboarding.OnboardingScreen
 import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
+import com.nexus.app.ui.NexusTheme
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
 import com.nexus.core.XpEngine
@@ -46,9 +48,11 @@ import java.time.LocalDate
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 시스템바 아이콘 대비를 라이트/다크에 맞게 자동 동기화 (#64 — targetSdk 36 edge-to-edge)
+        enableEdgeToEdge()
         val manager = HealthConnectManager(applicationContext)
         setContent {
-            MaterialTheme {
+            NexusTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     NexusApp(manager)
                 }

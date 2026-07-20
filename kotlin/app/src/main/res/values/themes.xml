@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  윈도우 레벨 테마 (#64) — 콜드스타트 플래시가 시스템 모드를 따르도록 라이트/다크 리소스 분리.
+  콘텐츠 스킴은 Compose NexusTheme이 담당.
+-->
+<resources>
+    <style name="Theme.Nexus" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
