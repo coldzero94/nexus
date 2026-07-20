@@ -48,6 +48,10 @@
     <string name="goal_days_format">주 %1$d일</string>
     <string name="settings_goal">주간 목표</string>
     <string name="settings_goal_desc">일주일에 움직일 날 수 — 개인 기준 성장의 약속이에요.</string>
+    <string name="widget_description">캐릭터의 오늘 — 레벨·컨디션·XP 한눈에</string>
+    <string name="widget_level_format">Lv.%1$d</string>
+    <string name="widget_condition_format">컨디션 %1$d</string>
+    <string name="widget_today_format">오늘 +%1$,d XP</string>
     <string name="home_goal_move">오늘 %1$d분만 움직이면 컨디션이 올라요</string>
     <string name="home_goal_recovering">이 리듬이면 컨디션이 곧 회복돼요</string>
     <string name="home_goal_done">오늘 몫은 충분해요 — 캐릭터가 든든해해요</string>
