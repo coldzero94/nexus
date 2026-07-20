@@ -1,0 +1,11 @@
+current,dayPoints,restMode,restedYesterday,expected
+100,0,false,false,92
+30,0,false,false,29
+21,0,false,false,20.9
+20,0,false,false,20
+50,30,false,false,65
+50,30,false,true,72
+95,30,false,true,100
+80,0,true,false,80
+100,5,false,false,92
+10,30,false,false,25
