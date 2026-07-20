@@ -166,7 +166,7 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
             MainTab.HOME -> HomeScreen(manager, Modifier.padding(padding), onReconnect)
             MainTab.ACTIVITY -> ActivityScreen(manager, Modifier.padding(padding), onReconnect)
             MainTab.GROWTH -> GrowthScreen(manager, Modifier.padding(padding), onReconnect)
-            MainTab.SETTINGS -> SettingsScreen(Modifier.padding(padding))
+            MainTab.SETTINGS -> SettingsScreen(manager, Modifier.padding(padding), onReconnect)
         }
     }
 }
