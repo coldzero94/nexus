@@ -36,7 +36,9 @@ import com.nexus.app.health.HealthSyncWorker
 import com.nexus.app.home.AppOpenTracker
 import com.nexus.app.home.HomeScreen
 import com.nexus.app.home.WelcomeBackScene
+import com.nexus.app.onboarding.InitialLevelScene
 import com.nexus.app.onboarding.OnboardingScreen
+import com.nexus.app.onboarding.OnboardingStore
 import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.app.ui.NexusTheme
@@ -64,8 +66,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun NexusApp(manager: HealthConnectManager) {
     val context = LocalContext.current
-    var finished by rememberSaveable { mutableStateOf(false) }
-    var connected by rememberSaveable { mutableStateOf(false) }
+    // 온보딩 완료는 영속(#44) — rememberSaveable 단독은 콜드스타트마다 온보딩을 반복하는 버그였다
+    val onboarding = remember { OnboardingStore(context) }
+    var finished by rememberSaveable { mutableStateOf(onboarding.completed) }
+    var connected by rememberSaveable { mutableStateOf(onboarding.connected) }
+    var showInitialLevel by rememberSaveable {
+        mutableStateOf(onboarding.completed && onboarding.connected && !onboarding.initialLevelShown)
+    }
 
     // 복귀 환영 (#30): 판정·마커 갱신은 커밋된 컴포지션에서 1회(LaunchedEffect) —
     // 이니셜라이저 부수효과는 프레임 폐기 시 마커만 소모하고 판정을 잃을 수 있다.
@@ -90,8 +97,19 @@ private fun NexusApp(manager: HealthConnectManager) {
         OnboardingScreen(manager) { isConnected ->
             connected = isConnected
             finished = true
-            // 연결 성공 시 15분 주기 백그라운드 동기화 등록 (#8)
-            if (isConnected) HealthSyncWorker.enqueuePeriodic(context)
+            onboarding.completed = true
+            onboarding.connected = isConnected
+            if (isConnected) {
+                // 연결 성공 시 15분 주기 백그라운드 동기화 등록 (#8) + 초기 레벨 연출 (#44)
+                HealthSyncWorker.enqueuePeriodic(context)
+                showInitialLevel = !onboarding.initialLevelShown
+            }
+        }
+    } else if (connected && showInitialLevel) {
+        // 최초 연결 직후 1회 — 과거 이력 소급 "이미 이만큼 성장" (#44)
+        InitialLevelScene(manager) {
+            onboarding.initialLevelShown = true
+            showInitialLevel = false
         }
     } else if (connected && welcomeGapDays > 0L) {
         // 3일+ 공백 복귀 → 환영 씬 먼저 (#30, 1급 기능)
