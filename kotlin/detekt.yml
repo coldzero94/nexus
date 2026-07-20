@@ -20,6 +20,13 @@ style:
     ignorePropertyDeclaration: true
   MaxLineLength:
     maxLineLength: 120  # .editorconfig max_line_length와 동기 — 한쪽만 바꾸지 말 것
+  ForbiddenImport:
+    active: true
+    # SDK 직접 호출은 allowlist 정책(TelemetryPolicy)을 통째로 우회한다 — 래퍼 밖 사용 금지 (#46)
+    excludes: ["**/com/nexus/app/telemetry/**"]
+    imports:
+      - value: "com.telemetrydeck.*"
+        reason: "계측은 com.nexus.app.telemetry.Telemetry 래퍼로만 — 이벤트 allowlist 강제 (#46)"
 
 complexity:
   LongParameterList:

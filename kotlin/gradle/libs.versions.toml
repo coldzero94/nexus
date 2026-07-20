@@ -33,6 +33,7 @@ room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 glance-appwidget = { module = "androidx.glance:glance-appwidget", version = "1.1.1" }
+telemetrydeck-sdk = { module = "com.telemetrydeck:kotlin-sdk", version = "7.1.0" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 
