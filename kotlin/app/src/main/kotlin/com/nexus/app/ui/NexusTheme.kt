@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
  * 앱 테마 (#64, E4-11) — 시스템 다크 모드 추종. 전 화면이 MaterialTheme 토큰만 쓰므로
  * (하드코딩 색 금지 규칙) 스킴 교체만으로 다크 렌더가 성립한다.
  * Android 12+는 다이내믹 컬러(배경화면 팔레트) — 갤럭시 One UI 톤과 자연 조화.
+ * 정적 스킴 분기는 minSdk(34)에선 도달 불가 — 향후 minSdk 하향 대비로 보존(#64 리뷰).
  */
 @Composable
 fun NexusTheme(useDarkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
