@@ -53,6 +53,7 @@ dependencies {
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.glance.appwidget)
     ksp(libs.room.compiler)
 
     testImplementation(libs.kotlin.test.junit)
