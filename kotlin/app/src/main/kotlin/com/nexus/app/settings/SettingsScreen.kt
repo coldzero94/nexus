@@ -176,8 +176,11 @@ private fun DeleteDataCard() {
                 TextButton(onClick = {
                     confirming = false
                     val am = context.getSystemService(android.app.ActivityManager::class.java)
-                    if (!am.clearApplicationUserData()) {
-                        Log.w(TAG, "clearApplicationUserData refused") // 성공 시엔 프로세스가 종료된다
+                    if (!am.clearApplicationUserData()) { // 성공 시엔 프로세스가 종료된다
+                        Log.w(TAG, "clearApplicationUserData refused")
+                        android.widget.Toast
+                            .makeText(context, R.string.delete_failed, android.widget.Toast.LENGTH_SHORT)
+                            .show()
                     }
                 }) {
                     Text(stringResource(R.string.delete_confirm_yes), color = MaterialTheme.colorScheme.error)
