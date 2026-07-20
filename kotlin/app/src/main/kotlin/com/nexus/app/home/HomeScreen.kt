@@ -116,15 +116,7 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
             HomeLoad.Failure ->
                 Text(stringResource(R.string.home_error), style = MaterialTheme.typography.bodyMedium)
 
-            is HomeLoad.Success -> HomeLoaded(
-                state = current.state,
-                morningVisible = ui.morningVisible,
-                onMorningDismiss = ui::dismissMorning,
-                settlementDelta = ui.settlementDelta,
-                onSettlementOpen = { ui.openSettlement(current.state.cappedTotalXp) },
-                onDepart = { ui.depart(current.state.cappedTotalXp) },
-                onOpen = ui::openExpedition,
-            )
+            is HomeLoad.Success -> HomeLoaded(state = current.state, ui = ui)
         }
     }
 }
@@ -142,18 +134,26 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
         private set
     var morningVisible by mutableStateOf(false)
         private set
+    var journalVisible by mutableStateOf(false)
+        private set
 
     fun onLoaded(loaded: HomeLoad) {
         load = loaded
         if (loaded is HomeLoad.Success) {
             settlementDelta = settleOnLoad(stores.settlement, loaded.state.cappedTotalXp)
             morningVisible = shouldShowMorningCard(stores.morning)
+            journalVisible = shouldShowJournal(stores.journal, java.time.LocalDateTime.now())
         }
     }
 
     fun dismissMorning() {
         stores.morning.markShown(LocalDate.now().toEpochDay())
         morningVisible = false
+    }
+
+    fun dismissJournal() {
+        stores.journal.markShown(LocalDate.now().toEpochDay())
+        journalVisible = false
     }
 
     /** 개봉한 순간이 기준점 — 확인 전 재진입엔 다시 뜬다 (#61 패턴). */
@@ -186,6 +186,7 @@ private class HomeStores(context: android.content.Context) {
     val expedition = ExpeditionStore(context)
     val settlement = SettlementStore(context)
     val morning = MorningCardStore(context)
+    val journal = EveningJournalStore(context)
 }
 
 /**
@@ -201,6 +202,20 @@ private fun shouldShowMorningCard(store: MorningCardStore): Boolean {
     return store.lastShownEpochDay != today
 }
 
+/**
+ * 저녁 일지 노출 판정 (#70) — [EveningJournalStore.OPEN_HOUR] 이후·오늘 미확인일 때.
+ * 최초는 기준점만(아침 카드와 대칭). 저녁 전에 확인 못 한 어제 일지는 이월하지 않는다 —
+ * 아침 카드가 "어제의 성장"을 이미 전달하므로 중복 서사 방지.
+ */
+private fun shouldShowJournal(store: EveningJournalStore, now: java.time.LocalDateTime): Boolean {
+    val today = now.toLocalDate().toEpochDay()
+    if (store.lastShownEpochDay == EveningJournalStore.UNSET) {
+        store.markShown(today)
+        return false
+    }
+    return now.hour >= EveningJournalStore.OPEN_HOUR && store.lastShownEpochDay != today
+}
+
 /** 로드 시 정산 적용 (#35) — 순수 판정([decideSettlement]) 후 필요 시 기준점 동기화, 카드 차액 반환. */
 private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
     val decision = decideSettlement(store.lastSeenXp, currentXp)
@@ -210,18 +225,17 @@ private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
 
 /** 로드 완료 상태 — 정산 카드(#35)가 있으면 콘텐츠 위에 얹는다. */
 @Composable
-private fun HomeLoaded(
-    state: HomeUiState,
-    morningVisible: Boolean,
-    onMorningDismiss: () -> Unit,
-    settlementDelta: Int?,
-    onSettlementOpen: () -> Unit,
-    onDepart: () -> Unit,
-    onOpen: () -> Unit,
-) {
-    if (morningVisible) MorningCard(state, onDismiss = onMorningDismiss)
-    settlementDelta?.let { delta -> SettlementCard(deltaXp = delta, onOpen = onSettlementOpen) }
-    HomeContent(state = state, onDepart = onDepart, onOpen = onOpen)
+private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
+    if (ui.morningVisible) MorningCard(state, onDismiss = ui::dismissMorning)
+    ui.settlementDelta?.let { delta ->
+        SettlementCard(deltaXp = delta, onOpen = { ui.openSettlement(state.cappedTotalXp) })
+    }
+    HomeContent(
+        state = state,
+        onDepart = { ui.depart(state.cappedTotalXp) },
+        onOpen = ui::openExpedition,
+    )
+    if (ui.journalVisible) EveningJournalCard(state, onDismiss = ui::dismissJournal)
 }
 
 @Composable
