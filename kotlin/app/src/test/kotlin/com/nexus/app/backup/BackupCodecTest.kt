@@ -27,7 +27,8 @@ class BackupCodecTest {
             morningLastShownEpochDay = 20653,
             journalLastShownEpochDay = 20652,
             weeklyGoalDays = 4,
-            restModeEnabled = false,
+            restModeEnabled = true,
+            restModeSinceEpochDay = 20650,
         ),
     )
 
@@ -83,6 +84,7 @@ class BackupCodecTest {
                 "journalLastShownEpochDay",
                 "weeklyGoalDays",
                 "restModeEnabled",
+                "restModeSinceEpochDay",
             ),
             root.getValue("snapshot").jsonObject.keys,
         )

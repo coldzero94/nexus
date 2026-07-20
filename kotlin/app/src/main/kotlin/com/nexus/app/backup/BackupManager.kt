@@ -21,7 +21,7 @@ import java.io.IOException
 private const val TAG = "BackupManager"
 
 /** 가져오기 파일 크기 상한 — 원장 수년치도 수 MB 수준(BACKEND.md §3), 그 이상은 손상/오파일. */
-private const val MAX_IMPORT_BYTES = 25L * 1024 * 1024
+private const val MAX_IMPORT_BYTES = 25 * 1024 * 1024
 
 /**
  * 수동 백업 (#51, E8-6) — SAF Uri로 내보내고/가져온다. 실패는 false(호출부가 토스트 안내,
@@ -42,7 +42,9 @@ object BackupManager {
     suspend fun importFrom(context: Context, uri: Uri): Boolean = runGuarded("import") {
         val text = withContext(Dispatchers.IO) {
             context.contentResolver.openInputStream(uri)?.use { stream ->
-                stream.readBytes().also { require(it.size <= MAX_IMPORT_BYTES) { "backup file too large" } }
+                // 상한+1까지만 읽어 초과를 판정 — 전량 로드 후 검사하면 상한이 OOM을 못 막는다(#51 리뷰)
+                stream.readNBytes(MAX_IMPORT_BYTES + 1)
+                    .also { require(it.size <= MAX_IMPORT_BYTES) { "backup file too large" } }
             }?.toString(Charsets.UTF_8) ?: error("input stream unavailable")
         }
         val payload = BackupCodec.decode(text)
@@ -77,6 +79,7 @@ object BackupManager {
                 EveningJournalStore(context).lastShownEpochDay.takeIf { it != EveningJournalStore.UNSET },
                 weeklyGoalDays = GoalStore(context).weeklyGoalDays,
                 restModeEnabled = RestModeStore(context).enabled,
+                restModeSinceEpochDay = RestModeStore(context).sinceEpochDay.takeIf { it != 0L },
             ),
         )
     }
@@ -104,7 +107,12 @@ object BackupManager {
             morningLastShownEpochDay?.let { MorningCardStore(context).markShown(it) }
             journalLastShownEpochDay?.let { EveningJournalStore(context).markShown(it) }
             weeklyGoalDays?.let { GoalStore(context).weeklyGoalDays = it }
-            RestModeStore(context).setEnabled(restModeEnabled)
+            // 시작일까지 복원 — 복원일로 리셋되면 이전 휴식일이 면제에서 빠져 컨디션이 왜곡된다(#51 리뷰 F2)
+            if (restModeEnabled && restModeSinceEpochDay != null) {
+                RestModeStore(context).setEnabled(true, restModeSinceEpochDay)
+            } else {
+                RestModeStore(context).setEnabled(restModeEnabled)
+            }
         }
     }
 
