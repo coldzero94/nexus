@@ -38,6 +38,10 @@
     <string name="journal_body_active">오늘은 %1$d분 움직이고 %2$,d걸음을 걸었어요. 운동으로 +%3$,d XP 자랐답니다 — 내일도 같이 가요.</string>
     <string name="journal_body_rest">오늘은 조용한 하루였어요. 쉬는 날도 모험의 일부예요 — 내일 가볍게 걸어볼까요?</string>
     <string name="journal_dismiss">오늘도 수고했어</string>
+    <string name="initial_level_loading">지난 기록을 살펴보는 중…</string>
+    <string name="initial_level_title">이미 레벨 %1$d이에요!</string>
+    <string name="initial_level_body">지난 4주의 움직임이 %1$,d XP로 새겨져 있었어요. 캐릭터는 처음부터 당신과 함께였어요.</string>
+    <string name="initial_level_continue">만나러 가기</string>
     <string name="home_goal_move">오늘 %1$d분만 움직이면 컨디션이 올라요</string>
     <string name="home_goal_recovering">이 리듬이면 컨디션이 곧 회복돼요</string>
     <string name="home_goal_done">오늘 몫은 충분해요 — 캐릭터가 든든해해요</string>
