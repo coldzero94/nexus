@@ -137,22 +137,27 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
     var journalVisible by mutableStateOf(false)
         private set
 
+    /** 카드가 "어느 날"의 것인지 — dismiss가 노출 판정과 같은 날짜를 소비(자정 경계, #70 리뷰 N3). */
+    private var cardEpochDay = 0L
+
     fun onLoaded(loaded: HomeLoad) {
         load = loaded
         if (loaded is HomeLoad.Success) {
+            val now = java.time.LocalDateTime.now()
+            cardEpochDay = now.toLocalDate().toEpochDay()
             settlementDelta = settleOnLoad(stores.settlement, loaded.state.cappedTotalXp)
             morningVisible = shouldShowMorningCard(stores.morning)
-            journalVisible = shouldShowJournal(stores.journal, java.time.LocalDateTime.now())
+            journalVisible = shouldShowJournal(stores.journal, now)
         }
     }
 
     fun dismissMorning() {
-        stores.morning.markShown(LocalDate.now().toEpochDay())
+        stores.morning.markShown(cardEpochDay)
         morningVisible = false
     }
 
     fun dismissJournal() {
-        stores.journal.markShown(LocalDate.now().toEpochDay())
+        stores.journal.markShown(cardEpochDay)
         journalVisible = false
     }
 
@@ -210,8 +215,8 @@ private fun shouldShowMorningCard(store: MorningCardStore): Boolean {
 private fun shouldShowJournal(store: EveningJournalStore, now: java.time.LocalDateTime): Boolean {
     val today = now.toLocalDate().toEpochDay()
     if (store.lastShownEpochDay == EveningJournalStore.UNSET) {
-        store.markShown(today)
-        return false
+        // 일지의 콘텐츠는 "오늘" — 기준점을 어제로 두어 설치 당일 저녁 일지를 보존(#70 리뷰 N2)
+        store.markShown(today - 1)
     }
     return now.hour >= EveningJournalStore.OPEN_HOUR && store.lastShownEpochDay != today
 }

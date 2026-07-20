@@ -35,7 +35,7 @@
     <string name="morning_condition">컨디션 %1$d(으)로 하루를 시작해요.</string>
     <string name="morning_dismiss">좋아요</string>
     <string name="journal_title">🌙 오늘의 모험 일지</string>
-    <string name="journal_body_active">오늘은 %1$d분 움직이고 %2$,d걸음을 걸었어요. 그만큼 +%3$,d XP 자랐답니다 — 내일도 같이 가요.</string>
+    <string name="journal_body_active">오늘은 %1$d분 움직이고 %2$,d걸음을 걸었어요. 운동으로 +%3$,d XP 자랐답니다 — 내일도 같이 가요.</string>
     <string name="journal_body_rest">오늘은 조용한 하루였어요. 쉬는 날도 모험의 일부예요 — 내일 가볍게 걸어볼까요?</string>
     <string name="journal_dismiss">오늘도 수고했어</string>
     <string name="home_goal_move">오늘 %1$d분만 움직이면 컨디션이 올라요</string>
