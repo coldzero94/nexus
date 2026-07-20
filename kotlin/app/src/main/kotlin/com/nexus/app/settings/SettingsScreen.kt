@@ -29,6 +29,7 @@ import androidx.core.content.ContextCompat
 import com.nexus.app.R
 import com.nexus.app.notify.NotificationSettings
 import com.nexus.app.notify.ReminderWorker
+import com.nexus.app.ui.GoalDayChooser
 
 /** 설정 (#31·#33) — 휴식 모드·리마인더 알림. 연동 상태·백업·데이터 삭제는 후속(E7·E10). */
 @Composable
@@ -64,6 +65,29 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             }
         }
         ReminderCard()
+        WeeklyGoalCard()
+    }
+}
+
+/** 주간 목표 변경 (#73) — 온보딩에서 정한 값을 언제든 수정. */
+@Composable
+private fun WeeklyGoalCard() {
+    val context = LocalContext.current
+    val store = remember { GoalStore(context) }
+    var selected by remember { mutableStateOf(store.weeklyGoalDays) }
+
+    Card {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.settings_goal), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_goal_desc), style = MaterialTheme.typography.bodySmall)
+            GoalDayChooser(
+                selected = selected,
+                onSelect = { days ->
+                    store.weeklyGoalDays = days
+                    selected = days
+                },
+            )
+        }
     }
 }
 

@@ -19,10 +19,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,8 +33,10 @@ import com.nexus.app.R
 import com.nexus.app.character.CharacterComposer
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthPermissions
+import com.nexus.app.settings.GoalStore
+import com.nexus.app.ui.GoalDayChooser
 
-private enum class OnboardingStep { Welcome, Rationale, SamsungHealth }
+private enum class OnboardingStep { Welcome, Rationale, SamsungHealth, WeeklyGoal }
 
 /**
  * 온보딩 v0 (#6): 캐릭터 생성(임시) → 권한 설명 → HC 권한 3종 요청 → 삼성헬스 안내.
@@ -63,8 +67,44 @@ fun OnboardingScreen(manager: HealthConnectManager, onFinished: (connected: Bool
         )
 
         OnboardingStep.SamsungHealth -> SamsungHealthStep(
+            onDone = { step = OnboardingStep.WeeklyGoal },
+        )
+
+        OnboardingStep.WeeklyGoal -> WeeklyGoalStep(
             onDone = { onFinished(granted) },
         )
+    }
+}
+
+/**
+ * 주간 목표 스텝 (#73, E7-5) — "며칠 움직일까"를 약속받는다(개인 계수 시스템 입력).
+ * 기본 4일(균형 보너스 기준). 선택 즉시 저장, 설정 탭에서 언제든 변경.
+ */
+@Composable
+private fun WeeklyGoalStep(onDone: () -> Unit) = StepScaffold {
+    val context = LocalContext.current
+    val store = remember { GoalStore(context) }
+    var selected by rememberSaveable { mutableStateOf(store.weeklyGoalDays) }
+
+    Text(
+        text = stringResource(R.string.onboarding_goal_title),
+        style = MaterialTheme.typography.headlineMedium,
+        textAlign = TextAlign.Center,
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        text = stringResource(R.string.onboarding_goal_body),
+        style = MaterialTheme.typography.bodyMedium,
+        textAlign = TextAlign.Center,
+    )
+    Spacer(Modifier.height(24.dp))
+    GoalDayChooser(selected = selected, onSelect = { selected = it })
+    Spacer(Modifier.height(24.dp))
+    Button(onClick = {
+        store.weeklyGoalDays = selected
+        onDone()
+    }) {
+        Text(stringResource(R.string.onboarding_goal_confirm))
     }
 }
 
