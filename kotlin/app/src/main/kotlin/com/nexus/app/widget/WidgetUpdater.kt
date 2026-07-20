@@ -2,6 +2,9 @@ package com.nexus.app.widget
 
 import android.content.Context
 import androidx.glance.appwidget.updateAll
+import com.nexus.app.data.ExpeditionStore
+import com.nexus.app.home.EveningJournalStore
+import com.nexus.app.home.MorningCardStore
 import com.nexus.core.LevelCurve
 
 /**
@@ -26,12 +29,21 @@ object WidgetUpdater {
         try {
             val store = WidgetSnapshotStore(context)
             val previous = store.read()
+            val now = java.time.LocalDateTime.now()
+            val today = now.toLocalDate().toEpochDay()
             store.write(
                 WidgetSnapshot(
                     level = LevelCurve.displayLevel(cappedTotalXp),
                     condition = condition ?: previous.condition,
                     todayXp = todayXp,
                     spriteState = if (todayActive) "walk" else "idle",
+                    // 4대 장치 (#72): 원정 시각·아침/저녁 이벤트 — 프리퍼런스 소량 읽기라 계약 내
+                    expeditionStartedAt = ExpeditionStore(context).startedAtMillis ?: 0L,
+                    morningPending = MorningCardStore(context).lastShownEpochDay
+                        .let { it != MorningCardStore.UNSET && it != today },
+                    journalPending = EveningJournalStore(context).lastShownEpochDay
+                        .let { it != EveningJournalStore.UNSET && it != today } &&
+                        now.hour >= EveningJournalStore.OPEN_HOUR,
                 ),
             )
             NexusWidget().updateAll(context)

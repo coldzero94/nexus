@@ -10,6 +10,7 @@ import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -17,6 +18,7 @@ import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
@@ -24,6 +26,9 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.nexus.app.R
 import com.nexus.app.character.CharacterComposer
+import com.nexus.core.ExpeditionEngine
+import com.nexus.core.ExpeditionState
+import com.nexus.core.XpEngine
 
 /**
  * 홈 위젯 (#39, E6-1) — 캐릭터 + 레벨·컨디션·오늘 XP. 위젯은 [WidgetSnapshotStore]만 읽는다
@@ -81,9 +86,60 @@ private fun WidgetContent(context: Context, snapshot: WidgetSnapshot, sprite: an
                 context.getString(R.string.widget_today_format, snapshot.todayXp),
                 style = TextStyle(fontSize = 12.sp, color = GlanceTheme.colors.onSurfaceVariant),
             )
+            // 장치 ③ 일일 진행바 — 오늘 성장(니 200pt 기준) (#72)
+            LinearProgressIndicator(
+                progress = (snapshot.todayXp / XpEngine.DAILY_KNEE).toFloat().coerceIn(0f, 1f),
+                modifier = GlanceModifier.fillMaxWidth().padding(top = 4.dp),
+                color = GlanceTheme.colors.primary,
+                backgroundColor = GlanceTheme.colors.surfaceVariant,
+            )
+            // 장치 ②·④ — 원정 상태와 아침/저녁 이벤트 중 우선순위 높은 한 줄 (#72)
+            statusLine(context, snapshot)?.let { line ->
+                Text(line, style = TextStyle(fontSize = 11.sp, color = GlanceTheme.colors.onSurfaceVariant))
+            }
         }
     }
 }
+
+/**
+ * 상태 한 줄 (#72) — 우선순위: 원정 개봉 대기 > 원정 진행 > 저녁 일지 > 아침 카드 > 없음.
+ * 원정 잔여는 렌더 시점에 core 산술로 — 스냅샷 지연(≤15분)과 무관하게 정확.
+ */
+private fun statusLine(context: Context, snapshot: WidgetSnapshot): String? {
+    when (
+        val state = ExpeditionEngine.stateAt(
+            snapshot.expeditionStartedAt.takeIf { it != 0L },
+            System.currentTimeMillis(),
+        )
+    ) {
+        ExpeditionState.ReadyToOpen -> return context.getString(R.string.widget_expedition_ready)
+
+        is ExpeditionState.InProgress -> {
+            val hours = remainingDisplayHours(state.remainingMillis)
+                ?: return context.getString(R.string.widget_expedition_soon)
+            return context.getString(R.string.widget_expedition_progress, hours)
+        }
+
+        ExpeditionState.Idle -> Unit
+    }
+    return when {
+        snapshot.journalPending -> context.getString(R.string.widget_journal_pending)
+        snapshot.morningPending -> context.getString(R.string.widget_morning_pending)
+        else -> null
+    }
+}
+
+/**
+ * 잔여 표기 시간 — "약 N시간"엔 floor보다 반올림이 정확하고, 1시간 미만은 null
+ * ("곧 돌아와요" 분기 — 매 원정 마지막 1시간의 "약 0시간 남음" 방지, #72 리뷰).
+ */
+internal fun remainingDisplayHours(remainingMillis: Long): Long? = if (remainingMillis < MILLIS_PER_HOUR) {
+    null
+} else {
+    (remainingMillis + MILLIS_PER_HOUR / 2) / MILLIS_PER_HOUR
+}
+
+private const val MILLIS_PER_HOUR = 3_600_000L
 
 class NexusWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = NexusWidget()
