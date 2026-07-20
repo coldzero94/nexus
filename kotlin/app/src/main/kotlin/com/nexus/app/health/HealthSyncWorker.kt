@@ -91,11 +91,17 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         private const val GRANT_WINDOW_DAYS = 7
         private const val UNIQUE_NAME = "nexus_health_sync"
 
+        /** 동기화 주기(분) — HC 준실시간 한계(30~60분 지연)와 배터리 사이 절충. */
+        private const val SYNC_INTERVAL_MINUTES = 15L
+
+        /** 실패 재시도 지수 백오프 시작(초). */
+        private const val BACKOFF_START_SECONDS = 30L
+
         /** 15분 주기 워커 등록(중복 무시). 온보딩 연결 성공 후 호출. */
         fun enqueuePeriodic(context: Context) {
             val request =
-                PeriodicWorkRequestBuilder<HealthSyncWorker>(15, TimeUnit.MINUTES)
-                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+                PeriodicWorkRequestBuilder<HealthSyncWorker>(SYNC_INTERVAL_MINUTES, TimeUnit.MINUTES)
+                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_START_SECONDS, TimeUnit.SECONDS)
                     .build()
             WorkManager
                 .getInstance(context)
