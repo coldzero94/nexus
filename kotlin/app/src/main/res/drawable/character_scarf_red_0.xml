@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- 임시 장비 그래픽 — 실제 에셋은 #76에서 교체. 규약: character_{layerState}_0 (#37) -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M30,68q18,10 36,0q2,8 -4,12q-14,6 -28,0q-6,-4 -4,-12z" />
+    <path
+        android:fillColor="#B71C1C"
+        android:pathData="M58,74q8,2 10,12q-6,2 -12,-2q1,-6 2,-10z" />
+</vector>

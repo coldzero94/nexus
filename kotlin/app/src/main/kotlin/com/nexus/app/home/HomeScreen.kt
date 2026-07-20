@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.character.CharacterComposer
+import com.nexus.app.character.equipRenderLayers
 import com.nexus.app.data.EnergyStore
 import com.nexus.app.data.ExpeditionStore
 import com.nexus.app.data.NexusDatabase
@@ -267,7 +269,16 @@ private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
 private fun HomeContent(state: HomeUiState, onDepart: () -> Unit, onOpen: () -> Unit) {
     // 오늘 움직였으면 걷는 모습 — 데이터가 캐릭터에 그대로 새겨진다는 감각(임시 규칙, 기분 표는 E4-4)
     val spriteState = if (state.todayActiveMinutes > 0) "walk" else "idle"
-    CharacterComposer.CharacterSprite(state = spriteState, modifier = Modifier.size(140.dp))
+    // 장착 장비를 본체 위에 반영 (#37) — 카탈로그 로드 실패 시 본체만(빈 레이어)
+    val context = LocalContext.current
+    val equipLayers by produceState(emptyList<String>(), spriteState) {
+        value = equipRenderLayers(context, spriteState)
+    }
+    CharacterComposer.CharacterSprite(
+        state = spriteState,
+        modifier = Modifier.size(140.dp),
+        equipLayers = equipLayers,
+    )
     DialogueBubble(spriteState)
     ConditionGauge(state.condition)
     TodaySummaryCard(state)

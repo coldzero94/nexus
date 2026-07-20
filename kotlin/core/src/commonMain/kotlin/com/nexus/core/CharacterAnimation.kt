@@ -43,9 +43,12 @@ object CharacterAssetConvention {
 
     fun frameName(state: String, frame: Int): String {
         require(frame >= 0) { "frame must be >= 0" }
-        require(STATE_NAME.matches(state)) { "invalid state name: $state" }
+        require(isValidState(state)) { "invalid state name: $state" }
         return "character_${state}_$frame"
     }
+
+    /** 상태·레이어 이름이 리소스 규약에 맞는가 (#37 장비 layerState 검증에도 공유). */
+    fun isValidState(state: String): Boolean = STATE_NAME.matches(state)
 
     /**
      * JSON 메타 파싱 + 검증. 잘못된 표는 여기서 즉시 실패한다(런타임 조용한 무애니메이션 방지) —

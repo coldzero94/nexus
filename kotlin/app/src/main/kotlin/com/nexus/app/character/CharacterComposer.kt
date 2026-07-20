@@ -34,9 +34,32 @@ import kotlinx.coroutines.withContext
  */
 object CharacterComposer {
 
-    /** 캐릭터 스프라이트 — [state]는 animations.json의 상태 키(미지 상태는 기본 상태 폴백). */
+    /**
+     * 캐릭터 스프라이트 — [state]는 animations.json의 상태 키(미지 상태는 기본 상태 폴백).
+     * [equipLayers]는 본체 위에 쌓을 장비 레이어 상태들(#37, core [com.nexus.core.Loadout.renderLayers]
+     * 결과의 본체 이후 원소들). 장비는 정적 1프레임이라 애니메이션 없이 본체 위에 겹쳐 그린다.
+     */
     @Composable
-    fun CharacterSprite(state: String, modifier: Modifier = Modifier) {
+    fun CharacterSprite(state: String, modifier: Modifier = Modifier, equipLayers: List<String> = emptyList()) {
+        val context = LocalContext.current
+        val assets = remember { CharacterAssets(context) }
+        Box(modifier) {
+            BaseSprite(state, Modifier.matchParentSize())
+            equipLayers.forEach { layer ->
+                assets.frameResIdOrNull(layer, 0)?.let { resId ->
+                    Image(
+                        painter = painterResource(resId),
+                        contentDescription = null, // 장식 레이어 — 본체가 접근성 설명을 담당
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
+            }
+        }
+    }
+
+    /** 본체 애니메이션 프레임 — 상태별 프레임 티커(2~4프레임). */
+    @Composable
+    private fun BaseSprite(state: String, modifier: Modifier) {
         val context = LocalContext.current
         val assets = remember { CharacterAssets(context) }
         var set by remember { mutableStateOf<CharacterAnimationSet?>(null) }

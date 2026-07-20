@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- 임시 장비 그래픽 — 실제 에셋은 #76(장비 슬롯 2×4종)에서 교체. 규약: character_{layerState}_0 (#37) -->
+    <path
+        android:fillColor="#D7A86E"
+        android:pathData="M18,30q30,-16 60,0q-30,10 -60,0z" />
+    <path
+        android:fillColor="#C68B4A"
+        android:pathData="M34,16q14,-8 28,0q4,10 -14,14q-18,-4 -14,-14z" />
+</vector>
