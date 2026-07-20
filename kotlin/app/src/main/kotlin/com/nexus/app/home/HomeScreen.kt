@@ -92,12 +92,18 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
     val ledger = remember { RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao()) }
     val energyStore = remember { EnergyStore(context) }
     val expeditionStore = remember { ExpeditionStore(context) }
+    val settlementStore = remember { SettlementStore(context) }
     var reloadKey by remember { mutableIntStateOf(0) }
+    var settlementDelta by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(exerciseRepo, stepRepo, reloadKey) {
-        load = if (exerciseRepo == null || stepRepo == null) {
+        val loaded = if (exerciseRepo == null || stepRepo == null) {
             HomeLoad.PermissionDenied
         } else {
             loadHome(exerciseRepo, stepRepo, restStore, ledger, energyStore, expeditionStore)
+        }
+        load = loaded
+        if (loaded is HomeLoad.Success) {
+            settlementDelta = settleOnLoad(settlementStore, loaded.state.cappedTotalXp)
         }
     }
 
@@ -117,8 +123,14 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
             HomeLoad.Failure ->
                 Text(stringResource(R.string.home_error), style = MaterialTheme.typography.bodyMedium)
 
-            is HomeLoad.Success -> HomeContent(
+            is HomeLoad.Success -> HomeLoaded(
                 state = current.state,
+                settlementDelta = settlementDelta,
+                onSettlementOpen = {
+                    // 개봉한 순간이 기준점 — 확인 전 재진입엔 다시 뜬다 (#61 패턴)
+                    settlementStore.markSeen(current.state.cappedTotalXp)
+                    settlementDelta = null
+                },
                 onDepart = {
                     // 출발 = 에너지 확정 소모(#67) + 시작 시각 기록(#34) + 완료 알림 예약(#71)
                     if (energyStore.trySpend(current.state.cappedTotalXp, EnergyEngine.EXPEDITION_COST)) {
@@ -135,6 +147,26 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
             )
         }
     }
+}
+
+/** 로드 시 정산 적용 (#35) — 순수 판정([decideSettlement]) 후 필요 시 기준점 동기화, 카드 차액 반환. */
+private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
+    val decision = decideSettlement(store.lastSeenXp, currentXp)
+    if (decision.syncBaseline) store.markSeen(currentXp)
+    return decision.deltaXp
+}
+
+/** 로드 완료 상태 — 정산 카드(#35)가 있으면 콘텐츠 위에 얹는다. */
+@Composable
+private fun HomeLoaded(
+    state: HomeUiState,
+    settlementDelta: Int?,
+    onSettlementOpen: () -> Unit,
+    onDepart: () -> Unit,
+    onOpen: () -> Unit,
+) {
+    settlementDelta?.let { delta -> SettlementCard(deltaXp = delta, onOpen = onSettlementOpen) }
+    HomeContent(state = state, onDepart = onDepart, onOpen = onOpen)
 }
 
 @Composable
