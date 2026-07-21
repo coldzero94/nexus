@@ -73,16 +73,13 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         deletedIds.forEach { id ->
             if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
         }
-        // 위젯 갱신 (#40): 동기화가 위젯의 유일한 백그라운드 갱신원 — 15분 준실시간 한계
+        // 위젯 갱신 (#40): 동기화가 위젯의 유일한 백그라운드 갱신원 — 15분 준실시간 한계.
+        // 기분(#212)은 홈 로드가 평가 — 워커는 신호원이 없어 spriteState 미전달(마지막 기분 보존).
         val todayEpoch = LocalDate.now(zone).toEpochDay()
         WidgetUpdater.update(
             context = applicationContext,
             cappedTotalXp = ledger.cappedTotalXp(),
             todayXp = ledger.cappedXpOn(todayEpoch),
-            todayActive = sessions.any {
-                it.type != null &&
-                    it.start.atZone(zone).toLocalDate().toEpochDay() == todayEpoch
-            },
         )
     }
 

@@ -20,7 +20,8 @@ object WidgetUpdater {
         context: Context,
         cappedTotalXp: Int,
         todayXp: Int,
-        todayActive: Boolean,
+        // 기분 배선 (#212): 홈이 평가한 렌더 상태를 전달. null이면 마지막 값 보존(워커는 기분 미평가).
+        spriteState: String? = null,
         condition: Int? = null,
     ) {
         // best-effort 격리 (#40 리뷰 F1): 위젯은 코스메틱 부수효과 — 갱신 실패가
@@ -36,7 +37,7 @@ object WidgetUpdater {
                     level = LevelCurve.displayLevel(cappedTotalXp),
                     condition = condition ?: previous.condition,
                     todayXp = todayXp,
-                    spriteState = if (todayActive) "walk" else "idle",
+                    spriteState = spriteState ?: previous.spriteState,
                     // 4대 장치 (#72): 원정 시각·아침/저녁 이벤트 — 프리퍼런스 소량 읽기라 계약 내
                     expeditionStartedAt = ExpeditionStore(context).startedAtMillis ?: 0L,
                     morningPending = MorningCardStore(context).lastShownEpochDay
