@@ -3,29 +3,34 @@ package com.nexus.app.ui
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * 앱 테마 (#64, E4-11) — 시스템 다크 모드 추종. 전 화면이 MaterialTheme 토큰만 쓰므로
+ * 앱 테마 (#64·#251, E16-1) — 시스템 다크 모드 추종. 전 화면이 MaterialTheme 토큰만 쓰므로
  * (하드코딩 색 금지 규칙) 스킴 교체만으로 다크 렌더가 성립한다.
- * Android 12+는 다이내믹 컬러(배경화면 팔레트) — 갤럭시 One UI 톤과 자연 조화.
- * 정적 스킴 분기는 minSdk(34)에선 도달 불가 — 향후 minSdk 하향 대비로 보존(#64 리뷰).
+ *
+ * **다이내믹 컬러 정책(#251, docs/DESIGN.md)**: 기본은 **브랜드 스킴 고정**([NexusLightColors]/
+ * [NexusDarkColors]) — 실기기 색이 배경화면에 100% 종속돼 앱 고유색이 사라지는 것을 막고 아이콘·
+ * 스플래시·데이터 시각화 색과 일관되게 한다. [dynamicColor]=true는 옵트인(갤럭시 One UI 조화 선호
+ * 시), 미설정 시 브랜드색.
  */
 @Composable
-fun NexusTheme(useDarkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun NexusTheme(
+    useDarkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
+    content: @Composable () -> Unit,
+) {
     val context = LocalContext.current
     val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
             if (useDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 
-        useDarkTheme -> darkColorScheme()
+        useDarkTheme -> NexusDarkColors
 
-        else -> lightColorScheme()
+        else -> NexusLightColors
     }
     MaterialTheme(colorScheme = colorScheme, content = content)
 }
