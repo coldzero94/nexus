@@ -7,6 +7,7 @@
 - **브랜드 스킴 고정이 기본.** `ui/NexusColors.kt`의 정적 라이트/다크 M3 스킴(`NexusLightColors`/`NexusDarkColors`)을 `NexusTheme`이 주입한다.
 - **톤**: 따뜻·다정(성장 동료). primary는 캐릭터 앰버(#FFB74D)와 어울리는 warm amber, tertiary는 성장의 sage-green. 두 모드 AA 대비.
 - **다이내믹 컬러 정책**: **기본 OFF**(브랜드 고정). 근거 — Android 12+ 다이내믹 컬러를 기본으로 두면 실기기 색이 배경화면 팔레트에 100% 종속돼 앱 고유색이 사라지고, 아이콘·스플래시·데이터 시각화 색과 어긋난다. `NexusTheme(dynamicColor = true)`로 옵트인 가능(갤럭시 One UI 조화 선호 시). 설정 노출은 후속.
+- **surfaceContainer 5단계 + surfaceBright/Dim**을 warm 중성 톤으로 채워 Card(surfaceContainerLow)·NavigationBar(surfaceContainer)가 M3 기본 라벤더로 폴백하지 않게 함(#251 리뷰).
 - 색은 `NexusColors.kt`에서만 정의. 컴포저블은 `MaterialTheme.colorScheme.*` 토큰만 참조.
 
 ## 2. 타이포·모양 (#252, E16-2 예정)

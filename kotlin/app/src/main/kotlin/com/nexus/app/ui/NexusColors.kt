@@ -37,6 +37,15 @@ internal val NexusLightColors = lightColorScheme(
     onSurfaceVariant = Color(0xFF4D4639),
     outline = Color(0xFF7F7767),
     outlineVariant = Color(0xFFD0C5B4),
+    // surfaceContainer 계열 — Card(surfaceContainerLow)·NavigationBar(surfaceContainer) 기본 배경.
+    // 미지정 시 M3 기본 라벤더로 폴백하므로 warm 중성 톤으로 채운다(#251 리뷰).
+    surfaceDim = Color(0xFFE3D7C8),
+    surfaceBright = Color(0xFFFFF8F2),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFDF1E4),
+    surfaceContainer = Color(0xFFF7EBDE),
+    surfaceContainerHigh = Color(0xFFF1E6D8),
+    surfaceContainerHighest = Color(0xFFEBE0D3),
 )
 
 internal val NexusDarkColors = darkColorScheme(
@@ -64,4 +73,12 @@ internal val NexusDarkColors = darkColorScheme(
     onSurfaceVariant = Color(0xFFD0C5B4),
     outline = Color(0xFF99917F),
     outlineVariant = Color(0xFF4D4639),
+    // warm 다크 중성 surface 계열 — 카드·내비바가 M3 기본이 아닌 브랜드 톤으로 (#251 리뷰).
+    surfaceDim = Color(0xFF17130B),
+    surfaceBright = Color(0xFF3E3830),
+    surfaceContainerLowest = Color(0xFF110E07),
+    surfaceContainerLow = Color(0xFF1F1B13),
+    surfaceContainer = Color(0xFF241F16),
+    surfaceContainerHigh = Color(0xFF2E2920),
+    surfaceContainerHighest = Color(0xFF39342A),
 )
