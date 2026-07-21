@@ -80,6 +80,10 @@
     <string name="widget_level_format">Lv.%1$d</string>
     <string name="widget_condition_format">컨디션 %1$d</string>
     <string name="widget_today_format">오늘 +%1$,d XP</string>
+    <string name="streak_current">🔥 %1$d일째 함께 자라는 중</string>
+    <string name="streak_pending">오늘 움직이면 %1$d일째로 이어져요</string>
+    <string name="streak_start">오늘 첫 걸음을 떼어볼까요?</string>
+    <string name="streak_longest">최장 %1$d일 이어갔어요</string>
     <string name="home_goal_move">오늘 %1$d분만 움직이면 컨디션이 올라요</string>
     <string name="home_goal_recovering">이 리듬이면 컨디션이 곧 회복돼요</string>
     <string name="home_goal_done">오늘 몫은 충분해요 — 캐릭터가 든든해해요</string>

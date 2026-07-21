@@ -85,6 +85,8 @@ internal data class HomeUiState(
     val yesterdayActiveMinutes: Int,
     /** 기분 배선 입력 (#212) — 홈 로드가 조립, 컨트롤러가 표·표정·대사로 평가. */
     val moodContext: com.nexus.core.MoodContext,
+    /** 기세 (#214) — 현재 연속 활동일·최장·오늘 그레이스. */
+    val streak: com.nexus.core.StreakStatus,
 )
 
 internal sealed interface HomeLoad {
@@ -233,6 +235,7 @@ private class HomeStores(context: android.content.Context) {
     val morning = MorningCardStore(context)
     val journal = EveningJournalStore(context)
     val goal = GoalStore(context)
+    val streak = StreakStore(context)
 }
 
 /**
@@ -305,6 +308,7 @@ private fun HomeContent(
         equipLayers = equipLayers,
     )
     DialogueBubble(spriteState, moodLines)
+    StreakRow(state.streak)
     ConditionGauge(state.condition)
     TodaySummaryCard(state)
     ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)
@@ -405,6 +409,7 @@ private suspend fun assembleHomeState(
             goalDays = stores.goal.weeklyGoalDays,
             condition = condition.roundToInt(),
         ),
+        streak = resolveStreak(stores.ledger, stores.rest, stores.streak, today),
     )
 }
 
