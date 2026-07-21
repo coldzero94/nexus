@@ -1,0 +1,49 @@
+package com.nexus.app.home
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.nexus.app.R
+import com.nexus.core.StreakStatus
+
+/**
+ * 기세 표시 (#214) — 무처벌·다정체. 끊김을 경고하지 않고, 오늘 미충족은 "채우면 이어짐"으로 권한다.
+ * 현재 연속일과 최장(영속)을 보여준다. 표시 전용 — 건강 수치는 화면에만, 페이로드에 없다(②).
+ */
+@Composable
+internal fun StreakRow(streak: StreakStatus, modifier: Modifier = Modifier) {
+    Card(modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = if (streak.current > 0) {
+                    stringResource(R.string.streak_current, streak.current)
+                } else {
+                    stringResource(R.string.streak_start)
+                },
+                style = MaterialTheme.typography.titleMedium,
+            )
+            if (streak.todayPending) {
+                Text(
+                    text = stringResource(R.string.streak_pending, streak.current + 1),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (streak.longest > 0) {
+                Text(
+                    text = stringResource(R.string.streak_longest, streak.longest),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}

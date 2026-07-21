@@ -82,4 +82,7 @@ class RewardLedgerRepository(private val dao: RewardEventDao) {
 
     /** 표시용 누적 XP — 일 상한 적용(core LedgerMath). */
     suspend fun cappedTotalXp(): Int = LedgerMath.cappedTotalXp(dao.xpByDay().associate { it.epochDay to it.xp })
+
+    /** 일별 순 XP 맵 (#214 기세) — 그날 순 XP>0이면 활동일. 취소로 순합≤0인 날은 비활동. */
+    suspend fun dailyXpMap(): Map<Long, Double> = dao.xpByDay().associate { it.epochDay to it.xp }
 }

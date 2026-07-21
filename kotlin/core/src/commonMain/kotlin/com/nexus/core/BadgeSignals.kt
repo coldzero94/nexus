@@ -28,7 +28,27 @@ object StreakCalculator {
         }
         return longest
     }
+
+    /**
+     * 사용자 표시용 기세 상태 (#214) — 무처벌·용서형. [active]는 오래된→최신, 마지막이 오늘.
+     * **오늘 아직 안 채운 것은 끊김이 아니다**: 오늘이 비활동이면 어제까지의 기세를 유지하고
+     * `todayPending`으로 "오늘 채우면 +1"을 알린다(그레이스). 휴식일은 호출자가 [active]에서 true로
+     * 접어 넣어 유지시킨다. 최장 기세는 [priorLongest]와 합쳐 **단조 증가**(퇴행 없음, 불변식 ④).
+     */
+    fun status(active: List<Boolean>, priorLongest: Int): StreakStatus {
+        val todayActive = active.lastOrNull() == true
+        val effective = if (todayActive) active else active.dropLast(1)
+        val current = currentStreak(effective)
+        val longest = maxOf(priorLongest, longestStreak(active), current)
+        return StreakStatus(current = current, longest = longest, todayPending = !todayActive)
+    }
 }
+
+/**
+ * 기세 표시 상태 (#214) — [current] 현재 연속일, [longest] 최장(영속·단조), [todayPending] 오늘 미충족
+ * (그레이스: 끊긴 게 아니라 "채우면 이어짐").
+ */
+data class StreakStatus(val current: Int, val longest: Int, val todayPending: Boolean)
 
 /**
  * 배지 해금 신호 조립 (#175, E5-11) — 원장 누적 XP(#163)와 일별 활동 시리즈로 [BadgeContext]를
