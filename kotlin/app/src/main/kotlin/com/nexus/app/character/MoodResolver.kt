@@ -64,7 +64,10 @@ object MoodResolver {
         )
     }
 
-    /** 오늘의 개인 계수 — 오늘 기본점수 대 최근 활동일 평균([Baseline]). */
+    /**
+     * 오늘의 개인 계수 — 오늘 기본점수 대 최근 활동일 평균([Baseline]). 기분 트리거용 **근사치**로,
+     * 정식 XP 경로의 개인계수(걸음 base·dense 창)와 정확히 일치하진 않는다(코스메틱, #212 리뷰 P1).
+     */
     private fun personalCoefToday(sessions: List<SessionInput>, todayEpoch: Long): Double {
         val dailyBase = sessions
             .filter { it.type != null }

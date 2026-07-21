@@ -1,10 +1,16 @@
 package com.nexus.app.character
 
+import com.nexus.core.ActivityType
 import com.nexus.core.MoodEvaluator
 import com.nexus.core.MoodRule
 import com.nexus.core.MoodTable
+import com.nexus.core.SessionInput
+import com.nexus.core.TrustTier
+import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * 기분 배선 조립 고정 (#212) — [MoodResolver.buildMoodContext]가 홈 신호를 올바른 [com.nexus.core.MoodContext]로
@@ -75,5 +81,43 @@ class MoodResolverTest {
     fun weeklyGoalMet_thresholdIsInclusive() {
         assertEquals(true, MoodResolver.weeklyGoalMet(activeDaysThisWeek = 4, goalDays = 4))
         assertEquals(false, MoodResolver.weeklyGoalMet(activeDaysThisWeek = 3, goalDays = 4))
+    }
+
+    private fun session(date: LocalDate, type: ActivityType, minutes: Int) =
+        SessionInput(type, minutes, TrustTier.B, date.toEpochDay())
+
+    private fun ctx(sessions: List<SessionInput>, today: LocalDate, goalDays: Int) =
+        MoodResolver.contextFromSessions(sessions, today, restMode = false, goalDays = goalDays, condition = 70)
+
+    @Test
+    fun contextFromSessions_weeklyGoalCountsDistinctDaysThisWeekOnly() {
+        val wed = LocalDate.of(2026, 7, 22) // 수요일 — 주 시작(월) = 2026-07-20
+        val sessions = listOf(
+            session(LocalDate.of(2026, 7, 20), ActivityType.WALKING, 20), // 월
+            session(LocalDate.of(2026, 7, 21), ActivityType.WALKING, 20), // 화
+            session(wed, ActivityType.WALKING, 20), // 수
+            session(wed, ActivityType.RUNNING, 10), // 수 중복 → distinct 3일
+            session(LocalDate.of(2026, 7, 17), ActivityType.WALKING, 20), // 지난 금 → 이번주 제외
+        )
+        assertTrue(ctx(sessions, wed, goalDays = 3).weeklyGoalMet)
+        assertFalse(ctx(sessions, wed, goalDays = 4).weeklyGoalMet)
+    }
+
+    @Test
+    fun contextFromSessions_personalCoefIsTodayBaseOverPriorActiveAvg() {
+        val today = LocalDate.of(2026, 7, 22)
+        val sessions = listOf(
+            session(today, ActivityType.WALKING, 25), // 오늘 base = 25
+            session(LocalDate.of(2026, 7, 20), ActivityType.WALKING, 20), // prior base 20
+            session(LocalDate.of(2026, 7, 18), ActivityType.WALKING, 20), // prior base 20 (활동일 평균 20)
+        )
+        assertEquals(1.25, ctx(sessions, today, goalDays = 7).personalCoef, 1e-9) // 25/20 (클램프 미도달)
+    }
+
+    @Test
+    fun contextFromSessions_personalCoefNeutralWithoutPrior() {
+        val today = LocalDate.of(2026, 7, 22)
+        val only = listOf(session(today, ActivityType.WALKING, 30))
+        assertEquals(1.0, ctx(only, today, goalDays = 7).personalCoef, 1e-9) // 콜드스타트: 비교 대상 없음 → 중립
     }
 }
