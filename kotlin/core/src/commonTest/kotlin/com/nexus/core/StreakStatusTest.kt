@@ -32,8 +32,8 @@ class StreakStatusTest {
     }
 
     @Test
-    fun restDaysFoldedActive_keepStreak() {
-        // 호출자가 휴식일을 true로 접으면 기세 유지(가운데가 휴식이어도 안 끊김)
+    fun consecutiveActive_counts() {
+        // 호출자가 접은 시리즈(휴식 폴드 포함)가 연속 true면 그대로 카운트 — 폴드 검증은 StreakResolverTest
         val st = StreakCalculator.status(s(true, true, true, true), priorLongest = 0)
         assertEquals(4, st.current)
     }

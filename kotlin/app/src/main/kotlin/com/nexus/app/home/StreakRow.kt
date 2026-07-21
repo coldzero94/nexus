@@ -30,7 +30,8 @@ internal fun StreakRow(streak: StreakStatus, modifier: Modifier = Modifier) {
                 },
                 style = MaterialTheme.typography.titleMedium,
             )
-            if (streak.todayPending) {
+            // 진행 중인 기세가 있을 때만 그레이스 안내 — current=0이면 "첫 걸음" 카피와 중복되므로 생략
+            if (streak.todayPending && streak.current > 0) {
                 Text(
                     text = stringResource(R.string.streak_pending, streak.current + 1),
                     style = MaterialTheme.typography.bodySmall,
