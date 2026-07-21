@@ -32,5 +32,10 @@ fun NexusTheme(
 
         else -> NexusLightColors
     }
-    MaterialTheme(colorScheme = colorScheme, content = content)
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = NexusTypography,
+        shapes = NexusShapes,
+        content = content,
+    )
 }

@@ -10,9 +10,9 @@
 - **surfaceContainer 5단계 + surfaceBright/Dim**을 warm 중성 톤으로 채워 Card(surfaceContainerLow)·NavigationBar(surfaceContainer)가 M3 기본 라벤더로 폴백하지 않게 함(#251 리뷰).
 - 색은 `NexusColors.kt`에서만 정의. 컴포저블은 `MaterialTheme.colorScheme.*` 토큰만 참조.
 
-## 2. 타이포·모양 (#252, E16-2 예정)
+## 2. 타이포·모양 (#252, E16-2)
 
-- Typography 스케일·Shapes 토큰을 `NexusTheme`에 주입 예정. 현재는 M3 스톡.
+- `NexusTypography`(제목 Bold/SemiBold·본문 한글 넉넉 행간·라벨)와 `NexusShapes`(medium 16dp 등 살짝 둥근 코너)를 `NexusTheme`에 주입. 시스템 폰트(무료, OFL 번들은 후속). 화면은 MaterialTheme.typography/shapes 토큰만 참조.
 
 ## 3. 간격·엘리베이션 (#253, E16-3 예정)
 
