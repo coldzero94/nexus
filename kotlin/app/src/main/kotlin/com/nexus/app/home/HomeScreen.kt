@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.character.CharacterComposer
+import com.nexus.app.character.MoodResolver
 import com.nexus.app.character.equipRenderLayers
 import com.nexus.app.data.EnergyStore
 import com.nexus.app.data.ExpeditionStore
@@ -40,6 +41,7 @@ import com.nexus.app.health.SleepRepository
 import com.nexus.app.health.StepRepository
 import com.nexus.app.health.sleepHoursOrNull
 import com.nexus.app.notify.ExpeditionReturnWorker
+import com.nexus.app.settings.GoalStore
 import com.nexus.app.settings.RestModeStore
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
@@ -81,6 +83,8 @@ internal data class HomeUiState(
     /** 어제의 성장 (#36 아침 카드) — 어제 일자 상한 적용 XP·활동 분. */
     val yesterdayXp: Int,
     val yesterdayActiveMinutes: Int,
+    /** 기분 배선 입력 (#212) — 홈 로드가 조립, 컨트롤러가 표·표정·대사로 평가. */
+    val moodContext: com.nexus.core.MoodContext,
 )
 
 internal sealed interface HomeLoad {
@@ -146,18 +150,32 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
     var journalVisible by mutableStateOf(false)
         private set
 
+    /** 기분 배선 (#212) — 렌더 상태(표정 아트 or idle/walk 폴백)와 채택 기분 대사 풀. */
+    var spriteState by mutableStateOf("idle")
+        private set
+    var moodLines by mutableStateOf<List<String>>(emptyList())
+        private set
+
     /** 카드가 "어느 날"의 것인지 — dismiss가 노출 판정과 같은 날짜를 소비(자정 경계, #70 리뷰 N3). */
     private var cardEpochDay = 0L
 
     suspend fun onLoaded(loaded: HomeLoad) {
         load = loaded
         if (loaded is HomeLoad.Success) {
-            // 위젯 갱신 (#40) — 앱 사용 시 즉시, 컨디션 실값 포함(워커는 컨디션 미갱신)
+            // 기분 평가 (#212) — 표정/대사 결정, 표정 아트 없으면 idle/walk 폴백. 홈·위젯 동일 상태.
+            val mood = MoodResolver.resolveMood(context, loaded.state.moodContext)
+            spriteState = MoodResolver.renderState(
+                CharacterAssets(context),
+                mood?.face,
+                loaded.state.todayActiveMinutes,
+            )
+            moodLines = mood?.lines ?: emptyList()
+            // 위젯 갱신 (#40) — 앱 사용 시 즉시, 컨디션·기분 실값 포함(워커는 마지막 기분 보존)
             WidgetUpdater.update(
                 context = context,
                 cappedTotalXp = loaded.state.cappedTotalXp,
                 todayXp = loaded.state.todayXp,
-                todayActive = loaded.state.todayActiveMinutes > 0,
+                spriteState = spriteState,
                 condition = loaded.state.condition.roundToInt(),
             )
             // 첫 XP 퍼널 (#47) — 원장에 무언가 적립된 사실만, 수치는 싣지 않는다
@@ -214,6 +232,7 @@ private class HomeStores(context: android.content.Context) {
     val settlement = SettlementStore(context)
     val morning = MorningCardStore(context)
     val journal = EveningJournalStore(context)
+    val goal = GoalStore(context)
 }
 
 /**
@@ -259,6 +278,8 @@ private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
     }
     HomeContent(
         state = state,
+        spriteState = ui.spriteState,
+        moodLines = ui.moodLines,
         onDepart = { ui.depart(state.cappedTotalXp) },
         onOpen = ui::openExpedition,
     )
@@ -266,9 +287,13 @@ private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
 }
 
 @Composable
-private fun HomeContent(state: HomeUiState, onDepart: () -> Unit, onOpen: () -> Unit) {
-    // 오늘 움직였으면 걷는 모습 — 데이터가 캐릭터에 그대로 새겨진다는 감각(임시 규칙, 기분 표는 E4-4)
-    val spriteState = if (state.todayActiveMinutes > 0) "walk" else "idle"
+private fun HomeContent(
+    state: HomeUiState,
+    spriteState: String,
+    moodLines: List<String>,
+    onDepart: () -> Unit,
+    onOpen: () -> Unit,
+) {
     // 장착 장비를 본체 위에 반영 (#37) — 카탈로그 로드 실패 시 본체만(빈 레이어)
     val context = LocalContext.current
     val equipLayers by produceState(emptyList<String>(), spriteState) {
@@ -279,7 +304,7 @@ private fun HomeContent(state: HomeUiState, onDepart: () -> Unit, onOpen: () -> 
         modifier = Modifier.size(140.dp),
         equipLayers = equipLayers,
     )
-    DialogueBubble(spriteState)
+    DialogueBubble(spriteState, moodLines)
     ConditionGauge(state.condition)
     TodaySummaryCard(state)
     ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)
@@ -302,31 +327,6 @@ private fun nextGoalText(state: HomeUiState): String = when {
 
 /** 다음 목표 문구의 활동 기준(분) — 컨디션 활동 문턱(10pt≈걷기 10분)과 맞춘다. */
 private const val ACTIVE_GOAL_MINUTES = 10
-
-/**
- * 캐릭터 대사 말풍선 (#29, E4-5) — 상태별 풀에서 반복 회피로 한 줄. 대사는 코드가 아닌
- * assets JSON(데이터 테이블)이라 하드코딩 문자열 규칙의 대상이 아니다 — 수정 = JSON만.
- */
-@Composable
-private fun DialogueBubble(spriteState: String) {
-    val context = LocalContext.current
-    var line by remember(spriteState) { mutableStateOf<String?>(null) }
-    LaunchedEffect(spriteState) {
-        line = withContext(Dispatchers.IO) {
-            val candidates = CharacterAssets(context).loadDialoguePool().linesOrDefault(spriteState)
-            val memory = DialogueMemory(context)
-            val picked = DialogueSelector.pick(candidates, memory.recent, Random.nextInt(candidates.size))
-            memory.recent = DialogueSelector.remember(memory.recent, picked, DialogueMemory.RECENT_CAPACITY)
-            picked
-        }
-    }
-    line?.let {
-        Text(
-            text = stringResource(R.string.home_dialogue_format, it),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-    }
-}
 
 /** ActivityScreen.loadActivity와 같은 catch 계약 (#130) + 권한 회수는 안내로 (#144 패턴). */
 private suspend fun loadHome(
@@ -353,26 +353,7 @@ private suspend fun loadHome(
         deriveCondition(sessions, today, stores.rest),
         sleepHoursOrNull(sleepRepo),
     )
-    val cappedTotal = stores.ledger.cappedTotalXp()
-    val todayEpoch = today.toEpochDay()
-    HomeLoad.Success(
-        HomeUiState(
-            condition = condition,
-            todayXp = XpExplainer.explainDay(sessions, epochDay = todayEpoch).cappedXp,
-            todayActiveMinutes = sessions
-                .filter { it.epochDay == todayEpoch && it.type != null }
-                .sumOf { it.minutes },
-            todaySteps = stepRepo.readDailySteps(days = 1)
-                .firstOrNull { it.date == today }?.steps ?: 0L,
-            energy = EnergyEngine.balance(cappedTotal, stores.energy.totalSpent),
-            cappedTotalXp = cappedTotal,
-            expedition = ExpeditionEngine.stateAt(stores.expedition.startedAtMillis, System.currentTimeMillis()),
-            yesterdayXp = stores.ledger.cappedXpOn(todayEpoch - 1),
-            yesterdayActiveMinutes = sessions
-                .filter { it.epochDay == todayEpoch - 1 && it.type != null }
-                .sumOf { it.minutes },
-        ),
-    )
+    HomeLoad.Success(assembleHomeState(sessions, condition, today, stepRepo, stores))
 } catch (e: CancellationException) {
     throw e
 } catch (e: IOException) {
@@ -393,6 +374,38 @@ private suspend fun loadHome(
 } catch (e: android.database.SQLException) {
     Log.w(TAG, "home ledger db failure", e)
     HomeLoad.Failure
+}
+
+/** 홈 상태 조립 (#32) — loadHome이 계산한 조각을 UI 상태로. 기분 컨텍스트도 여기서 구성(#212). */
+private suspend fun assembleHomeState(
+    sessions: List<SessionInput>,
+    condition: Double,
+    today: LocalDate,
+    stepRepo: StepRepository,
+    stores: HomeStores,
+): HomeUiState {
+    val todayEpoch = today.toEpochDay()
+    val cappedTotal = stores.ledger.cappedTotalXp()
+    return HomeUiState(
+        condition = condition,
+        todayXp = XpExplainer.explainDay(sessions, epochDay = todayEpoch).cappedXp,
+        todayActiveMinutes = sessions.filter { it.epochDay == todayEpoch && it.type != null }.sumOf { it.minutes },
+        todaySteps = stepRepo.readDailySteps(days = 1).firstOrNull { it.date == today }?.steps ?: 0L,
+        energy = EnergyEngine.balance(cappedTotal, stores.energy.totalSpent),
+        cappedTotalXp = cappedTotal,
+        expedition = ExpeditionEngine.stateAt(stores.expedition.startedAtMillis, System.currentTimeMillis()),
+        yesterdayXp = stores.ledger.cappedXpOn(todayEpoch - 1),
+        yesterdayActiveMinutes = sessions
+            .filter { it.epochDay == todayEpoch - 1 && it.type != null }
+            .sumOf { it.minutes },
+        moodContext = MoodResolver.contextFromSessions(
+            sessions = sessions,
+            today = today,
+            restMode = stores.rest.enabled,
+            goalDays = stores.goal.weeklyGoalDays,
+            condition = condition.roundToInt(),
+        ),
+    )
 }
 
 /**

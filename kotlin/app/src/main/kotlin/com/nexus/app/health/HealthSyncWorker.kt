@@ -73,16 +73,19 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         deletedIds.forEach { id ->
             if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
         }
-        // 위젯 갱신 (#40): 동기화가 위젯의 유일한 백그라운드 갱신원 — 15분 준실시간 한계
+        // 위젯 갱신 (#40): 동기화가 위젯의 유일한 백그라운드 갱신원 — 15분 준실시간 한계.
+        // 기분(#212)의 풍부한 신호(개인계수·주간목표)는 델타만 읽는 워커엔 없어 활동 기반 walk/idle만
+        // 전달한다 — 백그라운드 활동의 liveness 유지(#40의 존재 이유). 표정 아트(#66) 랜딩 시엔
+        // 홈이 쓴 표정을 워커 walk/idle이 덮어쓰지 않도록 위젯 기분 배선을 재검토해야 한다(#212 리뷰 W1).
         val todayEpoch = LocalDate.now(zone).toEpochDay()
+        val todayActive = sessions.any {
+            it.type != null && it.start.atZone(zone).toLocalDate().toEpochDay() == todayEpoch
+        }
         WidgetUpdater.update(
             context = applicationContext,
             cappedTotalXp = ledger.cappedTotalXp(),
             todayXp = ledger.cappedXpOn(todayEpoch),
-            todayActive = sessions.any {
-                it.type != null &&
-                    it.start.atZone(zone).toLocalDate().toEpochDay() == todayEpoch
-            },
+            spriteState = if (todayActive) "walk" else "idle",
         )
     }
 
