@@ -17,7 +17,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ConditionEngine
@@ -130,7 +129,7 @@ internal fun ConditionGauge(condition: Double) {
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(NexusSpacing.sm))
             LinearProgressIndicator(
                 progress = { (condition / ConditionEngine.MAX).toFloat() },
                 modifier = Modifier.fillMaxWidth(),
@@ -143,7 +142,10 @@ internal fun ConditionGauge(condition: Double) {
 @Composable
 internal fun TodaySummaryCard(state: HomeUiState) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(NexusSpacing.lg), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(stringResource(R.string.home_today_title), style = MaterialTheme.typography.titleMedium)
             SummaryRow(
                 stringResource(R.string.home_today_xp),

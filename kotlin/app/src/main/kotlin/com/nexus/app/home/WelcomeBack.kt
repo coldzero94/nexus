@@ -34,19 +34,19 @@ fun WelcomeBackScene(gapDays: Long, onContinue: () -> Unit) {
         verticalArrangement = Arrangement.Center,
     ) {
         CharacterComposer.CharacterSprite(state = "walk", modifier = Modifier.size(160.dp))
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(NexusSpacing.xl))
         Text(
             text = stringResource(R.string.welcome_back_title, gapDays),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(NexusSpacing.md))
         Text(
             text = stringResource(R.string.welcome_back_body),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(NexusSpacing.xxl))
         Button(onClick = onContinue) {
             Text(stringResource(R.string.welcome_back_continue))
         }

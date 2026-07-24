@@ -77,23 +77,23 @@ fun InitialLevelScene(manager: HealthConnectManager, onDone: (markShown: Boolean
         val loaded = result
         if (loaded == null) {
             CircularProgressIndicator()
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(NexusSpacing.lg))
             Text(stringResource(R.string.initial_level_loading), style = MaterialTheme.typography.bodyMedium)
         } else {
             CharacterComposer.CharacterSprite(state = "walk", modifier = Modifier.size(160.dp))
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(NexusSpacing.xl))
             Text(
                 stringResource(R.string.initial_level_title, loaded.first),
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(NexusSpacing.md))
             Text(
                 stringResource(R.string.initial_level_body, loaded.second),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(NexusSpacing.xxl))
             Button(onClick = { onDone(true) }) {
                 Text(stringResource(R.string.initial_level_continue))
             }

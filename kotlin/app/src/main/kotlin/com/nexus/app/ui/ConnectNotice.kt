@@ -11,9 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.nexus.app.R
-import com.nexus.app.ui.NexusSpacing
 
 /**
  * 미연결 안내 공용 컴포넌트 (#32·#152, #144 패턴) — 권한 문제는 에러가 아니라 "연결하면

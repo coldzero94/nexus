@@ -225,12 +225,12 @@ private fun LevelCard(data: GrowthSummary) {
                 stringResource(R.string.growth_level_format, data.level),
                 style = MaterialTheme.typography.titleLarge,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(NexusSpacing.sm))
             LinearProgressIndicator(
                 progress = { data.progress.toFloat() },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(NexusSpacing.xs))
             Text(
                 stringResource(R.string.growth_xp_format, data.totalXp, XpEngine.FORMULA_VERSION),
                 style = MaterialTheme.typography.bodySmall,
@@ -242,7 +242,10 @@ private fun LevelCard(data: GrowthSummary) {
 @Composable
 private fun AffinityCard(data: GrowthSummary) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(NexusSpacing.lg), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(
                 stringResource(R.string.growth_affinity_format, stringResource(data.affinity.labelRes())),
                 style = MaterialTheme.typography.titleMedium,
