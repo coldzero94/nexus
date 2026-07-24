@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.nexus.app.growth.GrowthScreen
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
@@ -55,6 +56,8 @@ import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 콜드스타트 스플래시 (#261) — super.onCreate 전에 설치해 Theme.Nexus.Starting을 Theme.Nexus로 전환.
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         // 시스템바 아이콘 대비를 라이트/다크에 맞게 자동 동기화 (#64 — targetSdk 36 edge-to-edge)
         enableEdgeToEdge()

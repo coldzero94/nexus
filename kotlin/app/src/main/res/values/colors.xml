@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 콜드스타트 스플래시 배경 (#261) — 브랜드 앰버(런처 아이콘과 동일 계열). 다크는 values-night. -->
+    <color name="brand_splash_bg">#EDA23A</color>
+</resources>

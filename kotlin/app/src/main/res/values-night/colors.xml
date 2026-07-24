@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 다크 콜드스타트 스플래시 배경 (#261) — 덜 밝은 브랜드 앰버. -->
+    <color name="brand_splash_bg">#C97F26</color>
+</resources>

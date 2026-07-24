@@ -4,4 +4,14 @@
 -->
 <resources>
     <style name="Theme.Nexus" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!--
+      콜드스타트 스플래시 (#261) — androidx.core-splashscreen. 브랜드 앰버 배경 + 마크 아이콘으로
+      무지 플래시를 대체. installSplashScreen() 후 postSplashScreenTheme(Theme.Nexus)로 전환.
+    -->
+    <style name="Theme.Nexus.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/brand_splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Nexus</item>
+    </style>
 </resources>

@@ -36,6 +36,7 @@ import com.nexus.app.health.HealthPermissions
 import com.nexus.app.settings.GoalStore
 import com.nexus.app.ui.GoalDayChooser
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.NexusWordmark
 
 private enum class OnboardingStep { Welcome, Rationale, SamsungHealth, WeeklyGoal }
 
@@ -124,6 +125,9 @@ private fun StepScaffold(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun WelcomeStep(onNext: () -> Unit) = StepScaffold {
+    // 브랜드 워드마크 (#261) — 온보딩 최전선 상단
+    NexusWordmark()
+    Spacer(Modifier.height(NexusSpacing.xl))
     CharacterComposer.CharacterSprite(state = "idle", modifier = Modifier.size(120.dp))
     Text(
         text = stringResource(R.string.onboarding_character_hint),

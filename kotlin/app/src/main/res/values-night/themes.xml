@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.Nexus" parent="android:Theme.Material.NoActionBar" />
+
+    <!-- 다크 콜드스타트 스플래시 (#261) — brand_splash_bg는 values-night에서 덜 밝은 앰버. -->
+    <style name="Theme.Nexus.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/brand_splash_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Nexus</item>
+    </style>
 </resources>
