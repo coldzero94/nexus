@@ -17,6 +17,10 @@
     <string name="home_condition_floor_caption">%1$d 아래로 안 내려가요</string>
     <string name="home_condition_rest_caption">휴식 중 · 유지돼요</string>
     <string name="home_today_title">오늘</string>
+    <!-- 오늘 XP 진행 게이지 (#259) -->
+    <string name="xp_gauge_to_knee">하루 목표 %1$d XP · %2$d 남았어요</string>
+    <string name="xp_gauge_over_knee">목표 달성! 여기부터 천천히 쌓여요</string>
+    <string name="xp_gauge_desc">오늘 XP %1$d, 하루 목표 %2$d</string>
     <string name="home_today_xp">XP</string>
     <string name="home_today_xp_value">%1$,d pt</string>
     <string name="home_today_exercise">운동</string>
