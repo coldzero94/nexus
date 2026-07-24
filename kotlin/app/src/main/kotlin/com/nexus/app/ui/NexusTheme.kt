@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 
 /**
@@ -32,10 +33,13 @@ fun NexusTheme(
 
         else -> NexusLightColors
     }
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = NexusTypography,
-        shapes = NexusShapes,
-        content = content,
-    )
+    // 데이터 시각화 팔레트(#257)는 M3 스킴 밖 토큰 — 동일 다크 판정에 묶어 주입.
+    CompositionLocalProvider(LocalVizColors provides VizColors.palette(useDarkTheme)) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = NexusTypography,
+            shapes = NexusShapes,
+            content = content,
+        )
+    }
 }

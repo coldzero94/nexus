@@ -22,8 +22,15 @@
 
 - `NexusCard`(헤더 제목+우측 값 슬롯+본문 슬롯, 내부 패딩·간격 토큰) + `CardEmphasis`(Neutral=surface / Highlight=primaryContainer / Celebration=secondaryContainer). HomeCards 6·Growth Level(Highlight)/Affinity/Stats·Settings 카드·ConnectNotice·StreakRow·홈 다음목표 이관 → 정보 경중이 색으로 읽힘(2단계 위계). NexusListRow·NexusIcons·VizColors는 후속.
 
-## 5. 데이터 시각화 (#257~, 예정)
+## 5. 데이터 시각화 (#257~)
 
-- 컨디션 게이지(바닥20 마커·무처벌)·걸음 막대·XP 게이지. `VizColors` 토큰 공유. 색만으로 상태 전달 금지(라벨 병기).
+- **토큰**: `ui/VizColors.kt` — M3 `ColorScheme` 밖의 차트 전용 팔레트(라이트/다크). `NexusTheme`가
+  동일 다크 판정으로 `LocalVizColors` 주입, `VizColors.current`로 접근. 차트 요소는 서피스 대비
+  **3:1↑**(비텍스트 UI AA)만 보장 → 값·라벨 텍스트엔 재사용 금지(가독 4.5:1은 `onSurface` 사용).
+- **컨디션 게이지 (#257)**: `home/ConditionGaugeBar.kt` — 스톡 프로그레스 대신 Canvas. 바닥(20)~
+  MAX(100) 구간을 3존(회복중/안정/좋음) 착색 + 좌측 **바닥 마커**로 "불퇴행" 시각 증거화. 무처벌
+  원칙상 회복중도 **적색 금지**(테라코타). 채움 수학·존 분류는 `core/ConditionGauge`(순수·테스트됨).
+- **공유 예정**: 걸음 막대(#258)·XP 게이지(#259)가 같은 `VizColors`(walking/running/strength) 참조.
+- **접근성**: 색만으로 상태 전달 금지 — 존은 색 점 + 텍스트 라벨 병기.
 
 _각 항목은 해당 E16 티켓이 랜딩할 때 이 문서를 같은 PR에서 갱신한다._
