@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.nexus.app.growth.GrowthScreen
@@ -138,11 +140,11 @@ private fun NexusApp(manager: HealthConnectManager) {
 /** 복귀 판정 전 표식 — 온보딩이 먼저 렌더되므로 사용자에게 보이는 지연은 없다 (#30). */
 private const val UNDECIDED_GAP = -1L
 
-private enum class MainTab(val labelRes: Int) {
-    HOME(R.string.tab_home),
-    ACTIVITY(R.string.tab_activity),
-    GROWTH(R.string.tab_growth),
-    SETTINGS(R.string.tab_settings),
+private enum class MainTab(val labelRes: Int, val icon: com.nexus.app.ui.TabIcon) {
+    HOME(R.string.tab_home, com.nexus.app.ui.NexusIcons.home),
+    ACTIVITY(R.string.tab_activity, com.nexus.app.ui.NexusIcons.activity),
+    GROWTH(R.string.tab_growth, com.nexus.app.ui.NexusIcons.growth),
+    SETTINGS(R.string.tab_settings, com.nexus.app.ui.NexusIcons.settings),
 }
 
 @Composable
@@ -155,7 +157,12 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
                     NavigationBarItem(
                         selected = tab == t,
                         onClick = { tab = t },
-                        icon = {},
+                        icon = {
+                            Icon(
+                                painter = painterResource(if (tab == t) t.icon.filled else t.icon.outline),
+                                contentDescription = stringResource(t.labelRes),
+                            )
+                        },
                         label = { Text(stringResource(t.labelRes)) },
                     )
                 }
