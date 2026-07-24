@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
+import com.nexus.app.ui.NexusSpacing
 
 /**
  * 미연결 안내 공용 컴포넌트 (#32·#152, #144 패턴) — 권한 문제는 에러가 아니라 "연결하면
@@ -21,7 +22,10 @@ import com.nexus.app.R
 @Composable
 fun ConnectNotice(onReconnect: (() -> Unit)?, body: String = stringResource(R.string.home_demo_body)) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(stringResource(R.string.growth_demo_title), style = MaterialTheme.typography.titleMedium)
             Text(body, style = MaterialTheme.typography.bodyMedium)
             if (onReconnect != null) {

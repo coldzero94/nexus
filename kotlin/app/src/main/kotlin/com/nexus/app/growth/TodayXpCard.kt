@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ActivityType
 import com.nexus.core.DayXpExplanation
 import com.nexus.core.XpLine
@@ -34,7 +35,7 @@ import com.nexus.core.XpLine
 internal fun TodayXpCard(explanation: DayXpExplanation) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(Modifier.fillMaxWidth().padding(NexusSpacing.lg)) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

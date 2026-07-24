@@ -26,6 +26,7 @@ import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.character.CharacterComposer
 import com.nexus.app.character.EquipStore
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.EquipCatalog
 import com.nexus.core.EquipItem
 import com.nexus.core.EquipSlot
@@ -55,7 +56,10 @@ fun EquipmentCard(spriteState: String, modifier: Modifier = Modifier) {
 
     val loaded = catalog ?: return
     Card(modifier) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.md),
+        ) {
             Text(stringResource(R.string.equip_title), style = MaterialTheme.typography.titleMedium)
             CharacterComposer.CharacterSprite(
                 state = spriteState,
@@ -81,9 +85,9 @@ fun EquipmentCard(spriteState: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun SlotRow(slot: EquipSlot, items: List<EquipItem>, equippedId: String?, onToggle: (EquipItem) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs)) {
         Text(stringResource(slotLabel(slot)), style = MaterialTheme.typography.labelMedium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm)) {
             items.forEach { item ->
                 FilterChip(
                     selected = equippedId == item.id,

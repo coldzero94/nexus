@@ -35,6 +35,7 @@ import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthPermissions
 import com.nexus.app.settings.GoalStore
 import com.nexus.app.ui.GoalDayChooser
+import com.nexus.app.ui.NexusSpacing
 
 private enum class OnboardingStep { Welcome, Rationale, SamsungHealth, WeeklyGoal }
 
@@ -91,15 +92,15 @@ private fun WeeklyGoalStep(onDone: () -> Unit) = StepScaffold {
         style = MaterialTheme.typography.headlineMedium,
         textAlign = TextAlign.Center,
     )
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(NexusSpacing.sm))
     Text(
         text = stringResource(R.string.onboarding_goal_body),
         style = MaterialTheme.typography.bodyMedium,
         textAlign = TextAlign.Center,
     )
-    Spacer(Modifier.height(24.dp))
+    Spacer(Modifier.height(NexusSpacing.xl))
     GoalDayChooser(selected = selected, onSelect = { selected = it })
-    Spacer(Modifier.height(24.dp))
+    Spacer(Modifier.height(NexusSpacing.xl))
     Button(onClick = {
         store.weeklyGoalDays = selected
         onDone()
@@ -114,7 +115,7 @@ private fun StepScaffold(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(NexusSpacing.screen),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         content = content,
@@ -128,19 +129,19 @@ private fun WelcomeStep(onNext: () -> Unit) = StepScaffold {
         text = stringResource(R.string.onboarding_character_hint),
         style = MaterialTheme.typography.labelSmall,
     )
-    Spacer(Modifier.height(24.dp))
+    Spacer(Modifier.height(NexusSpacing.xl))
     Text(
         text = stringResource(R.string.onboarding_welcome_title),
         style = MaterialTheme.typography.headlineMedium,
         textAlign = TextAlign.Center,
     )
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(NexusSpacing.md))
     Text(
         text = stringResource(R.string.onboarding_welcome_body),
         style = MaterialTheme.typography.bodyMedium,
         textAlign = TextAlign.Center,
     )
-    Spacer(Modifier.height(32.dp))
+    Spacer(Modifier.height(NexusSpacing.xxl))
     Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.onboarding_next))
     }
@@ -153,17 +154,17 @@ private fun RationaleStep(onGrant: () -> Unit, onSkip: () -> Unit) = StepScaffol
         style = MaterialTheme.typography.headlineSmall,
         textAlign = TextAlign.Center,
     )
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(NexusSpacing.md))
     Text(
         text = stringResource(R.string.permission_rationale_body),
         style = MaterialTheme.typography.bodyMedium,
         textAlign = TextAlign.Center,
     )
-    Spacer(Modifier.height(24.dp))
+    Spacer(Modifier.height(NexusSpacing.xl))
     PermissionRow(R.string.permission_read_title, R.string.permission_read_desc)
     PermissionRow(R.string.permission_background_title, R.string.permission_background_desc)
     PermissionRow(R.string.permission_history_title, R.string.permission_history_desc)
-    Spacer(Modifier.height(32.dp))
+    Spacer(Modifier.height(NexusSpacing.xxl))
     Button(onClick = onGrant, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.permission_grant))
     }
@@ -191,13 +192,13 @@ private fun SamsungHealthStep(onDone: () -> Unit) = StepScaffold {
         style = MaterialTheme.typography.headlineSmall,
         textAlign = TextAlign.Center,
     )
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(NexusSpacing.md))
     Text(
         text = stringResource(R.string.samsung_health_body),
         style = MaterialTheme.typography.bodyMedium,
         textAlign = TextAlign.Center,
     )
-    Spacer(Modifier.height(32.dp))
+    Spacer(Modifier.height(NexusSpacing.xxl))
     Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.samsung_health_done))
     }

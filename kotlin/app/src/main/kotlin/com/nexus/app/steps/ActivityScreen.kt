@@ -33,6 +33,7 @@ import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.StepRepository
 import com.nexus.app.health.TokenStore
 import com.nexus.app.ui.ConnectNotice
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ActivityType
 import com.nexus.core.TrustTier
 import java.io.IOException
@@ -73,7 +74,7 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(NexusSpacing.screen),
     ) {
         // ── 걸음 (#7) ──
         Text(stringResource(R.string.steps_title), style = MaterialTheme.typography.headlineSmall)

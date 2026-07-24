@@ -43,6 +43,7 @@ import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.NexusTheme
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
@@ -177,7 +178,7 @@ private fun DemoLanding(available: Boolean, onReconnect: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(NexusSpacing.screen),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

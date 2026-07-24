@@ -29,6 +29,7 @@ import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ClassAffinityCalculator
 import com.nexus.core.LevelCurve
 import kotlinx.coroutines.CancellationException
@@ -69,7 +70,7 @@ fun InitialLevelScene(manager: HealthConnectManager, onDone: (markShown: Boolean
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(NexusSpacing.screen),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

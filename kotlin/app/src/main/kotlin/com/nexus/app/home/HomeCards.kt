@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ConditionEngine
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionState
@@ -31,7 +32,10 @@ import kotlin.math.roundToInt
 @Composable
 internal fun EveningJournalCard(state: HomeUiState, onDismiss: () -> Unit) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+        ) {
             Text(stringResource(R.string.journal_title), style = MaterialTheme.typography.titleMedium)
             Text(
                 if (state.todayXp > 0) {
@@ -62,7 +66,10 @@ internal fun EveningJournalCard(state: HomeUiState, onDismiss: () -> Unit) {
 @Composable
 internal fun MorningCard(state: HomeUiState, onDismiss: () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+        ) {
             Text(stringResource(R.string.morning_title), style = MaterialTheme.typography.titleMedium)
             Text(
                 // XP 기준 분기 — 수기(Tier C)만 있던 어제는 "+0 XP" 병치 대신 쉼 프레이밍(#36 리뷰 N2)
@@ -93,7 +100,10 @@ internal fun MorningCard(state: HomeUiState, onDismiss: () -> Unit) {
 @Composable
 internal fun SettlementCard(deltaXp: Int, onOpen: () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+        ) {
             Text(stringResource(R.string.settlement_title), style = MaterialTheme.typography.titleMedium)
             Text(
                 stringResource(R.string.settlement_body, deltaXp),
@@ -112,7 +122,7 @@ internal fun SettlementCard(deltaXp: Int, onOpen: () -> Unit) {
 @Composable
 internal fun ConditionGauge(condition: Double) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(Modifier.fillMaxWidth().padding(NexusSpacing.lg)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(stringResource(R.string.home_condition_title), style = MaterialTheme.typography.titleMedium)
                 Text(
@@ -133,7 +143,7 @@ internal fun ConditionGauge(condition: Double) {
 @Composable
 internal fun TodaySummaryCard(state: HomeUiState) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.fillMaxWidth().padding(NexusSpacing.lg), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.home_today_title), style = MaterialTheme.typography.titleMedium)
             SummaryRow(
                 stringResource(R.string.home_today_xp),
@@ -166,7 +176,10 @@ private fun SummaryRow(label: String, value: String) {
 @Composable
 internal fun ExpeditionCard(expedition: ExpeditionState, energy: Int, onDepart: () -> Unit, onOpen: () -> Unit) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(stringResource(R.string.home_expedition_title), style = MaterialTheme.typography.titleMedium)
                 Text(

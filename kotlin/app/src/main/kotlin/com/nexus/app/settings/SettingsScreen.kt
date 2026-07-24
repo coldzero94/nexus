@@ -41,6 +41,7 @@ import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.notify.NotificationSettings
 import com.nexus.app.notify.ReminderWorker
 import com.nexus.app.ui.GoalDayChooser
+import com.nexus.app.ui.NexusSpacing
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -58,13 +59,16 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(NexusSpacing.screen),
+        verticalArrangement = Arrangement.spacedBy(NexusSpacing.lg),
     ) {
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall)
         HealthStatusCard(manager, onReconnect)
         Card {
-            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+            ) {
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -123,10 +127,13 @@ private fun BackupCard() {
     }
 
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(stringResource(R.string.settings_backup_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.settings_backup_desc), style = MaterialTheme.typography.bodySmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm)) {
                 Button(onClick = { exportLauncher.launch("nexus-backup.json") }) {
                     Text(stringResource(R.string.backup_export))
                 }
@@ -150,7 +157,10 @@ private fun HealthStatusCard(manager: HealthConnectManager, onReconnect: (() -> 
         connected = if (manager.isAvailable()) checkPermissionsOrFalse(manager) else false
     }
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(stringResource(R.string.settings_health_title), style = MaterialTheme.typography.titleMedium)
             when (connected) {
                 null -> Text(
@@ -209,7 +219,10 @@ private fun DeleteDataCard() {
     val context = LocalContext.current
     var confirming by remember { mutableStateOf(false) }
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(stringResource(R.string.settings_delete_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.settings_delete_desc), style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = { confirming = true }) {
@@ -257,7 +270,10 @@ private fun WidgetPinCard() {
     }
     if (!pinSupported) return // 미지원 런처 — 무반응 버튼 대신 카드 자체를 숨김 (#40 리뷰 N1)
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(stringResource(R.string.settings_widget), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.settings_widget_desc), style = MaterialTheme.typography.bodySmall)
             Button(onClick = {
@@ -284,7 +300,10 @@ private fun WeeklyGoalCard() {
     var selected by remember { mutableStateOf(store.weeklyGoalDays) }
 
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(stringResource(R.string.settings_goal), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.settings_goal_desc), style = MaterialTheme.typography.bodySmall)
             GoalDayChooser(
@@ -319,7 +338,10 @@ private fun ReminderCard() {
     ) { granted -> if (granted) apply(true) }
 
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+        ) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

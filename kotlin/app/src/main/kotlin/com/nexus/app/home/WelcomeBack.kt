@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.character.CharacterComposer
+import com.nexus.app.ui.NexusSpacing
 
 /**
  * 복귀 환영 씬 (#30) — 3일+ 공백 후 첫 실행. 죄책감 없는 환영(무처벌 원칙):
@@ -28,7 +29,7 @@ fun WelcomeBackScene(gapDays: Long, onContinue: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(NexusSpacing.screen),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

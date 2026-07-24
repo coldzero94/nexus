@@ -11,6 +11,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.settings.GoalStore
+import com.nexus.app.ui.NexusSpacing
 
 /**
  * 주간 목표 일수 선택 (#73) — 온보딩·설정이 공유. 칩이 좁은 화면 너비를 넘기면 다음 줄로 감긴다
@@ -21,8 +22,8 @@ import com.nexus.app.settings.GoalStore
 fun GoalDayChooser(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     FlowRow(
         modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
     ) {
         for (days in GoalStore.MIN_DAYS..GoalStore.MAX_DAYS) {
             FilterChip(
