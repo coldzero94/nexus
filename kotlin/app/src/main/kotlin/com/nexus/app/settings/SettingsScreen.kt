@@ -40,6 +40,7 @@ import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.notify.NotificationSettings
 import com.nexus.app.notify.ReminderWorker
 import com.nexus.app.ui.GoalDayChooser
+import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -63,27 +64,19 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
     ) {
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall)
         HealthStatusCard(manager, onReconnect)
-        Card {
-            Column(
-                Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-                verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
-            ) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(stringResource(R.string.settings_rest_mode), style = MaterialTheme.typography.titleMedium)
-                    Switch(
-                        checked = restEnabled,
-                        onCheckedChange = { checked ->
-                            store.setEnabled(checked)
-                            restEnabled = checked
-                        },
-                    )
-                }
-                Text(stringResource(R.string.settings_rest_mode_desc), style = MaterialTheme.typography.bodySmall)
-            }
+        NexusCard(
+            title = stringResource(R.string.settings_rest_mode),
+            trailing = {
+                Switch(
+                    checked = restEnabled,
+                    onCheckedChange = { checked ->
+                        store.setEnabled(checked)
+                        restEnabled = checked
+                    },
+                )
+            },
+        ) {
+            Text(stringResource(R.string.settings_rest_mode_desc), style = MaterialTheme.typography.bodySmall)
         }
         ReminderCard()
         WeeklyGoalCard()
@@ -125,21 +118,15 @@ private fun BackupCard() {
         }
     }
 
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(stringResource(R.string.settings_backup_title), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.settings_backup_desc), style = MaterialTheme.typography.bodySmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm)) {
-                Button(onClick = { exportLauncher.launch("nexus-backup.json") }) {
-                    Text(stringResource(R.string.backup_export))
-                }
-                val importTypes = arrayOf("application/json", "application/octet-stream")
-                TextButton(onClick = { importLauncher.launch(importTypes) }) {
-                    Text(stringResource(R.string.backup_import))
-                }
+    NexusCard(title = stringResource(R.string.settings_backup_title)) {
+        Text(stringResource(R.string.settings_backup_desc), style = MaterialTheme.typography.bodySmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm)) {
+            Button(onClick = { exportLauncher.launch("nexus-backup.json") }) {
+                Text(stringResource(R.string.backup_export))
+            }
+            val importTypes = arrayOf("application/json", "application/octet-stream")
+            TextButton(onClick = { importLauncher.launch(importTypes) }) {
+                Text(stringResource(R.string.backup_import))
             }
         }
     }
@@ -155,32 +142,26 @@ private fun HealthStatusCard(manager: HealthConnectManager, onReconnect: (() -> 
     LaunchedEffect(Unit) {
         connected = if (manager.isAvailable()) checkPermissionsOrFalse(manager) else false
     }
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(stringResource(R.string.settings_health_title), style = MaterialTheme.typography.titleMedium)
-            when (connected) {
-                null -> Text(
-                    stringResource(R.string.settings_health_checking),
+    NexusCard(title = stringResource(R.string.settings_health_title)) {
+        when (connected) {
+            null -> Text(
+                stringResource(R.string.settings_health_checking),
+                style = MaterialTheme.typography.bodySmall,
+            )
+
+            true -> Text(
+                stringResource(R.string.settings_health_connected),
+                style = MaterialTheme.typography.bodySmall,
+            )
+
+            false -> {
+                Text(
+                    stringResource(R.string.settings_health_disconnected),
                     style = MaterialTheme.typography.bodySmall,
                 )
-
-                true -> Text(
-                    stringResource(R.string.settings_health_connected),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-
-                false -> {
-                    Text(
-                        stringResource(R.string.settings_health_disconnected),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    if (onReconnect != null) {
-                        Button(onClick = onReconnect) {
-                            Text(stringResource(R.string.action_retry_permission))
-                        }
+                if (onReconnect != null) {
+                    Button(onClick = onReconnect) {
+                        Text(stringResource(R.string.action_retry_permission))
                     }
                 }
             }
@@ -217,19 +198,13 @@ private suspend fun checkPermissionsOrFalse(manager: HealthConnectManager): Bool
 private fun DeleteDataCard() {
     val context = LocalContext.current
     var confirming by remember { mutableStateOf(false) }
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(stringResource(R.string.settings_delete_title), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.settings_delete_desc), style = MaterialTheme.typography.bodySmall)
-            TextButton(onClick = { confirming = true }) {
-                Text(
-                    stringResource(R.string.settings_delete_button),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
+    NexusCard(title = stringResource(R.string.settings_delete_title)) {
+        Text(stringResource(R.string.settings_delete_desc), style = MaterialTheme.typography.bodySmall)
+        TextButton(onClick = { confirming = true }) {
+            Text(
+                stringResource(R.string.settings_delete_button),
+                color = MaterialTheme.colorScheme.error,
+            )
         }
     }
     if (confirming) {
@@ -268,25 +243,19 @@ private fun WidgetPinCard() {
         android.appwidget.AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported
     }
     if (!pinSupported) return // 미지원 런처 — 무반응 버튼 대신 카드 자체를 숨김 (#40 리뷰 N1)
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(stringResource(R.string.settings_widget), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.settings_widget_desc), style = MaterialTheme.typography.bodySmall)
-            Button(onClick = {
-                val manager = android.appwidget.AppWidgetManager.getInstance(context)
-                val provider = android.content.ComponentName(
-                    context,
-                    com.nexus.app.widget.NexusWidgetReceiver::class.java,
-                )
-                if (manager.isRequestPinAppWidgetSupported) {
-                    manager.requestPinAppWidget(provider, null, null)
-                }
-            }) {
-                Text(stringResource(R.string.settings_widget_add))
+    NexusCard(title = stringResource(R.string.settings_widget)) {
+        Text(stringResource(R.string.settings_widget_desc), style = MaterialTheme.typography.bodySmall)
+        Button(onClick = {
+            val manager = android.appwidget.AppWidgetManager.getInstance(context)
+            val provider = android.content.ComponentName(
+                context,
+                com.nexus.app.widget.NexusWidgetReceiver::class.java,
+            )
+            if (manager.isRequestPinAppWidgetSupported) {
+                manager.requestPinAppWidget(provider, null, null)
             }
+        }) {
+            Text(stringResource(R.string.settings_widget_add))
         }
     }
 }
@@ -298,21 +267,15 @@ private fun WeeklyGoalCard() {
     val store = remember { GoalStore(context) }
     var selected by remember { mutableStateOf(store.weeklyGoalDays) }
 
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(stringResource(R.string.settings_goal), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.settings_goal_desc), style = MaterialTheme.typography.bodySmall)
-            GoalDayChooser(
-                selected = selected,
-                onSelect = { days ->
-                    store.weeklyGoalDays = days
-                    selected = days
-                },
-            )
-        }
+    NexusCard(title = stringResource(R.string.settings_goal)) {
+        Text(stringResource(R.string.settings_goal_desc), style = MaterialTheme.typography.bodySmall)
+        GoalDayChooser(
+            selected = selected,
+            onSelect = { days ->
+                store.weeklyGoalDays = days
+                selected = days
+            },
+        )
     }
 }
 
@@ -336,36 +299,28 @@ private fun ReminderCard() {
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) apply(true) }
 
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(stringResource(R.string.settings_reminder), style = MaterialTheme.typography.titleMedium)
-                Switch(
-                    checked = enabled,
-                    onCheckedChange = { checked ->
-                        when {
-                            !checked -> apply(false)
+    NexusCard(
+        title = stringResource(R.string.settings_reminder),
+        trailing = {
+            Switch(
+                checked = enabled,
+                onCheckedChange = { checked ->
+                    when {
+                        !checked -> apply(false)
 
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                                ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS,
-                                ) != PackageManager.PERMISSION_GRANTED ->
-                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS,
+                            ) != PackageManager.PERMISSION_GRANTED ->
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
 
-                            else -> apply(true)
-                        }
-                    },
-                )
-            }
-            Text(stringResource(R.string.settings_reminder_desc), style = MaterialTheme.typography.bodySmall)
-        }
+                        else -> apply(true)
+                    }
+                },
+            )
+        },
+    ) {
+        Text(stringResource(R.string.settings_reminder_desc), style = MaterialTheme.typography.bodySmall)
     }
 }

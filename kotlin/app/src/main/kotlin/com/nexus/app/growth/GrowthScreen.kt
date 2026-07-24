@@ -34,7 +34,9 @@ import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.ConnectNotice
+import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ActivityType
 import com.nexus.core.ClassAffinity
@@ -219,40 +221,30 @@ private fun GrowthContent(data: GrowthUiState) {
 
 @Composable
 private fun LevelCard(data: GrowthSummary) {
-    Card {
-        Column(Modifier.fillMaxWidth().padding(NexusSpacing.lg)) {
-            Text(
-                stringResource(R.string.growth_level_format, data.level),
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Spacer(Modifier.height(NexusSpacing.sm))
-            LinearProgressIndicator(
-                progress = { data.progress.toFloat() },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(NexusSpacing.xs))
-            Text(
-                stringResource(R.string.growth_xp_format, data.totalXp, XpEngine.FORMULA_VERSION),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
+    // 성장 탭의 히어로 — 레벨 수는 titleLarge로 크게, 카드는 Highlight로 강조(형제 카드와 위계 차)
+    NexusCard(emphasis = CardEmphasis.Highlight) {
+        Text(
+            stringResource(R.string.growth_level_format, data.level),
+            style = MaterialTheme.typography.titleLarge,
+        )
+        LinearProgressIndicator(
+            progress = { data.progress.toFloat() },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            stringResource(R.string.growth_xp_format, data.totalXp, XpEngine.FORMULA_VERSION),
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 
 @Composable
 private fun AffinityCard(data: GrowthSummary) {
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(
-                stringResource(R.string.growth_affinity_format, stringResource(data.affinity.labelRes())),
-                style = MaterialTheme.typography.titleMedium,
-            )
-            ActivityType.entries.forEach { type ->
-                ShareRow(stringResource(type.labelRes()), data.axisShares[type] ?: 0.0)
-            }
+    NexusCard(
+        title = stringResource(R.string.growth_affinity_format, stringResource(data.affinity.labelRes())),
+    ) {
+        ActivityType.entries.forEach { type ->
+            ShareRow(stringResource(type.labelRes()), data.axisShares[type] ?: 0.0)
         }
     }
 }
@@ -270,21 +262,15 @@ private fun ShareRow(label: String, share: Double) {
 
 @Composable
 private fun StatsCard(data: GrowthSummary) {
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(stringResource(R.string.growth_stats_title), style = MaterialTheme.typography.titleMedium)
-            StatMapping.unlockedStats.forEach { stat ->
-                StatRow(stringResource(stat.labelRes()), data.stats[stat] ?: 0)
-            }
-            StatMapping.lockedStats.forEach { stat ->
-                Text(
-                    stringResource(R.string.growth_stat_locked_format, stringResource(stat.labelRes())),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+    NexusCard(title = stringResource(R.string.growth_stats_title)) {
+        StatMapping.unlockedStats.forEach { stat ->
+            StatRow(stringResource(stat.labelRes()), data.stats[stat] ?: 0)
+        }
+        StatMapping.lockedStats.forEach { stat ->
+            Text(
+                stringResource(R.string.growth_stat_locked_format, stringResource(stat.labelRes())),
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }

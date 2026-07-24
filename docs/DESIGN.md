@@ -18,9 +18,9 @@
 
 - `NexusSpacing`(8pt 스케일 xs4·sm8·md12·lg16·xl24·xxl32 + screen20) + `NexusElevation`. 화면 최상위 패딩을 `NexusSpacing.screen`으로 통일(홈·활동·성장·설정·온보딩), 섹션 간격·카드 패딩을 토큰 참조로 치환. 카드 배경은 톤 엘리베이션(surfaceContainer)이라 그림자는 절제. 값이 아니라 이름(의미)으로 참조.
 
-## 4. 컴포넌트 (#254~, E16-4 예정)
+## 4. 컴포넌트 (#254, E16-4)
 
-- `NexusCard`(emphasis 위계)·`NexusListRow`·`NexusIcons`·`VizColors`(데이터 시각화) 예정.
+- `NexusCard`(헤더 제목+우측 값 슬롯+본문 슬롯, 내부 패딩·간격 토큰) + `CardEmphasis`(Neutral=surface / Highlight=primaryContainer / Celebration=secondaryContainer). HomeCards 6·Growth Level(Highlight)/Affinity/Stats·Settings 카드·ConnectNotice·StreakRow·홈 다음목표 이관 → 정보 경중이 색으로 읽힘(2단계 위계). NexusListRow·NexusIcons·VizColors는 후속.
 
 ## 5. 데이터 시각화 (#257~, 예정)
 

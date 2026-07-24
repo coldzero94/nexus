@@ -1,17 +1,12 @@
 package com.nexus.app.home
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
-import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.NexusCard
 import com.nexus.core.StreakStatus
 
 /**
@@ -20,34 +15,26 @@ import com.nexus.core.StreakStatus
  */
 @Composable
 internal fun StreakRow(streak: StreakStatus, modifier: Modifier = Modifier) {
-    Card(modifier.fillMaxWidth()) {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
-        ) {
+    val title = if (streak.current > 0) {
+        stringResource(R.string.streak_current, streak.current)
+    } else {
+        stringResource(R.string.streak_start)
+    }
+    NexusCard(modifier = modifier, title = title) {
+        // 진행 중인 기세가 있을 때만 그레이스 안내 — current=0이면 "첫 걸음" 카피와 중복되므로 생략
+        if (streak.todayPending && streak.current > 0) {
             Text(
-                text = if (streak.current > 0) {
-                    stringResource(R.string.streak_current, streak.current)
-                } else {
-                    stringResource(R.string.streak_start)
-                },
-                style = MaterialTheme.typography.titleMedium,
+                text = stringResource(R.string.streak_pending, streak.current + 1),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            // 진행 중인 기세가 있을 때만 그레이스 안내 — current=0이면 "첫 걸음" 카피와 중복되므로 생략
-            if (streak.todayPending && streak.current > 0) {
-                Text(
-                    text = stringResource(R.string.streak_pending, streak.current + 1),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (streak.longest > 0) {
-                Text(
-                    text = stringResource(R.string.streak_longest, streak.longest),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        }
+        if (streak.longest > 0) {
+            Text(
+                text = stringResource(R.string.streak_longest, streak.longest),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

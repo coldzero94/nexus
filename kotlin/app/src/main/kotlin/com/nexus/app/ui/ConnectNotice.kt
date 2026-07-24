@@ -1,15 +1,9 @@
 package com.nexus.app.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
 
@@ -19,17 +13,11 @@ import com.nexus.app.R
  */
 @Composable
 fun ConnectNotice(onReconnect: (() -> Unit)?, body: String = stringResource(R.string.home_demo_body)) {
-    Card {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(stringResource(R.string.growth_demo_title), style = MaterialTheme.typography.titleMedium)
-            Text(body, style = MaterialTheme.typography.bodyMedium)
-            if (onReconnect != null) {
-                Button(onClick = onReconnect) {
-                    Text(stringResource(R.string.action_retry_permission))
-                }
+    NexusCard(title = stringResource(R.string.growth_demo_title)) {
+        Text(body, style = MaterialTheme.typography.bodyMedium)
+        if (onReconnect != null) {
+            Button(onClick = onReconnect) {
+                Text(stringResource(R.string.action_retry_permission))
             }
         }
     }
