@@ -57,7 +57,11 @@ fun NexusCard(
 
 @Composable
 private fun CardEmphasis.colors(): CardColors = when (this) {
-    CardEmphasis.Neutral -> CardDefaults.cardColors()
+    // 종속 카드는 surfaceContainerLow(밝음) — 히어로(surfaceContainerHigh, 진함)보다 물러나게
+    // (M3 filled Card 기본값 surfaceContainerHighest는 히어로보다 진해 위계가 역전됐다, #256 리뷰)
+    CardEmphasis.Neutral -> CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+    )
 
     CardEmphasis.Highlight -> CardDefaults.cardColors(
         containerColor = MaterialTheme.colorScheme.primaryContainer,

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
@@ -18,19 +17,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
-import com.nexus.app.character.CharacterComposer
 import com.nexus.app.character.MoodResolver
-import com.nexus.app.character.equipRenderLayers
 import com.nexus.app.data.EnergyStore
 import com.nexus.app.data.ExpeditionStore
 import com.nexus.app.data.NexusDatabase
@@ -299,19 +294,9 @@ private fun HomeContent(
     onDepart: () -> Unit,
     onOpen: () -> Unit,
 ) {
-    // 장착 장비를 본체 위에 반영 (#37) — 카탈로그 로드 실패 시 본체만(빈 레이어)
-    val context = LocalContext.current
-    val equipLayers by produceState(emptyList<String>(), spriteState) {
-        value = equipRenderLayers(context, spriteState)
-    }
-    CharacterComposer.CharacterSprite(
-        state = spriteState,
-        modifier = Modifier.size(140.dp),
-        equipLayers = equipLayers,
-    )
-    DialogueBubble(spriteState, moodLines)
+    // 상단 히어로 — 캐릭터·대사·컨디션을 묶어 최상위 앵커로 (#256). 아래는 종속 상세 카드.
+    HomeHero(spriteState, moodLines, state.condition)
     StreakRow(state.streak)
-    ConditionGauge(state.condition)
     TodaySummaryCard(state)
     ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)
     // 다음 목표를 카드로 편입 — 맨 Text로 두면 카드 스택 리듬이 끊긴다 (#254)
