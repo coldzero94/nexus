@@ -41,7 +41,7 @@ fun NexusCard(
             if (title != null || trailing != null) {
                 Row(
                     Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = if (title != null) Arrangement.SpaceBetween else Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (title != null) {

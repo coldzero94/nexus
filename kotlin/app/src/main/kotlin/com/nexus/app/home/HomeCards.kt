@@ -2,9 +2,7 @@ package com.nexus.app.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -97,7 +95,6 @@ internal fun ConditionGauge(condition: Double) {
             )
         },
     ) {
-        Spacer(Modifier.height(NexusSpacing.xs))
         LinearProgressIndicator(
             progress = { (condition / ConditionEngine.MAX).toFloat() },
             modifier = Modifier.fillMaxWidth(),
