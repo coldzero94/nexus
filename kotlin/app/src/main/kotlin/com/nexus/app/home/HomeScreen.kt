@@ -295,7 +295,7 @@ private fun HomeContent(
     onOpen: () -> Unit,
 ) {
     // 상단 히어로 — 캐릭터·대사·컨디션을 묶어 최상위 앵커로 (#256). 아래는 종속 상세 카드.
-    HomeHero(spriteState, moodLines, state.condition)
+    HomeHero(spriteState, moodLines, state.condition, state.moodContext.restMode)
     StreakRow(state.streak)
     TodaySummaryCard(state)
     ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)

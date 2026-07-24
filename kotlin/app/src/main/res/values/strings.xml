@@ -11,6 +11,11 @@
     <string name="home_demo_body">Health Connect 권한이 없어 캐릭터가 자랄 수 없어요. 연결하면 운동이 캐릭터에 새겨져요.</string>
     <string name="home_condition_title">컨디션</string>
     <string name="home_condition_value">%1$d</string>
+    <string name="home_condition_zone_recovering">회복중</string>
+    <string name="home_condition_zone_stable">안정</string>
+    <string name="home_condition_zone_good">좋음</string>
+    <string name="home_condition_floor_caption">%1$d 아래로 안 내려가요</string>
+    <string name="home_condition_rest_caption">휴식 중 · 유지돼요</string>
     <string name="home_today_title">오늘</string>
     <string name="home_today_xp">XP</string>
     <string name="home_today_xp_value">%1$,d pt</string>
