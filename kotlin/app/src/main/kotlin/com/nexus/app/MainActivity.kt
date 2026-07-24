@@ -44,8 +44,10 @@ import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
+import com.nexus.app.ui.NexusIcons
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.NexusTheme
+import com.nexus.app.ui.TabIcon
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
 import com.nexus.core.XpEngine
@@ -140,11 +142,11 @@ private fun NexusApp(manager: HealthConnectManager) {
 /** 복귀 판정 전 표식 — 온보딩이 먼저 렌더되므로 사용자에게 보이는 지연은 없다 (#30). */
 private const val UNDECIDED_GAP = -1L
 
-private enum class MainTab(val labelRes: Int, val icon: com.nexus.app.ui.TabIcon) {
-    HOME(R.string.tab_home, com.nexus.app.ui.NexusIcons.home),
-    ACTIVITY(R.string.tab_activity, com.nexus.app.ui.NexusIcons.activity),
-    GROWTH(R.string.tab_growth, com.nexus.app.ui.NexusIcons.growth),
-    SETTINGS(R.string.tab_settings, com.nexus.app.ui.NexusIcons.settings),
+private enum class MainTab(val labelRes: Int, val icon: TabIcon) {
+    HOME(R.string.tab_home, NexusIcons.home),
+    ACTIVITY(R.string.tab_activity, NexusIcons.activity),
+    GROWTH(R.string.tab_growth, NexusIcons.growth),
+    SETTINGS(R.string.tab_settings, NexusIcons.settings),
 }
 
 @Composable
@@ -160,7 +162,8 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
                         icon = {
                             Icon(
                                 painter = painterResource(if (tab == t) t.icon.filled else t.icon.outline),
-                                contentDescription = stringResource(t.labelRes),
+                                // 라벨이 상시 표시돼 접근성 이름을 제공 — CD는 null로 두어 이중 낭독 방지(#255 리뷰)
+                                contentDescription = null,
                             )
                         },
                         label = { Text(stringResource(t.labelRes)) },
