@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -15,7 +14,6 @@ import com.nexus.app.R
 import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
-import com.nexus.core.ConditionEngine
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionState
 import kotlin.math.roundToInt
