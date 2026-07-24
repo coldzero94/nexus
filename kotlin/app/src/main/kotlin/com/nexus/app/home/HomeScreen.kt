@@ -299,19 +299,9 @@ private fun HomeContent(
     onDepart: () -> Unit,
     onOpen: () -> Unit,
 ) {
-    // 장착 장비를 본체 위에 반영 (#37) — 카탈로그 로드 실패 시 본체만(빈 레이어)
-    val context = LocalContext.current
-    val equipLayers by produceState(emptyList<String>(), spriteState) {
-        value = equipRenderLayers(context, spriteState)
-    }
-    CharacterComposer.CharacterSprite(
-        state = spriteState,
-        modifier = Modifier.size(140.dp),
-        equipLayers = equipLayers,
-    )
-    DialogueBubble(spriteState, moodLines)
+    // 상단 히어로 — 캐릭터·대사·컨디션을 묶어 최상위 앵커로 (#256). 아래는 종속 상세 카드.
+    HomeHero(spriteState, moodLines, state.condition)
     StreakRow(state.streak)
-    ConditionGauge(state.condition)
     TodaySummaryCard(state)
     ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)
     // 다음 목표를 카드로 편입 — 맨 Text로 두면 카드 스택 리듬이 끊긴다 (#254)

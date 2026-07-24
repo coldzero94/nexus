@@ -83,25 +83,6 @@ internal fun SettlementCard(deltaXp: Int, onOpen: () -> Unit) {
     }
 }
 
-/** 컨디션 게이지 (#32) — 소프트 손실 게이지(20~100 사이에서 움직임, 소멸 없음). */
-@Composable
-internal fun ConditionGauge(condition: Double) {
-    NexusCard(
-        title = stringResource(R.string.home_condition_title),
-        trailing = {
-            Text(
-                stringResource(R.string.home_condition_value, condition.roundToInt()),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        },
-    ) {
-        LinearProgressIndicator(
-            progress = { (condition / ConditionEngine.MAX).toFloat() },
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
 /** 오늘 요약 — XP·운동 분·걸음 한 줄씩 (#32). */
 @Composable
 internal fun TodaySummaryCard(state: HomeUiState) {
