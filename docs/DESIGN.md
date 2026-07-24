@@ -33,7 +33,10 @@
 - **걸음 막대 차트 (#258)**: `steps/StepBarChart.kt` — 활동 탭 텍스트 행을 7일 막대로. 최댓값 y-스케일
   (`core/StepChartScale`, 순수·테스트), 오늘=`walking` 강조·과거 활동일=`walkingMuted`(알파 감쇠는
   라이트에서 3:1 붕괴라 고정 톤)·무활동일=얇은 baseline. 빈 데이터는 '준비 중' 프레이밍(#213 정합).
-- **공유 예정**: XP 게이지(#259)가 같은 `VizColors` 참조.
+- **XP 게이지 (#259)**: `ui/XpGauge.kt` — 성장 `TodayXpCard`·홈 `TodaySummaryCard` 공유 컴포넌트.
+  오늘 XP를 소프트 니(200)·하드캡(300) 스케일에 그리고, 니를 '벽' 아닌 '천천히 쌓여요' 지점으로
+  프레이밍(니 이후 `xpBonusTrack` 로즈틴트 + 마커 + 긍정 캡션). `xp`계열 토큰은 카드 서피스 기준 검증.
+  스케일은 `core/XpGaugeScale`(순수·테스트). 이로써 `VizColors`가 완전한 차트 토큰 세트로 자리잡음.
 - **접근성**: 색만으로 상태 전달 금지 — 존은 색 점 + 라벨, 오늘 막대는 '오늘' 라벨 병기. 막대별
   `contentDescription`(요일·값)로 단일 포커스 낭독.
 

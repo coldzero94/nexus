@@ -36,9 +36,18 @@ data class VizPalette(
     val running: Color,
     /** 근력 카테고리(#258~). */
     val strength: Color,
+    /** 오늘 XP 게이지 채움(#259) — 워엄 플럼(보상감). */
+    val xp: Color,
+    /** XP 게이지 니 이전 빈 트랙(#259). */
+    val xpTrack: Color,
+    /** XP 게이지 니 이후 '천천히 쌓여요' 빈 트랙(#259) — 로즈틴트로 소프트 구간 구분. */
+    val xpBonusTrack: Color,
 )
 
-/** 라이트 팔레트 — 히어로 서피스(surfaceContainerHigh #F1E6D8) 기준 3:1↑ 검증됨(#257). */
+/**
+ * 라이트 팔레트 — 컨디션/카테고리색은 히어로 서피스(surfaceContainerHigh #F1E6D8) 기준 3:1↑ 검증(#257·#258),
+ * xp 계열은 카드 서피스(surfaceContainerLow #FDF1E4) 기준 검증(#259, 게이지가 카드 위에 렌더).
+ */
 private val LightViz = VizPalette(
     conditionTrack = Color(0xFFDFCDB4),
     conditionRecovering = Color(0xFFB5652F),
@@ -49,9 +58,15 @@ private val LightViz = VizPalette(
     walkingMuted = Color(0xFFA5854A),
     running = Color(0xFFB5562F),
     strength = Color(0xFF2F6E6A),
+    xp = Color(0xFF96486A),
+    xpTrack = Color(0xFFECDDCB),
+    xpBonusTrack = Color(0xFFEAD6D5),
 )
 
-/** 다크 팔레트 — 히어로 서피스(surfaceContainerHigh #2E2920) 기준 3:1↑ 검증됨(#257). */
+/**
+ * 다크 팔레트 — 컨디션/카테고리색은 히어로 서피스(surfaceContainerHigh #2E2920) 기준 3:1↑ 검증(#257·#258),
+ * xp 계열은 카드 서피스(surfaceContainerLow #1F1B13) 기준 검증(#259).
+ */
 private val DarkViz = VizPalette(
     conditionTrack = Color(0xFF3B342A),
     conditionRecovering = Color(0xFFE8A468),
@@ -62,6 +77,9 @@ private val DarkViz = VizPalette(
     walkingMuted = Color(0xFF9A7C4E),
     running = Color(0xFFEC9A6B),
     strength = Color(0xFF79C4BD),
+    xp = Color(0xFFDDA6C0),
+    xpTrack = Color(0xFF3B342A),
+    xpBonusTrack = Color(0xFF3E3038),
 )
 
 /** [NexusTheme]가 다크 판정에 맞춰 [LightViz]/[DarkViz]를 주입. 기본값은 라이트. */

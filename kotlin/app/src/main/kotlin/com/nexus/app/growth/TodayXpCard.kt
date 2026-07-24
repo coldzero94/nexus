@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -16,11 +14,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
+import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.XpGauge
 import com.nexus.core.ActivityType
 import com.nexus.core.DayXpExplanation
 import com.nexus.core.XpLine
@@ -33,23 +32,19 @@ import com.nexus.core.XpLine
 @Composable
 internal fun TodayXpCard(explanation: DayXpExplanation) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    Card {
-        Column(Modifier.fillMaxWidth().padding(NexusSpacing.lg)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    stringResource(R.string.xp_explain_today_format, explanation.cappedXp),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                TextButton(onClick = { expanded = !expanded }) {
-                    Text(stringResource(if (expanded) R.string.xp_explain_hide else R.string.xp_explain_show))
-                }
+    // NexusCard로 통일(#259 리뷰) — 게이지 토큰이 검증된 surfaceContainerLow 위에서 렌더되게.
+    // 헤더 값(ink) + 우측 펼치기 버튼은 title·trailing 슬롯으로.
+    NexusCard(
+        title = stringResource(R.string.xp_explain_today_format, explanation.cappedXp),
+        trailing = {
+            TextButton(onClick = { expanded = !expanded }) {
+                Text(stringResource(if (expanded) R.string.xp_explain_hide else R.string.xp_explain_show))
             }
-            if (expanded) ExplanationDetail(explanation)
-        }
+        },
+    ) {
+        // 오늘 XP → 소프트 니 진행 게이지 (#259) — 값·라벨은 헤더가 ink 제공
+        XpGauge(explanation.cappedXp)
+        if (expanded) ExplanationDetail(explanation)
     }
 }
 

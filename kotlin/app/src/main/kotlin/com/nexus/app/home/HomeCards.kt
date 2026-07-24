@@ -13,7 +13,7 @@ import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
 import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.NexusCard
-import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.XpGauge
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionState
 import kotlin.math.roundToInt
@@ -89,6 +89,8 @@ internal fun TodaySummaryCard(state: HomeUiState) {
             stringResource(R.string.home_today_xp),
             stringResource(R.string.home_today_xp_value, state.todayXp),
         )
+        // 오늘 XP 진행 게이지 (#259) — 성장 탭과 동일 컴포넌트 재사용, XP 수치 바로 아래
+        XpGauge(state.todayXp)
         SummaryRow(
             stringResource(R.string.home_today_exercise),
             stringResource(R.string.home_today_exercise_value, state.todayActiveMinutes),
