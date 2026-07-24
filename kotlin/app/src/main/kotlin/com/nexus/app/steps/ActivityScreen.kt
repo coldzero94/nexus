@@ -2,9 +2,7 @@ package com.nexus.app.steps
 
 import android.os.RemoteException
 import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.health.DailySteps
 import com.nexus.app.health.ExerciseRepository
@@ -76,11 +73,11 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
             .verticalScroll(rememberScrollState())
             .padding(NexusSpacing.screen),
     ) {
-        // ── 걸음 (#7) ──
+        // ── 걸음 (#7·#258) ──
         Text(stringResource(R.string.steps_title), style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(NexusSpacing.xs))
         Text(stringResource(R.string.steps_subtitle), style = MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(NexusSpacing.md))
         when (current) {
             null -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
 
@@ -91,13 +88,9 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
                 Text(stringResource(R.string.steps_error), style = MaterialTheme.typography.bodyMedium)
 
             is ActivityLoad.Success -> {
-                val pattern = stringResource(R.string.steps_date_format)
-                val formatter = remember(pattern) { DateTimeFormatter.ofPattern(pattern, Locale.KOREAN) }
-                current.data.steps.asReversed().forEach { day ->
-                    StepRow(dateLabel = day.date.format(formatter), steps = day.steps)
-                }
+                StepBarChart(current.data.steps)
                 if (current.data.manualSteps > 0L) {
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(NexusSpacing.sm))
                     Text(
                         text = stringResource(R.string.steps_manual_excluded, current.data.manualSteps),
                         style = MaterialTheme.typography.bodySmall,
@@ -106,14 +99,14 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
             }
         }
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(NexusSpacing.xxl))
 
         // ── 운동 세션 (#8) ──
         Text(stringResource(R.string.sessions_title), style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(NexusSpacing.md))
         if (data != null) SessionsSection(data.sessions)
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(NexusSpacing.xxl))
 
         // ── 동기화 상태 (#8) ──
         Text(text = syncFooter(store), style = MaterialTheme.typography.bodySmall)
@@ -179,23 +172,6 @@ private fun SessionsSection(sessions: List<ExerciseSummary>) {
 }
 
 @Composable
-private fun StepRow(dateLabel: String, steps: Long) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(dateLabel, style = MaterialTheme.typography.bodyLarge)
-        Text(
-            text = stringResource(R.string.steps_count_format, steps),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold,
-        )
-    }
-}
-
-@Composable
 private fun SessionRow(session: ExerciseSummary, dtFormatter: DateTimeFormatter) {
     val zone = remember { ZoneId.systemDefault() }
     val whenLabel = remember(session.start) { session.start.atZone(zone).format(dtFormatter) }
@@ -205,7 +181,7 @@ private fun SessionRow(session: ExerciseSummary, dtFormatter: DateTimeFormatter)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(vertical = NexusSpacing.sm),
     ) {
         Text(whenLabel, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
         Text(
