@@ -28,8 +28,10 @@ data class VizPalette(
     val conditionGood: Color,
     /** 바닥 마커 선 — 불퇴행 하한 표식. */
     val floorMarker: Color,
-    /** 걷기 카테고리(#258~). */
+    /** 걷기 카테고리(#258~) — 강조(오늘) 막대. */
     val walking: Color,
+    /** 걷기 물러난 톤(#258) — 과거 활동일 막대. 알파 감쇠는 라이트에서 3:1 붕괴라 **고정 톤**으로 정의. */
+    val walkingMuted: Color,
     /** 러닝 카테고리(#258~). */
     val running: Color,
     /** 근력 카테고리(#258~). */
@@ -44,6 +46,7 @@ private val LightViz = VizPalette(
     conditionGood = Color(0xFF4F7A2F),
     floorMarker = Color(0xFF7A5B2E),
     walking = Color(0xFF8A6D2E),
+    walkingMuted = Color(0xFFA5854A),
     running = Color(0xFFB5562F),
     strength = Color(0xFF2F6E6A),
 )
@@ -56,6 +59,7 @@ private val DarkViz = VizPalette(
     conditionGood = Color(0xFFA9CA80),
     floorMarker = Color(0xFFC9B48C),
     walking = Color(0xFFE6C271),
+    walkingMuted = Color(0xFF9A7C4E),
     running = Color(0xFFEC9A6B),
     strength = Color(0xFF79C4BD),
 )
