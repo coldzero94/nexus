@@ -59,6 +59,7 @@ android {
 dependencies {
     implementation(project(":core"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.health.connect)
     implementation(libs.androidx.work.runtime)

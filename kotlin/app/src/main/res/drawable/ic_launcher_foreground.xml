@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  런처 아이콘 전경 (#261) — 자작 기하 마크: 상승 화살표(움직임→성장). 캐릭터(#66)와 구분되는
+  제품 심볼. 66dp 세이프존(21~87) 안에 배치. 색은 에스프레소(캐릭터의 짙은 이목구비와 호응).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 화살대 -->
+    <path
+        android:pathData="M54,71 L54,43"
+        android:strokeColor="#3E2A16"
+        android:strokeWidth="12"
+        android:strokeLineCap="round" />
+    <!-- 화살촉 -->
+    <path
+        android:pathData="M37,58 L54,40 L71,58"
+        android:strokeColor="#3E2A16"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

@@ -40,4 +40,15 @@
 - **접근성**: 색만으로 상태 전달 금지 — 존은 색 점 + 라벨, 오늘 막대는 '오늘' 라벨 병기. 막대별
   `contentDescription`(요일·값)로 단일 포커스 낭독.
 
+## 6. 브랜드 아이덴티티 (#261, E16-11)
+
+- **제품 마크**: `drawable/nexus_mark.xml` — 자작 기하 심볼(상승 화살표 = 움직임→성장). 캐릭터(#66)와
+  구분되는 제품 레벨 마크. 런처 monochrome·워드마크가 공유.
+- **런처 아이콘**: `mipmap-anydpi-v26/ic_launcher(_round)` — 어댑티브(앰버 그라디언트 배경 +
+  에스프레소 마크 전경) + Android13 monochrome. minSdk 34라 v26 단일 정의. 66dp 세이프존 준수.
+- **콜드스타트 스플래시**: `androidx.core-splashscreen` + `Theme.Nexus.Starting`(brand_splash_bg
+  앰버 라이트/다크 + 마크 아이콘). `MainActivity.installSplashScreen()`으로 무지 플래시 제거.
+- **워드마크**: `ui/NexusWordmark.kt` — 마크 + "NEXUS"(시스템 폰트 Bold·와이드 트래킹, primary).
+  온보딩 첫 화면 상단. 라이트/다크 AA.
+
 _각 항목은 해당 E16 티켓이 랜딩할 때 이 문서를 같은 PR에서 갱신한다._

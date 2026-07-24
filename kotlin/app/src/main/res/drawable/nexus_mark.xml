@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  NEXUS 제품 마크 (#261) — 상승 화살표 심볼. 단색·틴트 가능(Icon tint가 덮어씀). 워드마크 락업과
+  런처 monochrome(테마드 아이콘, Android 13+) 레이어가 공유. 런처 전경과 동일 지오메트리.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108"
+    android:tint="#1B1B1B">
+    <path
+        android:pathData="M54,71 L54,43"
+        android:strokeColor="#1B1B1B"
+        android:strokeWidth="12"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M37,58 L54,40 L71,58"
+        android:strokeColor="#1B1B1B"
+        android:strokeWidth="12"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
