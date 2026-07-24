@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.nexus.app.growth.GrowthScreen
@@ -42,8 +44,10 @@ import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
+import com.nexus.app.ui.NexusIcons
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.NexusTheme
+import com.nexus.app.ui.TabIcon
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
 import com.nexus.core.XpEngine
@@ -138,11 +142,11 @@ private fun NexusApp(manager: HealthConnectManager) {
 /** 복귀 판정 전 표식 — 온보딩이 먼저 렌더되므로 사용자에게 보이는 지연은 없다 (#30). */
 private const val UNDECIDED_GAP = -1L
 
-private enum class MainTab(val labelRes: Int) {
-    HOME(R.string.tab_home),
-    ACTIVITY(R.string.tab_activity),
-    GROWTH(R.string.tab_growth),
-    SETTINGS(R.string.tab_settings),
+private enum class MainTab(val labelRes: Int, val icon: TabIcon) {
+    HOME(R.string.tab_home, NexusIcons.home),
+    ACTIVITY(R.string.tab_activity, NexusIcons.activity),
+    GROWTH(R.string.tab_growth, NexusIcons.growth),
+    SETTINGS(R.string.tab_settings, NexusIcons.settings),
 }
 
 @Composable
@@ -155,7 +159,13 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
                     NavigationBarItem(
                         selected = tab == t,
                         onClick = { tab = t },
-                        icon = {},
+                        icon = {
+                            Icon(
+                                painter = painterResource(if (tab == t) t.icon.filled else t.icon.outline),
+                                // 라벨이 상시 표시돼 접근성 이름을 제공 — CD는 null로 두어 이중 낭독 방지(#255 리뷰)
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text(stringResource(t.labelRes)) },
                     )
                 }
