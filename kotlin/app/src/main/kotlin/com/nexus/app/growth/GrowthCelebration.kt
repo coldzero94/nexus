@@ -18,8 +18,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.nexus.app.R
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ClassAffinity
 
 /**
@@ -35,7 +35,10 @@ internal fun CelebrationCard(change: GrowthChange, visible: Boolean, onDismiss: 
         exit = fadeOut(),
     ) {
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+            ) {
                 change.levelUpTo?.let { level ->
                     Text(
                         stringResource(R.string.celebrate_level_up, level),

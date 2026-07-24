@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.character.CharacterComposer
+import com.nexus.app.ui.NexusSpacing
 
 /**
  * 복귀 환영 씬 (#30) — 3일+ 공백 후 첫 실행. 죄책감 없는 환영(무처벌 원칙):
@@ -28,24 +29,24 @@ fun WelcomeBackScene(gapDays: Long, onContinue: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(NexusSpacing.screen),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         CharacterComposer.CharacterSprite(state = "walk", modifier = Modifier.size(160.dp))
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(NexusSpacing.xl))
         Text(
             text = stringResource(R.string.welcome_back_title, gapDays),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(NexusSpacing.md))
         Text(
             text = stringResource(R.string.welcome_back_body),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(NexusSpacing.xxl))
         Button(onClick = onContinue) {
             Text(stringResource(R.string.welcome_back_continue))
         }

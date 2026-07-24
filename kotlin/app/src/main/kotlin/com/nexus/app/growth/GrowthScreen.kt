@@ -35,6 +35,7 @@ import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.ui.ConnectNotice
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ActivityType
 import com.nexus.core.ClassAffinity
 import com.nexus.core.ClassAffinityCalculator
@@ -101,8 +102,8 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(NexusSpacing.screen),
+        verticalArrangement = Arrangement.spacedBy(NexusSpacing.lg),
     ) {
         Text(stringResource(R.string.growth_title), style = MaterialTheme.typography.headlineSmall)
         when (val current = load) {
@@ -219,17 +220,17 @@ private fun GrowthContent(data: GrowthUiState) {
 @Composable
 private fun LevelCard(data: GrowthSummary) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(Modifier.fillMaxWidth().padding(NexusSpacing.lg)) {
             Text(
                 stringResource(R.string.growth_level_format, data.level),
                 style = MaterialTheme.typography.titleLarge,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(NexusSpacing.sm))
             LinearProgressIndicator(
                 progress = { data.progress.toFloat() },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(NexusSpacing.xs))
             Text(
                 stringResource(R.string.growth_xp_format, data.totalXp, XpEngine.FORMULA_VERSION),
                 style = MaterialTheme.typography.bodySmall,
@@ -241,7 +242,10 @@ private fun LevelCard(data: GrowthSummary) {
 @Composable
 private fun AffinityCard(data: GrowthSummary) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(
                 stringResource(R.string.growth_affinity_format, stringResource(data.affinity.labelRes())),
                 style = MaterialTheme.typography.titleMedium,
@@ -267,7 +271,10 @@ private fun ShareRow(label: String, share: Double) {
 @Composable
 private fun StatsCard(data: GrowthSummary) {
     Card {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(stringResource(R.string.growth_stats_title), style = MaterialTheme.typography.titleMedium)
             StatMapping.unlockedStats.forEach { stat ->
                 StatRow(stringResource(stat.labelRes()), data.stats[stat] ?: 0)

@@ -14,9 +14,9 @@
 
 - `NexusTypography`(제목 Bold/SemiBold·본문 한글 넉넉 행간·라벨)와 `NexusShapes`(medium 16dp 등 살짝 둥근 코너)를 `NexusTheme`에 주입. 시스템 폰트(무료, OFL 번들은 후속). 화면은 MaterialTheme.typography/shapes 토큰만 참조.
 
-## 3. 간격·엘리베이션 (#253, E16-3 예정)
+## 3. 간격·엘리베이션 (#253, E16-3)
 
-- 8pt 기반 Spacing 토큰(xs4·sm8·md12·lg16·xl24·xxl32) + Elevation 토큰 예정. 현재 dp 리터럴 산발.
+- `NexusSpacing`(8pt 스케일 xs4·sm8·md12·lg16·xl24·xxl32 + screen20) + `NexusElevation`. 화면 최상위 패딩을 `NexusSpacing.screen`으로 통일(홈·활동·성장·설정·온보딩), 섹션 간격·카드 패딩을 토큰 참조로 치환. 카드 배경은 톤 엘리베이션(surfaceContainer)이라 그림자는 절제. 값이 아니라 이름(의미)으로 참조.
 
 ## 4. 컴포넌트 (#254~, E16-4 예정)
 

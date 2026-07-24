@@ -29,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.nexus.app.growth.GrowthScreen
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
@@ -43,6 +42,7 @@ import com.nexus.app.settings.SettingsScreen
 import com.nexus.app.steps.ActivityScreen
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.NexusTheme
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
@@ -177,7 +177,7 @@ private fun DemoLanding(available: Boolean, onReconnect: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(NexusSpacing.screen),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -188,19 +188,19 @@ private fun DemoLanding(available: Boolean, onReconnect: () -> Unit) {
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(NexusSpacing.sm))
         Text(
             text = stringResource(bodyRes),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )
         if (available) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(NexusSpacing.lg))
             Button(onClick = onReconnect) {
                 Text(stringResource(R.string.action_retry_permission))
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(NexusSpacing.xl))
         // core(KMP) 연결 증명 — 성장 미리보기(실제 홈은 E4)
         val sampleXp = XpEngine.baseScore(ActivityType.RUNNING, minutes = 30)
         Text(

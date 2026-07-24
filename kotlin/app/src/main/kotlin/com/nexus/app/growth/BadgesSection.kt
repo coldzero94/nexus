@@ -13,10 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.Badge
 import com.nexus.core.BadgeEvaluator
 import com.nexus.core.BadgeSignals
@@ -77,7 +77,10 @@ internal suspend fun loadBadges(context: Context, manager: HealthConnectManager,
 @Composable
 internal fun BadgesCard(state: BadgeState, modifier: Modifier = Modifier) {
     Card(modifier) {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(
+            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        ) {
             Text(
                 stringResource(R.string.growth_badges_title, state.unlocked.size, state.table.badges.size),
                 style = MaterialTheme.typography.titleMedium,

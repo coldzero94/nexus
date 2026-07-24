@@ -8,7 +8,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.settings.GoalStore
 
@@ -21,8 +20,8 @@ import com.nexus.app.settings.GoalStore
 fun GoalDayChooser(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     FlowRow(
         modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
+        verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
     ) {
         for (days in GoalStore.MIN_DAYS..GoalStore.MAX_DAYS) {
             FilterChip(
