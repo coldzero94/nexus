@@ -46,6 +46,7 @@ import com.nexus.app.settings.RestModeStore
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.ConnectNotice
+import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.ConditionEngine
@@ -313,10 +314,10 @@ private fun HomeContent(
     ConditionGauge(state.condition)
     TodaySummaryCard(state)
     ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)
-    Text(
-        text = nextGoalText(state),
-        style = MaterialTheme.typography.bodyMedium,
-    )
+    // 다음 목표를 카드로 편입 — 맨 Text로 두면 카드 스택 리듬이 끊긴다 (#254)
+    NexusCard {
+        Text(text = nextGoalText(state), style = MaterialTheme.typography.bodyMedium)
+    }
 }
 
 @Composable
