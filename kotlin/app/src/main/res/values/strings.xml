@@ -28,7 +28,7 @@
     <string name="home_today_steps">걸음</string>
     <string name="home_today_steps_value">%1$,d</string>
     <string name="home_expedition_title">원정</string>
-    <string name="home_energy_format">⚡ %1$d</string>
+    <string name="home_energy_format">%1$d</string>
     <string name="expedition_idle_body">에너지를 모아 캐릭터를 8시간 모험에 보내요.</string>
     <string name="expedition_depart">원정 보내기 (⚡%1$d)</string>
     <string name="expedition_in_progress">모험에서 돌아오는 중 — %1$s 남았어요</string>
@@ -89,7 +89,7 @@
     <string name="widget_level_format">Lv.%1$d</string>
     <string name="widget_condition_format">컨디션 %1$d</string>
     <string name="widget_today_format">오늘 +%1$,d XP</string>
-    <string name="streak_current">🔥 %1$d일째 함께 자라는 중</string>
+    <string name="streak_current">%1$d일째 함께 자라는 중</string>
     <string name="streak_pending">오늘 움직이면 %1$d일째로 이어져요</string>
     <string name="streak_start">오늘 첫 걸음을 떼어볼까요?</string>
     <string name="streak_longest">최장 %1$d일 이어갔어요</string>

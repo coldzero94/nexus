@@ -3,16 +3,23 @@ package com.nexus.app.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.NexusCard
+import com.nexus.app.ui.NexusIcons
+import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.XpGauge
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionState
@@ -129,10 +136,21 @@ internal fun ExpeditionCard(expedition: ExpeditionState, energy: Int, onDepart: 
     NexusCard(
         title = stringResource(R.string.home_expedition_title),
         trailing = {
-            Text(
-                stringResource(R.string.home_energy_format, energy),
-                style = MaterialTheme.typography.titleMedium,
-            )
+            // 에너지 이모지(⚡)→개념 아이콘 (#265). 장식이라 CD=null, tint는 카드 콘텐츠색 상속.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(NexusIcons.energy),
+                    contentDescription = null,
+                    modifier = Modifier.size(ENERGY_ICON_DP.dp),
+                )
+                Text(
+                    stringResource(R.string.home_energy_format, energy),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
         },
     ) {
         when (expedition) {
@@ -179,3 +197,4 @@ private fun remainingLabel(remainingMillis: Long): String {
 
 private const val MILLIS_PER_MINUTE = 60_000L
 private const val MINUTES_PER_HOUR = 60L
+private const val ENERGY_ICON_DP = 18

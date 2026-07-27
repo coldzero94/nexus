@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
 import com.nexus.app.ui.NexusCard
+import com.nexus.app.ui.NexusIcons
 import com.nexus.core.StreakStatus
 
 /**
@@ -20,7 +21,9 @@ internal fun StreakRow(streak: StreakStatus, modifier: Modifier = Modifier) {
     } else {
         stringResource(R.string.streak_start)
     }
-    NexusCard(modifier = modifier, title = title) {
+    // 🔥 이모지→기세 개념 아이콘 (#265) — 진행 중인 기세일 때만(current=0 '첫 걸음'엔 불꽃 부적절)
+    val titleIcon = if (streak.current > 0) NexusIcons.streak else null
+    NexusCard(modifier = modifier, titleIcon = titleIcon, title = title) {
         // 진행 중인 기세가 있을 때만 그레이스 안내 — current=0이면 "첫 걸음" 카피와 중복되므로 생략
         if (streak.todayPending && streak.current > 0) {
             Text(
