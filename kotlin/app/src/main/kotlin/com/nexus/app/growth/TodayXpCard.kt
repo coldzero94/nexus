@@ -14,14 +14,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.TrustTierChip
 import com.nexus.app.ui.XpGauge
 import com.nexus.core.ActivityType
 import com.nexus.core.DayXpExplanation
+import com.nexus.core.TrustTier
 import com.nexus.core.XpLine
 
 /**
@@ -74,16 +77,30 @@ private fun ExplanationDetail(explanation: DayXpExplanation) {
 private fun XpLineRow(line: XpLine) {
     val typeLabel = line.type?.let { stringResource(it.labelRes()) }
         ?: stringResource(R.string.activity_other)
-    val points = if (line.countsForXp) {
-        stringResource(R.string.xp_explain_points_format, line.basePoints)
-    } else {
-        stringResource(R.string.xp_explain_excluded)
+    // Tier C 라벨 자체가 "XP 제외"를 담고 있어 우측 값에 또 쓰지 않는다(중복 방지, #222 리뷰).
+    // 그 외 제외 사유(종목 미상 등)는 여전히 우측에 밝힌다.
+    val points = when {
+        line.countsForXp -> stringResource(R.string.xp_explain_points_format, line.basePoints)
+        line.tier == TrustTier.C -> ""
+        else -> stringResource(R.string.xp_explain_excluded)
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(
-            stringResource(R.string.xp_explain_line_format, typeLabel, line.minutes, line.tier.name),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = Modifier.weight(1f, fill = false),
+            horizontalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.xp_explain_line_prefix, typeLabel, line.minutes),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            // 활동 화면과 같은 칩 — 탭하면 등급 의미 설명 (#222). 여기선 근거 입력이 없어 의미만.
+            TrustTierChip(tier = line.tier, style = MaterialTheme.typography.bodyMedium)
+        }
         Text(points, style = MaterialTheme.typography.bodyMedium)
     }
 }

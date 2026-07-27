@@ -191,12 +191,25 @@
     <string name="trust_tier_a">Tier A</string>
     <string name="trust_tier_b">Tier B</string>
     <string name="trust_tier_c">Tier C · XP 제외</string>
+    <!-- 등급 설명 (#222) — 판정 근거는 core TrustExplainer, 문구만 여기 -->
+    <string name="trust_explain_title">이 등급은 왜?</string>
+    <string name="trust_explain_close">알겠어요</string>
+    <string name="trust_explain_more">등급 설명</string>
+    <string name="trust_meaning_a">워치 기록에 심박까지 있어 운동 강도를 더 정확히 읽어요.</string>
+    <string name="trust_meaning_b">폰으로 기록된 운동이에요. 워치가 없어도 개인 성장에는 100% 반영돼요.</string>
+    <string name="trust_meaning_c">직접 입력했거나 앱이 아직 모르는 기록이라 XP에는 넣지 않아요. 기록 자체는 그대로 보여요.</string>
+    <string name="trust_reason_watch_hr">근거: 워치 기록 + 심박 데이터</string>
+    <string name="trust_reason_watch_no_hr">근거: 워치 기록이지만 심박 데이터가 없어요</string>
+    <string name="trust_reason_phone">근거: 폰으로 기록됨</string>
+    <string name="trust_reason_manual">근거: 사람이 직접 입력한 기록</string>
+    <string name="trust_reason_unknown">근거: 앱에 등록되지 않은 앱·기기에서 온 기록</string>
     <string name="steps_manual_excluded">수기 입력 %1$,d보 — XP 제외</string>
 
     <!-- 데이터 소스 (#10) -->
     <string name="source_samsung_health">삼성헬스</string>
     <string name="source_samsung_watch">삼성워치</string>
-    <string name="session_trust_source_format">%1$s · 출처 %2$s</string>
+    <!-- 등급 칩과 나란히 놓이는 출처 조각 — 간격은 레이아웃이 준다(리소스 공백은 aapt2가 제거, #222) -->
+    <string name="session_source_suffix">· 출처 %1$s</string>
 
     <!-- 성장 탭 (#23) -->
     <string name="growth_title">성장</string>
@@ -218,7 +231,8 @@
     <string name="xp_explain_show">환산 설명</string>
     <string name="xp_explain_hide">접기</string>
     <string name="xp_explain_empty">오늘 기록된 운동 세션이 없어요.</string>
-    <string name="xp_explain_line_format">%1$s %2$d분 · 신뢰 %3$s</string>
+    <!-- 등급 칩을 별도 노출하므로 종목·시간만 (#222) -->
+    <string name="xp_explain_line_prefix">%1$s %2$d분 · 신뢰</string>
     <string name="xp_explain_points_format">%1$,d pt</string>
     <string name="xp_explain_excluded">XP 제외</string>
     <string name="xp_explain_knee_note">기본 합계 %1$,d pt 중 200pt 초과분은 절반만 반영됐어요 (−%2$,d pt)</string>
