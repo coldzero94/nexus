@@ -1,7 +1,6 @@
 package com.nexus.app.growth
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -19,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
+import com.nexus.app.ui.NexusMotion
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.ClassAffinity
 
@@ -31,7 +31,7 @@ import com.nexus.core.ClassAffinity
 internal fun CelebrationCard(change: GrowthChange, visible: Boolean, onDismiss: () -> Unit) {
     AnimatedVisibility(
         visible = visible,
-        enter = scaleIn(animationSpec = spring(dampingRatio = 0.55f)) + fadeIn(),
+        enter = scaleIn(animationSpec = NexusMotion.CelebrationSpring) + fadeIn(),
         exit = fadeOut(),
     ) {
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {

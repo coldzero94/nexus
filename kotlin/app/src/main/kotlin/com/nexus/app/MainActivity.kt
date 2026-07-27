@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,9 +49,11 @@ import com.nexus.app.steps.ActivityScreen
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.NexusIcons
+import com.nexus.app.ui.NexusMotion
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.NexusTheme
 import com.nexus.app.ui.TabIcon
+import com.nexus.app.ui.motionDuration
 import com.nexus.core.ActivityType
 import com.nexus.core.ReturnWelcomePolicy
 import com.nexus.core.XpEngine
@@ -155,6 +160,7 @@ private enum class MainTab(val labelRes: Int, val icon: TabIcon) {
 @Composable
 private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit) {
     var tab by rememberSaveable { mutableStateOf(MainTab.HOME) }
+    val stateHolder = rememberSaveableStateHolder()
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -175,11 +181,23 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
             }
         },
     ) { padding ->
-        when (tab) {
-            MainTab.HOME -> HomeScreen(manager, Modifier.padding(padding), onReconnect)
-            MainTab.ACTIVITY -> ActivityScreen(manager, Modifier.padding(padding), onReconnect)
-            MainTab.GROWTH -> GrowthScreen(manager, Modifier.padding(padding), onReconnect)
-            MainTab.SETTINGS -> SettingsScreen(manager, Modifier.padding(padding), onReconnect)
+        // 탭 전환 크로스페이드 (#262) — SaveableStateProvider로 각 탭의 스크롤 위치 보존(재진입 시 복원),
+        // 루트 fillMaxSize. duration은 motionDuration 경유(리듀스드모션 시 0=즉시).
+        Crossfade(
+            targetState = tab,
+            animationSpec = tween(motionDuration(NexusMotion.DURATION_MEDIUM), easing = NexusMotion.Standard),
+            label = "tab",
+            modifier = Modifier.fillMaxSize(),
+        ) { current ->
+            stateHolder.SaveableStateProvider(current) {
+                val screenModifier = Modifier.padding(padding)
+                when (current) {
+                    MainTab.HOME -> HomeScreen(manager, screenModifier, onReconnect)
+                    MainTab.ACTIVITY -> ActivityScreen(manager, screenModifier, onReconnect)
+                    MainTab.GROWTH -> GrowthScreen(manager, screenModifier, onReconnect)
+                    MainTab.SETTINGS -> SettingsScreen(manager, screenModifier, onReconnect)
+                }
+            }
         }
     }
 }
