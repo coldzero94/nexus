@@ -63,12 +63,18 @@ jobs:
           KEY_ALIAS: ${{ secrets.NEXUS_UPLOAD_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.NEXUS_UPLOAD_KEY_PASSWORD }}
         run: |
-          ./gradlew :app:assembleRelease \
-            -Pnexus.versionCode=${{ github.run_number }} \
-            -Pnexus.upload.storeFile=upload.jks \
-            -Pnexus.upload.storePassword="$STORE_PASSWORD" \
-            -Pnexus.upload.keyAlias="$KEY_ALIAS" \
-            -Pnexus.upload.keyPassword="$KEY_PASSWORD"
+          # 서명 property는 4종을 모두 주거나 하나도 주지 않는다 — 일부만 주면 빌드가 실패한다(의도된 가드).
+          # Secret 미설정(#11 대기) 시엔 아무것도 넘기지 않아 debug 폴백으로 빌드된다.
+          ARGS=(":app:assembleRelease" "-Pnexus.versionCode=${{ github.run_number }}")
+          if [ "$HAS_UPLOAD_KEY" = "true" ]; then
+            ARGS+=(
+              "-Pnexus.upload.storeFile=upload.jks"
+              "-Pnexus.upload.storePassword=$STORE_PASSWORD"
+              "-Pnexus.upload.keyAlias=$KEY_ALIAS"
+              "-Pnexus.upload.keyPassword=$KEY_PASSWORD"
+            )
+          fi
+          ./gradlew "${ARGS[@]}"
       # 서명 주체를 APK에서 직접 확인 (#230 리뷰) — "무엇을 넣었나"가 아니라 "무엇으로 서명됐나"로
       # 릴리스 노트를 정한다. 안드로이드 디버그 인증서면 인플레이스 업데이트가 불가하므로 그렇게 알린다.
       - name: Verify release signer
