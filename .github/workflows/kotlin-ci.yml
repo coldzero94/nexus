@@ -21,6 +21,9 @@ defaults:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # 업로드 키 Secret 유무 (#230) — step-level env는 같은 step의 if에서 평가되지 않아 job 레벨로 둔다
+      HAS_UPLOAD_KEY: ${{ secrets.NEXUS_UPLOAD_KEYSTORE != '' }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5.5.0
@@ -38,14 +41,46 @@ jobs:
         with:
           name: nexus-debug-apk
           path: kotlin/app/build/outputs/apk/debug/app-debug.apk
+      # ── 릴리스 서명 (#230) ──
+      # 업로드 키스토어를 base64 Secret에서 복원. Secret 미설정(#11 대기)이면 이 스텝을 건너뛰고
+      # Gradle이 debug 키로 폴백한다 — 빌드는 계속되지만 인플레이스 업데이트·Play 업로드는 불가.
+      - name: Restore upload keystore
+        id: keystore
+        if: github.event_name == 'push' && env.HAS_UPLOAD_KEY == 'true'
+        env:
+          NEXUS_UPLOAD_KEYSTORE: ${{ secrets.NEXUS_UPLOAD_KEYSTORE }}
+        run: |
+          echo "$NEXUS_UPLOAD_KEYSTORE" | base64 -d > upload.jks
+          test -s upload.jks
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      # versionCode는 항상 run_number — Play 내부 트랙이 동일 versionCode 재업로드를 거부한다
+      - name: Build release APK
+        if: github.event_name == 'push'
+        env:
+          STORE_PASSWORD: ${{ secrets.NEXUS_UPLOAD_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.NEXUS_UPLOAD_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.NEXUS_UPLOAD_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:assembleRelease \
+            -Pnexus.versionCode=${{ github.run_number }} \
+            -Pnexus.upload.storeFile=upload.jks \
+            -Pnexus.upload.storePassword="$STORE_PASSWORD" \
+            -Pnexus.upload.keyAlias="$KEY_ALIAS" \
+            -Pnexus.upload.keyPassword="$KEY_PASSWORD"
       # main 머지 시: GitHub Release로 APK 배포 (설치 링크 = 릴리즈 페이지)
       - name: Release APK
         if: github.event_name == 'push'
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
+          SIGNED: ${{ steps.keystore.outputs.signed }}
         run: |
+          if [ "$SIGNED" = "true" ]; then
+            NOTE="main 자동 빌드 — 커밋 ${{ github.sha }} · 업로드 키 서명(인플레이스 업데이트 가능)"
+          else
+            NOTE="main 자동 빌드 — 커밋 ${{ github.sha }} · ⚠ 업로드 키 미설정(#11)이라 debug 키 서명 — 이전 빌드 위에 덮어 설치되지 않을 수 있어요"
+          fi
           gh release create "build-${{ github.run_number }}" \
-            kotlin/app/build/outputs/apk/debug/app-debug.apk \
+            kotlin/app/build/outputs/apk/release/app-release.apk \
             --title "NEXUS dev build ${{ github.run_number }}" \
-            --notes "main 자동 빌드 — 커밋 ${{ github.sha }}"
+            --notes "$NOTE"
