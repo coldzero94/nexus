@@ -7,6 +7,7 @@ import com.nexus.core.MoodContext
 import com.nexus.core.MoodEvaluator
 import com.nexus.core.MoodResult
 import com.nexus.core.SessionInput
+import com.nexus.core.WeeklyGoal
 import com.nexus.core.XpEngine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -78,15 +79,16 @@ object MoodResolver {
         return Baseline.personalCoefficient(todayBase, prior)
     }
 
-    /** 이번 주(월요일 시작) 활동일 수 — 주간 목표 달성 판정용. */
-    private fun activeDaysThisWeek(sessions: List<SessionInput>, today: LocalDate): Int {
-        val weekStart = today.with(DayOfWeek.MONDAY).toEpochDay()
-        return sessions
-            .filter { it.type != null && it.epochDay in weekStart..today.toEpochDay() }
-            .map { it.epochDay }
-            .distinct()
-            .count()
-    }
+    /**
+     * 이번 주(월요일 시작) 활동일 수 — 판정은 core [WeeklyGoal] 단일 원천에 위임(#215 리뷰).
+     * 홈 카드(#215)와 같은 정의(수기 Tier C 제외)라 두 표시가 어긋나지 않는다.
+     */
+    private fun activeDaysThisWeek(sessions: List<SessionInput>, today: LocalDate): Int =
+        WeeklyGoal.activeDaysFromSessions(
+            sessions,
+            today.with(DayOfWeek.MONDAY).toEpochDay(),
+            today.toEpochDay(),
+        )
 
     /** 기분 표를 로드해 평가 — 부가 정보라 실패는 null(호출자가 idle/walk 폴백, #130 catch 계약). */
     suspend fun resolveMood(context: Context, moodContext: MoodContext): MoodResult? = try {
