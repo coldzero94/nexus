@@ -64,6 +64,7 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
     ) {
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall)
         HealthStatusCard(manager, onReconnect)
+        OpenDaysCard()
         CharacterNameCard()
         NexusCard(
             title = stringResource(R.string.settings_rest_mode),
