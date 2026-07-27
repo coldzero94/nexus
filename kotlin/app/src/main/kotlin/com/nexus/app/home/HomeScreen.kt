@@ -84,7 +84,15 @@ internal data class HomeUiState(
     val moodContext: com.nexus.core.MoodContext,
     /** 기세 (#214) — 현재 연속 활동일·최장·오늘 그레이스. */
     val streak: com.nexus.core.StreakStatus,
+    /** 이번 주 목표 진척 (#215) — 활동일 M / 목표 N, 주 남은 날. 월요일 KST 경계. */
+    val weeklyProgress: WeeklyProgress,
 )
+
+/**
+ * 이번 주 목표 진척 표시 상태 (#215) — 활동일 [activeDays] / 목표 [goalDays], 주 남은 날 [daysLeft].
+ * 계산은 [com.nexus.core.WeeklyGoal](순수), 여기선 UI가 바로 쓰는 형태로만 보관.
+ */
+internal data class WeeklyProgress(val activeDays: Int, val goalDays: Int, val daysLeft: Int)
 
 internal sealed interface HomeLoad {
     data class Success(val state: HomeUiState) : HomeLoad
@@ -297,6 +305,8 @@ private fun HomeContent(
     // 상단 히어로 — 캐릭터·대사·컨디션을 묶어 최상위 앵커로 (#256). 아래는 종속 상세 카드.
     HomeHero(spriteState, moodLines, state.condition, state.moodContext.restMode)
     StreakRow(state.streak)
+    // 이번 주 목표 진척 (#215) — 기세(일 단위 연속) 다음에 주 단위 리듬
+    WeeklyGoalRow(state.weeklyProgress)
     TodaySummaryCard(state)
     ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)
     // 다음 목표를 카드로 편입 — 맨 Text로 두면 카드 스택 리듬이 끊긴다 (#254)
@@ -397,6 +407,7 @@ private suspend fun assembleHomeState(
             condition = condition.roundToInt(),
         ),
         streak = resolveStreak(stores.ledger, stores.rest, stores.streak, today),
+        weeklyProgress = resolveWeeklyProgress(sessions, today, stores.goal.weeklyGoalDays),
     )
 }
 
