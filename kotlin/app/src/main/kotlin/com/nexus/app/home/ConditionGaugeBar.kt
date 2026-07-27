@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.VizColors
+import com.nexus.app.ui.animatedGaugeProgress
 import com.nexus.core.ConditionEngine
 import com.nexus.core.ConditionGauge
 import kotlin.math.roundToInt
@@ -43,7 +44,8 @@ import kotlin.math.roundToInt
 internal fun ConditionGaugeBar(condition: Double, restMode: Boolean, modifier: Modifier = Modifier) {
     val viz = VizColors.current
     val value = condition.roundToInt()
-    val ratio = ConditionGauge.fillRatio(condition).toFloat()
+    // 컨디션 변화는 완만 감속 보간 (#262) — 하향도 툭 떨어지지 않게. 존 색은 목표값 기준(고정).
+    val ratio = animatedGaugeProgress(ConditionGauge.fillRatio(condition).toFloat(), label = "condition")
     val zone = ConditionGauge.zoneOf(condition)
     val zoneColor = when (zone) {
         ConditionGauge.Zone.Recovering -> viz.conditionRecovering

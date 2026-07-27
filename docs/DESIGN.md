@@ -51,4 +51,15 @@
 - **워드마크**: `ui/NexusWordmark.kt` — 마크 + "NEXUS"(시스템 폰트 Bold·와이드 트래킹, primary).
   온보딩 첫 화면 상단. 라이트/다크 AA.
 
+## 7. 모션 (#262, E16-12)
+
+- **토큰**: `ui/NexusMotion.kt` — Duration 4단(120·240·360·520)·Easing 3종(Emphasized Decelerate/
+  Accelerate·Standard)·`CelebrationSpring`. 앱의 단일 '움직임 언어'. 모든 duration은 `motionDuration()`
+  경유 → `LocalMotionScale`=0f 주입 시 즉시(리듀스드모션 훅, 정책은 #228 소유). `scaledDuration`은 순수·테스트됨.
+- **탭 전환**: `MainActivity` when(tab) → `Crossfade`(Standard, MEDIUM) + `SaveableStateProvider`로
+  각 탭 스크롤 위치 보존.
+- **게이지 보간**: 컨디션·레벨·오늘XP를 `animatedGaugeProgress`로 감속 보간. 레벨·XP는 `upwardOnly`
+  (하락=레벨업 리셋·일일 경계 시 즉시 스냅, 뒤로 안 빠짐=불퇴행), 컨디션은 양방향 완만 감속.
+- **축하**: `GrowthCelebration` 등장 스프링을 `NexusMotion.CelebrationSpring` 토큰 참조로.
+
 _각 항목은 해당 E16 티켓이 랜딩할 때 이 문서를 같은 PR에서 갱신한다._

@@ -35,6 +35,7 @@ import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.animatedGaugeProgress
 import com.nexus.core.ActivityType
 import com.nexus.core.ClassAffinity
 import com.nexus.core.ClassAffinityCalculator
@@ -224,8 +225,10 @@ private fun LevelCard(data: GrowthSummary) {
             stringResource(R.string.growth_level_format, data.level),
             style = MaterialTheme.typography.titleLarge,
         )
+        // 레벨 진행은 상방 전용(불퇴행) — 증가는 감속 보간, 레벨업 리셋은 즉시(뒤로 안 빠짐) (#262)
+        val levelProgress = animatedGaugeProgress(data.progress.toFloat(), upwardOnly = true, label = "level")
         LinearProgressIndicator(
-            progress = { data.progress.toFloat() },
+            progress = { levelProgress },
             modifier = Modifier.fillMaxWidth(),
         )
         Text(

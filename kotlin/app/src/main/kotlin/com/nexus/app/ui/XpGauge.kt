@@ -33,7 +33,8 @@ import com.nexus.core.XpGaugeScale
 internal fun XpGauge(todayXp: Int, modifier: Modifier = Modifier) {
     val viz = VizColors.current
     val kneeFrac = XpGaugeScale.kneeFraction()
-    val fillFrac = XpGaugeScale.fillFraction(todayXp)
+    // XP는 상방 전용(불퇴행) — 증가는 감속 보간, 일일 경계 리셋은 즉시(뒤로 안 빠짐) (#262)
+    val fillFrac = animatedGaugeProgress(XpGaugeScale.fillFraction(todayXp), upwardOnly = true, label = "xp")
     val reached = XpGaugeScale.reachedKnee(todayXp)
     val knee = XpEngine.DAILY_KNEE.toInt()
     val markerColor = MaterialTheme.colorScheme.onSurfaceVariant
