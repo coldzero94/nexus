@@ -93,6 +93,11 @@
     <string name="streak_pending">오늘 움직이면 %1$d일째로 이어져요</string>
     <string name="streak_start">오늘 첫 걸음을 떼어볼까요?</string>
     <string name="streak_longest">최장 %1$d일 이어갔어요</string>
+    <!-- 이번 주 목표 진척 (#215) -->
+    <string name="weekly_goal_title">이번 주 %1$d/%2$d일</string>
+    <string name="weekly_goal_met">이번 주 약속을 지켰어요 — 남은 날은 보너스예요</string>
+    <string name="weekly_goal_remaining">%1$d일 더면 균형 보너스를 챙겨요</string>
+    <string name="weekly_goal_next_week">이번 주는 여기까지도 좋아요 — 다음 주에 이어가요</string>
     <string name="home_goal_move">오늘 %1$d분만 움직이면 컨디션이 올라요</string>
     <string name="home_goal_recovering">이 리듬이면 컨디션이 곧 회복돼요</string>
     <string name="home_goal_done">오늘 몫은 충분해요 — 캐릭터가 든든해해요</string>
