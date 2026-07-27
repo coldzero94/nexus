@@ -54,12 +54,9 @@ object TrustPolicy {
         dataOrigin: String,
         hasHeartRate: Boolean,
         allowlist: DataOriginAllowlist = DataOriginAllowlist.DEFAULT,
-    ): TrustTier = when {
-        recordingMethod == RecordingMethod.MANUAL_ENTRY -> TrustTier.C
-        dataOrigin in allowlist.tierA && hasHeartRate -> TrustTier.A
-        dataOrigin in allowlist.tierA || dataOrigin in allowlist.tierB -> TrustTier.B
-        else -> TrustTier.C
-    }
+    ): TrustTier = // 판정 분기는 [TrustExplainer.reasonFor] 한 곳에만 둔다 — 등급과 "왜 이 등급인지"가
+        // 서로 다른 분기를 갖고 있으면 화면이 모순된 설명을 보여준다(#222 리뷰).
+        TrustExplainer.reasonFor(recordingMethod, dataOrigin, hasHeartRate, allowlist).tier
 
     /** XP 인정 대상인가(수기·미상 제외). */
     fun isXpEligible(tier: TrustTier): Boolean = tier != TrustTier.C

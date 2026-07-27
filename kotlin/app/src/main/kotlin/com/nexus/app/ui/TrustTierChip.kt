@@ -7,13 +7,16 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDecoration
 import com.nexus.app.R
 import com.nexus.core.TrustReason
@@ -33,16 +36,21 @@ fun TrustTierChip(
     tier: TrustTier,
     modifier: Modifier = Modifier,
     reason: TrustReason? = null,
-    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodySmall,
+    style: TextStyle = MaterialTheme.typography.bodySmall,
 ) {
-    var explaining by remember { mutableStateOf(false) }
+    // 회전·테마 전환에도 열린 설명이 닫히지 않게(#222 리뷰)
+    var explaining by rememberSaveable { mutableStateOf(false) }
+    val openLabel = stringResource(R.string.trust_explain_more)
     Text(
         text = stringResource(tier.labelRes()),
         style = style,
         // 탭 가능함을 색·밑줄로 알린다(아이콘 추가 없이 줄 레이아웃 유지)
         color = MaterialTheme.colorScheme.primary,
         textDecoration = TextDecoration.Underline,
-        modifier = modifier.clickable { explaining = true },
+        modifier = modifier
+            // 13sp 텍스트라 그대로면 터치 타깃이 ~19dp — 최소 크기 확보 + 버튼 역할 낭독(#222 리뷰)
+            .minimumInteractiveComponentSize()
+            .clickable(onClickLabel = openLabel, role = Role.Button) { explaining = true },
     )
     if (explaining) {
         TierExplainDialog(tier = tier, reason = reason, onDismiss = { explaining = false })

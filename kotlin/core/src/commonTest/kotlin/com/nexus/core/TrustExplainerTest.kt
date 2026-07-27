@@ -8,6 +8,14 @@ import kotlin.test.assertEquals
  * 화면이 "B등급인데 워치+심박이라 A" 같은 모순을 보여준다).
  */
 class TrustExplainerTest {
+    /** 파라미터 조합 1건 — 중첩 루프 대신 곱집합을 펼쳐 검증한다. */
+    private data class Case(
+        val method: RecordingMethod,
+        val origin: String,
+        val hasHr: Boolean,
+        val allowlist: DataOriginAllowlist,
+    )
+
     private val watch = "com.samsung.android.wear.shealth"
     private val phone = "com.sec.android.app.shealth"
     private val unknown = "com.example.unknown"
@@ -51,14 +59,30 @@ class TrustExplainerTest {
     @Test
     fun `이유가 함의하는 등급은 classify 결과와 항상 일치`() {
         val origins = listOf(watch, phone, unknown)
-        for (method in RecordingMethod.entries) {
-            for (origin in origins) {
-                for (hr in listOf(true, false)) {
-                    val classified = TrustPolicy.classify(method, origin, hr)
-                    val explained = TrustExplainer.reasonFor(method, origin, hr).tier
-                    assertEquals(classified, explained, "method=$method origin=$origin hr=$hr")
+        // 화이트리스트 축도 포함 — SPN 변경(withCurrentDeviceSource)이 한쪽에만 반영되는 드리프트 방지
+        val allowlists = listOf(
+            DataOriginAllowlist.DEFAULT,
+            DataOriginAllowlist.DEFAULT.withCurrentDeviceSource(unknown),
+        )
+        val cases = RecordingMethod.entries.flatMap { method ->
+            origins.flatMap { origin ->
+                listOf(true, false).flatMap { hr ->
+                    allowlists.map { allowlist -> Case(method, origin, hr, allowlist) }
                 }
             }
         }
+        cases.forEach { c ->
+            val classified = TrustPolicy.classify(c.method, c.origin, c.hasHr, c.allowlist)
+            val explained = TrustExplainer.reasonFor(c.method, c.origin, c.hasHr, c.allowlist).tier
+            assertEquals(classified, explained, "method=${c.method} origin=${c.origin} hr=${c.hasHr}")
+        }
+    }
+
+    @Test
+    fun `현재 기기 소스가 병합되면 미상이 아니라 폰 기록으로 설명된다`() {
+        val allowlist = DataOriginAllowlist.DEFAULT.withCurrentDeviceSource(unknown)
+        val reason = TrustExplainer.reasonFor(RecordingMethod.AUTO_RECORDED, unknown, false, allowlist)
+        assertEquals(TrustReason.PHONE_RECORDED, reason)
+        assertEquals(TrustTier.B, reason.tier)
     }
 }

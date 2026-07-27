@@ -24,6 +24,7 @@ import com.nexus.app.ui.TrustTierChip
 import com.nexus.app.ui.XpGauge
 import com.nexus.core.ActivityType
 import com.nexus.core.DayXpExplanation
+import com.nexus.core.TrustTier
 import com.nexus.core.XpLine
 
 /**
@@ -76,17 +77,23 @@ private fun ExplanationDetail(explanation: DayXpExplanation) {
 private fun XpLineRow(line: XpLine) {
     val typeLabel = line.type?.let { stringResource(it.labelRes()) }
         ?: stringResource(R.string.activity_other)
-    val points = if (line.countsForXp) {
-        stringResource(R.string.xp_explain_points_format, line.basePoints)
-    } else {
-        stringResource(R.string.xp_explain_excluded)
+    // Tier C 라벨 자체가 "XP 제외"를 담고 있어 우측 값에 또 쓰지 않는다(중복 방지, #222 리뷰).
+    // 그 외 제외 사유(종목 미상 등)는 여전히 우측에 밝힌다.
+    val points = when {
+        line.countsForXp -> stringResource(R.string.xp_explain_points_format, line.basePoints)
+        line.tier == TrustTier.C -> ""
+        else -> stringResource(R.string.xp_explain_excluded)
     }
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.weight(1f, fill = false),
+            horizontalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 stringResource(R.string.xp_explain_line_prefix, typeLabel, line.minutes),
                 style = MaterialTheme.typography.bodyMedium,

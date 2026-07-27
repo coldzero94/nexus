@@ -2,6 +2,7 @@ package com.nexus.app.steps
 
 import android.os.RemoteException
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -191,8 +192,12 @@ private fun SessionRow(session: ExerciseSummary, dtFormatter: DateTimeFormatter)
             text = stringResource(R.string.session_meta_format, typeLabel, session.durationMinutes) + " · " + hrLabel,
             style = MaterialTheme.typography.bodySmall,
         )
-        // 등급은 탭하면 '왜 이 등급인지' 설명 (#222) — 근거는 이 세션의 실제 판정 입력에서 도출
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // 등급은 탭하면 '왜 이 등급인지' 설명 (#222) — 근거는 이 세션의 실제 판정 입력에서 도출.
+        // 간격은 레이아웃이 준다(리소스 앞뒤 공백은 aapt2가 제거해 라벨이 붙어버린다, #222 리뷰)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             TrustTierChip(
                 tier = session.trustTier,
                 reason = TrustExplainer.reasonFor(

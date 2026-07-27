@@ -208,9 +208,8 @@
     <!-- 데이터 소스 (#10) -->
     <string name="source_samsung_health">삼성헬스</string>
     <string name="source_samsung_watch">삼성워치</string>
-    <string name="session_trust_source_format">%1$s · 출처 %2$s</string>
-    <!-- 등급 칩이 앞에 붙으므로 출처만 잇는 접미 (#222) -->
-    <string name="session_source_suffix"> · 출처 %1$s</string>
+    <!-- 등급 칩과 나란히 놓이는 출처 조각 — 간격은 레이아웃이 준다(리소스 공백은 aapt2가 제거, #222) -->
+    <string name="session_source_suffix">· 출처 %1$s</string>
 
     <!-- 성장 탭 (#23) -->
     <string name="growth_title">성장</string>
@@ -232,9 +231,8 @@
     <string name="xp_explain_show">환산 설명</string>
     <string name="xp_explain_hide">접기</string>
     <string name="xp_explain_empty">오늘 기록된 운동 세션이 없어요.</string>
-    <string name="xp_explain_line_format">%1$s %2$d분 · 신뢰 %3$s</string>
     <!-- 등급 칩을 별도 노출하므로 종목·시간만 (#222) -->
-    <string name="xp_explain_line_prefix">%1$s %2$d분 · 신뢰 </string>
+    <string name="xp_explain_line_prefix">%1$s %2$d분 · 신뢰</string>
     <string name="xp_explain_points_format">%1$,d pt</string>
     <string name="xp_explain_excluded">XP 제외</string>
     <string name="xp_explain_knee_note">기본 합계 %1$,d pt 중 200pt 초과분은 절반만 반영됐어요 (−%2$,d pt)</string>
