@@ -3,6 +3,7 @@ package com.nexus.app.steps
 import android.os.RemoteException
 import android.util.Log
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -31,8 +33,9 @@ import com.nexus.app.health.StepRepository
 import com.nexus.app.health.TokenStore
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.TrustTierChip
 import com.nexus.core.ActivityType
-import com.nexus.core.TrustTier
+import com.nexus.core.TrustExplainer
 import java.io.IOException
 import java.time.Instant
 import java.time.ZoneId
@@ -188,14 +191,21 @@ private fun SessionRow(session: ExerciseSummary, dtFormatter: DateTimeFormatter)
             text = stringResource(R.string.session_meta_format, typeLabel, session.durationMinutes) + " · " + hrLabel,
             style = MaterialTheme.typography.bodySmall,
         )
-        Text(
-            text = stringResource(
-                R.string.session_trust_source_format,
-                tierLabel(session.trustTier),
-                sourceLabel(session.dataOrigin),
-            ),
-            style = MaterialTheme.typography.bodySmall,
-        )
+        // 등급은 탭하면 '왜 이 등급인지' 설명 (#222) — 근거는 이 세션의 실제 판정 입력에서 도출
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TrustTierChip(
+                tier = session.trustTier,
+                reason = TrustExplainer.reasonFor(
+                    recordingMethod = session.recordingMethod,
+                    dataOrigin = session.dataOrigin,
+                    hasHeartRate = session.avgHeartRate != null,
+                ),
+            )
+            Text(
+                text = stringResource(R.string.session_source_suffix, sourceLabel(session.dataOrigin)),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
     }
 }
 
@@ -213,15 +223,6 @@ private fun typeLabel(type: ActivityType?): String = stringResource(
         ActivityType.RUNNING -> R.string.session_type_running
         ActivityType.STRENGTH -> R.string.session_type_strength
         null -> R.string.session_type_other
-    },
-)
-
-@Composable
-private fun tierLabel(tier: TrustTier): String = stringResource(
-    when (tier) {
-        TrustTier.A -> R.string.trust_tier_a
-        TrustTier.B -> R.string.trust_tier_b
-        TrustTier.C -> R.string.trust_tier_c
     },
 )
 

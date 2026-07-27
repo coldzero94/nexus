@@ -14,11 +14,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.TrustTierChip
 import com.nexus.app.ui.XpGauge
 import com.nexus.core.ActivityType
 import com.nexus.core.DayXpExplanation
@@ -79,11 +81,19 @@ private fun XpLineRow(line: XpLine) {
     } else {
         stringResource(R.string.xp_explain_excluded)
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(
-            stringResource(R.string.xp_explain_line_format, typeLabel, line.minutes, line.tier.name),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.xp_explain_line_prefix, typeLabel, line.minutes),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            // 활동 화면과 같은 칩 — 탭하면 등급 의미 설명 (#222). 여기선 근거 입력이 없어 의미만.
+            TrustTierChip(tier = line.tier, style = MaterialTheme.typography.bodyMedium)
+        }
         Text(points, style = MaterialTheme.typography.bodyMedium)
     }
 }
