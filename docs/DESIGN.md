@@ -40,6 +40,14 @@
 - **접근성**: 색만으로 상태 전달 금지 — 존은 색 점 + 라벨, 오늘 막대는 '오늘' 라벨 병기. 막대별
   `contentDescription`(요일·값)로 단일 포커스 낭독.
 
+### 아이코노그래피 (#265, E16-15)
+
+- `drawable/ic_concept_*.xml` 9종(steps·exercise·condition·level·xp·goal·streak·expedition·energy) —
+  탭바와 동일 24dp 그리드·1.9 스트로크 라인 아이콘. `NexusIcons` accessor로 노출, tint는 소비처가
+  콘텐츠색 상속(하드코딩 색 금지). `NexusCard(titleIcon=…)` 슬롯으로 제목 앞 개념 아이콘 지원.
+- 카피 속 이모지→벡터 치환: 에너지(⚡, ExpeditionCard)·기세(🔥, StreakRow). 나머지 이모지는
+  accessor-ready(잔여 치환·위젯은 후속). 장식 아이콘 CD=null(의미는 인접 텍스트).
+
 ## 6. 브랜드 아이덴티티 (#261, E16-11)
 
 - **제품 마크**: `drawable/nexus_mark.xml` — 자작 기하 심볼(상승 화살표 = 움직임→성장). 캐릭터(#66)와
