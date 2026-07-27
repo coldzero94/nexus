@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +41,7 @@ import com.nexus.app.notify.ReminderWorker
 import com.nexus.app.ui.GoalDayChooser
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.core.CharacterName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -61,6 +64,7 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
     ) {
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall)
         HealthStatusCard(manager, onReconnect)
+        CharacterNameCard()
         NexusCard(
             title = stringResource(R.string.settings_rest_mode),
             trailing = {
@@ -253,6 +257,61 @@ private fun WidgetPinCard() {
             }
         }) {
             Text(stringResource(R.string.settings_widget_add))
+        }
+    }
+}
+
+/**
+ * 캐릭터 이름 (#216, E14-6) — 지어준 이름을 앱 카피가 호명하게 하는 진입점. 저장 규칙은
+ * core [CharacterName](1~12자·공백 방지), 저장은 로컬 [IdentityStore]. 이름은 기기에만 남는다
+ * (텔레메트리·크래시 페이로드·서버 전송 없음).
+ */
+@Composable
+private fun CharacterNameCard() {
+    val context = LocalContext.current
+    val store = remember { IdentityStore(context) }
+    var saved by remember { mutableStateOf(store.name) }
+    var input by remember { mutableStateOf(saved.orEmpty()) }
+    var invalid by remember { mutableStateOf(false) }
+
+    NexusCard(title = stringResource(R.string.settings_name)) {
+        Text(stringResource(R.string.settings_name_desc), style = MaterialTheme.typography.bodySmall)
+        OutlinedTextField(
+            value = input,
+            onValueChange = {
+                input = it
+                invalid = false
+            },
+            label = { Text(stringResource(R.string.settings_name_label, CharacterName.MAX_LENGTH)) },
+            singleLine = true,
+            isError = invalid,
+            supportingText = if (invalid) {
+                { Text(stringResource(R.string.settings_name_invalid, CharacterName.MAX_LENGTH)) }
+            } else {
+                null
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                saved?.let { stringResource(R.string.settings_name_saved, it) }
+                    ?: stringResource(R.string.settings_name_empty),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = {
+                    if (store.setName(input)) {
+                        saved = store.name
+                        input = saved.orEmpty()
+                        invalid = false
+                    } else {
+                        invalid = true
+                    }
+                },
+            ) {
+                Text(stringResource(R.string.settings_name_save))
+            }
         }
     }
 }
