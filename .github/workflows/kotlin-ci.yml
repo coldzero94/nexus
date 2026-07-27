@@ -35,7 +35,9 @@ jobs:
         run: ./gradlew spotlessCheck detekt
       # core: JVM 테스트(케이스 테이블) + iOS klib 컴파일(commonMain 오염 차단, 리눅스에서 가능)
       - name: Build and test
-        run: ./gradlew :core:jvmTest :app:testDebugUnitTest :core:compileKotlinIosArm64 :app:assembleDebug
+        run: >
+          ./gradlew :core:jvmTest :app:testDebugUnitTest :core:compileKotlinIosArm64
+          :app:assembleDebug :app:assembleRelease
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -67,13 +69,27 @@ jobs:
             -Pnexus.upload.storePassword="$STORE_PASSWORD" \
             -Pnexus.upload.keyAlias="$KEY_ALIAS" \
             -Pnexus.upload.keyPassword="$KEY_PASSWORD"
+      # 서명 주체를 APK에서 직접 확인 (#230 리뷰) — "무엇을 넣었나"가 아니라 "무엇으로 서명됐나"로
+      # 릴리스 노트를 정한다. 안드로이드 디버그 인증서면 인플레이스 업데이트가 불가하므로 그렇게 알린다.
+      - name: Verify release signer
+        id: signer
+        if: github.event_name == 'push'
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
+          CERTS=$("$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk)
+          echo "$CERTS" | grep -E "certificate DN:"
+          if echo "$CERTS" | grep -q "CN=Android Debug"; then
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          fi
       # main 머지 시: GitHub Release로 APK 배포 (설치 링크 = 릴리즈 페이지)
       - name: Release APK
         if: github.event_name == 'push'
         working-directory: .
         env:
           GH_TOKEN: ${{ github.token }}
-          SIGNED: ${{ steps.keystore.outputs.signed }}
+          SIGNED: ${{ steps.signer.outputs.signed }}
         run: |
           if [ "$SIGNED" = "true" ]; then
             NOTE="main 자동 빌드 — 커밋 ${{ github.sha }} · 업로드 키 서명(인플레이스 업데이트 가능)"

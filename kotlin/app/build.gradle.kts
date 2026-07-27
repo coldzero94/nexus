@@ -25,7 +25,12 @@ android {
                 .toInt()
         // CI가 -Pnexus.versionCode=<run_number>로 주입 (#230) — 로컬 기본 1.
         // Play 내부 트랙은 같은 versionCode 재업로드를 거부하므로 빌드마다 증가해야 한다.
-        versionCode = providers.gradleProperty("nexus.versionCode").orNull?.toIntOrNull() ?: 1
+        versionCode = providers
+            .gradleProperty("nexus.versionCode")
+            .orNull
+            // 오타·비정상 값이 조용히 1이 되면 Play 거부·미갱신으로 한참 뒤에야 드러난다 (#230 리뷰)
+            ?.let { it.toIntOrNull() ?: error("nexus.versionCode must be an integer, got '$it'") }
+            ?: 1
         versionName = "0.1.0"
 
         // TelemetryDeck 앱 ID — gradle.properties(로컬/CI 시크릿)에서 주입, 없으면 빈 값 = 계측 꺼짐 (#46)
@@ -59,11 +64,18 @@ android {
     val uploadStorePassword = providers.gradleProperty("nexus.upload.storePassword").orNull
     val uploadKeyAlias = providers.gradleProperty("nexus.upload.keyAlias").orNull
     val uploadKeyPassword = providers.gradleProperty("nexus.upload.keyPassword").orNull
+    val uploadStoreFileGiven = !providers.gradleProperty("nexus.upload.storeFile").orNull.isNullOrBlank()
     val hasUploadKey =
         uploadKeystore != null &&
             !uploadStorePassword.isNullOrBlank() &&
             !uploadKeyAlias.isNullOrBlank() &&
             !uploadKeyPassword.isNullOrBlank()
+    // 키스토어를 지정했는데 나머지가 비면 **조용히 debug로 폴백하지 않는다** — 그 APK는 업데이트도
+    // 업로드도 안 되는데 서명된 것처럼 배포돼 진단이 불가능해진다(#230 리뷰). 폴백은 '아무것도 안 준' 경우만.
+    check(!uploadStoreFileGiven || hasUploadKey) {
+        "업로드 서명 설정이 불완전합니다 — nexus.upload.{storeFile,storePassword,keyAlias,keyPassword} 4종을 " +
+            "모두 주거나(서명), 하나도 주지 마세요(debug 폴백). 키스토어 경로 존재 여부도 확인하세요."
+    }
 
     signingConfigs {
         if (hasUploadKey) {
@@ -77,6 +89,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 서명이 다른 debug/release가 같은 패키지면 설치가 서로를 막는다 — 별도 패키지로 공존 (#230 리뷰)
+            applicationIdSuffix = ".debug"
+        }
         release {
             // 업로드 키가 있으면 그것으로, 없으면 debug 키 폴백(로컬 빌드 무중단)
             signingConfig = if (hasUploadKey) signingConfigs.getByName("upload") else signingConfigs.getByName("debug")

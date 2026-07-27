@@ -117,5 +117,14 @@
     -keyalg RSA -keysize 2048 -validity 10000
   base64 -i upload.jks | pbcopy   # → GitHub Secret NEXUS_UPLOAD_KEYSTORE
   ```
+  Windows(PowerShell): `[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload.jks")) | Set-Clipboard`.
   원본 `.jks`와 비밀번호는 팀 비밀번호 관리자에 보관 — 레포·이슈·채팅에 올리지 않는다.
+- **로컬에서 서명 빌드를 시험할 때**: 비밀번호는 반드시 **`~/.gradle/gradle.properties`**(사용자 홈, 레포 밖)에
+  둔다. `kotlin/gradle.properties`는 **커밋되는 파일**이라 여기 적으면 비밀번호가 그대로 올라간다.
+- **부분 설정은 실패시킨다**: 4종 중 일부만 주면 빌드가 `check`로 멈춘다 — 조용히 debug로 폴백하면
+  "서명된 줄 알았는데 업데이트도 업로드도 안 되는" APK가 배포돼 진단이 불가능해진다(#230 리뷰).
+  CI도 산출 APK의 인증서를 `apksigner verify`로 확인해 릴리스 노트를 정한다(선언이 아니라 실측).
+- **`versionCode`는 `github.run_number`**: 워크플로 파일을 이름 변경·재생성하면 run_number가 1로
+  리셋된다. Play는 사용한 versionCode를 영구 기억하므로, 그런 변경 전에는 오프셋(BASE+run_number)을
+  도입해야 한다.
 - **키 분실 시**: Play App Signing을 쓰면 앱 서명 키는 Google이 보관하므로 **업로드 키만 재발급**하면 된다. Play Console → 설정 → 앱 무결성 → 업로드 키 재설정 요청(새 업로드 인증서 업로드, 반영까지 최대 며칠). 앱 서명 키 자체를 잃는 상황은 Play App Signing 사용 시 발생하지 않는다 — 이것이 자체 서명 대신 Play App Signing을 쓰는 이유.
