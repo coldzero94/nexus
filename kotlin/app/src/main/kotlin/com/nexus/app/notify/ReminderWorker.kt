@@ -13,6 +13,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nexus.app.R
+import com.nexus.app.settings.IdentityStore
 import com.nexus.core.NotificationPolicy
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -55,7 +56,13 @@ class ReminderWorker(appContext: Context, params: WorkerParameters) : CoroutineW
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.character_idle_0)
-            .setContentTitle(context.getString(R.string.notify_reminder_title))
+            // 이름을 지었으면 그 이름으로 호명, 아니면 무명 카피 폴백 (#216).
+            // 이름은 로컬 표시 전용 — 알림 텍스트에만 쓰이고 텔레메트리 페이로드엔 실리지 않는다.
+            .setContentTitle(
+                IdentityStore(context).name
+                    ?.let { context.getString(R.string.notify_reminder_title_named, it) }
+                    ?: context.getString(R.string.notify_reminder_title),
+            )
             .setContentText(context.getString(R.string.notify_reminder_body))
             .setAutoCancel(true)
             .build()

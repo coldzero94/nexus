@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -39,6 +41,7 @@ import com.nexus.app.notify.ReminderWorker
 import com.nexus.app.ui.GoalDayChooser
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.core.CharacterName
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -61,6 +64,7 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
     ) {
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall)
         HealthStatusCard(manager, onReconnect)
+        CharacterNameCard()
         NexusCard(
             title = stringResource(R.string.settings_rest_mode),
             trailing = {
@@ -254,6 +258,78 @@ private fun WidgetPinCard() {
         }) {
             Text(stringResource(R.string.settings_widget_add))
         }
+    }
+}
+
+/**
+ * 캐릭터 이름 (#216, E14-6) — 지어준 이름을 앱 카피가 호명하게 하는 진입점. 저장 규칙은
+ * core [CharacterName](1~12자·공백 방지), 저장은 로컬 [IdentityStore]. 이름은 앱이 전송하지 않는다
+ * (텔레메트리·크래시 페이로드·서버 전송 없음 — Android 자동 백업은 사용자 본인 계정 표면).
+ */
+@Composable
+private fun CharacterNameCard() {
+    val context = LocalContext.current
+    val store = remember { IdentityStore(context) }
+    var saved by remember { mutableStateOf(store.name) }
+    var input by remember { mutableStateOf(saved.orEmpty()) }
+    var invalid by remember { mutableStateOf(false) }
+
+    NexusCard(title = stringResource(R.string.settings_name)) {
+        Text(stringResource(R.string.settings_name_desc), style = MaterialTheme.typography.bodySmall)
+        OutlinedTextField(
+            value = input,
+            onValueChange = {
+                // 저장 시점이 아니라 입력 시점에 상한 — 40자 치고 나서야 알게 되지 않도록(#216 리뷰)
+                if (it.length <= CharacterName.MAX_LENGTH) input = it
+                invalid = false
+            },
+            label = { Text(stringResource(R.string.settings_name_label, CharacterName.MAX_LENGTH)) },
+            singleLine = true,
+            isError = invalid,
+            supportingText = if (invalid) {
+                { Text(stringResource(R.string.settings_name_invalid, CharacterName.MAX_LENGTH)) }
+            } else {
+                null
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                saved?.let { stringResource(R.string.settings_name_saved, it) }
+                    ?: stringResource(R.string.settings_name_empty),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            NameActions(
+                canClear = saved != null,
+                onClear = {
+                    store.clear()
+                    saved = null
+                    input = ""
+                    invalid = false
+                },
+                onSave = {
+                    if (store.setName(input)) {
+                        saved = store.name
+                        input = saved.orEmpty()
+                        invalid = false
+                    } else {
+                        invalid = true
+                    }
+                },
+            )
+        }
+    }
+}
+
+/** 이름 카드 액션 (#216) — 지우기(설정돼 있을 때만)와 저장. 지운 뒤엔 무명 카피로 돌아간다. */
+@Composable
+private fun NameActions(canClear: Boolean, onClear: () -> Unit, onSave: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm)) {
+        if (canClear) {
+            TextButton(onClick = onClear) { Text(stringResource(R.string.settings_name_clear)) }
+        }
+        Button(onClick = onSave) { Text(stringResource(R.string.settings_name_save)) }
     }
 }
 

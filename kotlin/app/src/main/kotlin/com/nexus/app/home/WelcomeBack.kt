@@ -11,13 +11,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.character.CharacterComposer
+import com.nexus.app.settings.IdentityStore
 import com.nexus.app.ui.NexusSpacing
 
 /**
@@ -26,6 +29,8 @@ import com.nexus.app.ui.NexusSpacing
  */
 @Composable
 fun WelcomeBackScene(gapDays: Long, onContinue: () -> Unit) {
+    val context = LocalContext.current
+    val name = remember { IdentityStore(context).name }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -42,7 +47,9 @@ fun WelcomeBackScene(gapDays: Long, onContinue: () -> Unit) {
         )
         Spacer(Modifier.height(NexusSpacing.md))
         Text(
-            text = stringResource(R.string.welcome_back_body),
+            // 이름을 지었으면 그 이름으로 호명, 아니면 무명 카피 폴백 (#216)
+            text = name?.let { stringResource(R.string.welcome_back_body_named, it) }
+                ?: stringResource(R.string.welcome_back_body),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )

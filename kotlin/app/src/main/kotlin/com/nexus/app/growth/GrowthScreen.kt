@@ -31,6 +31,7 @@ import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.settings.IdentityStore
 import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.NexusCard
@@ -105,7 +106,13 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
             .padding(NexusSpacing.screen),
         verticalArrangement = Arrangement.spacedBy(NexusSpacing.lg),
     ) {
-        Text(stringResource(R.string.growth_title), style = MaterialTheme.typography.headlineSmall)
+        // 이름을 지었으면 "OO의 성장"으로 호명, 아니면 무명 카피 폴백 (#216)
+        val characterName = remember { IdentityStore(context).name }
+        Text(
+            characterName?.let { stringResource(R.string.growth_title_named, it) }
+                ?: stringResource(R.string.growth_title),
+            style = MaterialTheme.typography.headlineSmall,
+        )
         when (val current = load) {
             null -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
 
