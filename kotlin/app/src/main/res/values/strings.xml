@@ -56,9 +56,9 @@
     <string name="onboarding_goal_confirm">이 정도로 할게요</string>
     <string name="goal_days_format">주 %1$d일</string>
     <!-- 알파 게이트 리드아웃 (#286) -->
-    <string name="settings_open_days">이번 주 사용</string>
+    <string name="settings_open_days">최근 7일 사용</string>
     <string name="settings_open_days_value">최근 7일 중 %1$d일 열었어요</string>
-    <string name="settings_open_days_desc">알파 기간 동안 팀이 여쭤보면 이 숫자를 알려주세요. 이 기록은 기기 안에만 있고 어디로도 전송되지 않아요.</string>
+    <string name="settings_open_days_desc">알파 기간 동안 팀이 여쭤보면 이 숫자를 알려주세요. 이 기록은 앱이 서버로 보내지 않아요.</string>
     <!-- 캐릭터 이름 (#216) -->
     <string name="settings_name">캐릭터 이름</string>
     <string name="settings_name_desc">이름을 지어주면 앱 곳곳에서 그 이름으로 불러요. 이름은 앱이 서버로 보내지 않아요.</string>

@@ -80,6 +80,16 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    /**
+     * 오픈 날짜 기록 (#286) — 콜드스타트뿐 아니라 **전면 복귀마다** 남긴다. 컴포지션 1회 이펙트에
+     * 얹으면 웜 리줌·프로세스 복원에서 날이 누락돼 게이트가 과소 집계된다(#286 리뷰).
+     * 값은 기기 로컬에만 쌓이고 계측·서버로 가지 않는다.
+     */
+    override fun onResume() {
+        super.onResume()
+        AppOpenTracker(applicationContext).recordOpenDay()
+    }
 }
 
 @Composable
