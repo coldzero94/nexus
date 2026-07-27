@@ -103,3 +103,28 @@
 - 상태: Compose + ViewModel(+ Flow). 테스트: JUnit5 + core는 케이스 테이블 기반.
 - 문자열: 리소스 externalize, ko 기본. 분석 이벤트 allowlist를 코드로 강제(§2 정책).
 - 연 1회(가을) AGP/Gradle 마이그레이션 버퍼.
+
+## 10. 릴리스 서명·버전 코드 (#230)
+
+**키스토어는 절대 커밋하지 않는다** (`.gitignore`: `*.jks`·`*.keystore`·`kotlin/keystore.properties`).
+
+- **업로드 키 배관**: `app/build.gradle.kts`가 gradle property 4종(`nexus.upload.storeFile`/`storePassword`/`keyAlias`/`keyPassword`)을 읽어 `signingConfigs["upload"]`를 만든다. **넷 중 하나라도 없으면 signingConfig를 만들지 않고 release가 debug 키로 폴백** — 로컬·포크 PR이 서명 없이도 빌드된다. 폴백 APK는 Play 업로드 불가이고, 기존 릴리스 빌드를 인플레이스 업데이트하지도 못한다.
+- **CI 배관**: main push에서만 동작. `NEXUS_UPLOAD_KEYSTORE`(키스토어 base64) Secret을 `kotlin/upload.jks`로 복원하고 비밀번호 3종(`NEXUS_UPLOAD_STORE_PASSWORD`·`NEXUS_UPLOAD_KEY_ALIAS`·`NEXUS_UPLOAD_KEY_PASSWORD`)을 property로 넘긴다. Secret 미설정이면 복원 스텝을 건너뛰고 GitHub Release 노트에 "debug 키 서명" 경고가 붙는다.
+- **versionCode**: `-Pnexus.versionCode=<github.run_number>`로 주입(로컬 기본 1). Play 내부 트랙은 같은 versionCode 재업로드를 거부하므로 빌드마다 증가해야 한다.
+- **키스토어 생성**(1회, 사람):
+  ```
+  keytool -genkeypair -v -keystore upload.jks -alias nexusupload \
+    -keyalg RSA -keysize 2048 -validity 10000
+  base64 -i upload.jks | pbcopy   # → GitHub Secret NEXUS_UPLOAD_KEYSTORE
+  ```
+  Windows(PowerShell): `[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload.jks")) | Set-Clipboard`.
+  원본 `.jks`와 비밀번호는 팀 비밀번호 관리자에 보관 — 레포·이슈·채팅에 올리지 않는다.
+- **로컬에서 서명 빌드를 시험할 때**: 비밀번호는 반드시 **`~/.gradle/gradle.properties`**(사용자 홈, 레포 밖)에
+  둔다. `kotlin/gradle.properties`는 **커밋되는 파일**이라 여기 적으면 비밀번호가 그대로 올라간다.
+- **부분 설정은 실패시킨다**: 4종 중 일부만 주면 빌드가 `check`로 멈춘다 — 조용히 debug로 폴백하면
+  "서명된 줄 알았는데 업데이트도 업로드도 안 되는" APK가 배포돼 진단이 불가능해진다(#230 리뷰).
+  CI도 산출 APK의 인증서를 `apksigner verify`로 확인해 릴리스 노트를 정한다(선언이 아니라 실측).
+- **`versionCode`는 `github.run_number`**: 워크플로 파일을 이름 변경·재생성하면 run_number가 1로
+  리셋된다. Play는 사용한 versionCode를 영구 기억하므로, 그런 변경 전에는 오프셋(BASE+run_number)을
+  도입해야 한다.
+- **키 분실 시**: Play App Signing을 쓰면 앱 서명 키는 Google이 보관하므로 **업로드 키만 재발급**하면 된다. Play Console → 설정 → 앱 무결성 → 업로드 키 재설정 요청(새 업로드 인증서 업로드, 반영까지 최대 며칠). 앱 서명 키 자체를 잃는 상황은 Play App Signing 사용 시 발생하지 않는다 — 이것이 자체 서명 대신 Play App Signing을 쓰는 이유.

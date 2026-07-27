@@ -13,3 +13,8 @@ kotlin/.kotlin/
 
 # macOS
 .DS_Store
+
+# 서명 키스토어 — 절대 커밋 금지 (#230). CI는 base64 Secret에서 복원한다.
+*.jks
+*.keystore
+kotlin/keystore.properties
