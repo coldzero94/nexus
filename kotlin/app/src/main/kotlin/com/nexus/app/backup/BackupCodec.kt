@@ -43,6 +43,11 @@ data class BackupSnapshot(
     val restModeEnabled: Boolean = false,
     /** 휴식 시작일 — 없으면 복원일로 폴백. 소급 면제 방지 계약(#31)을 복원 후에도 지킨다(#51 리뷰 F2). */
     val restModeSinceEpochDay: Long? = null,
+    /**
+     * 지어준 캐릭터 이름 (#216) — 설정값(건강 파생 아님)이라 백업에 포함한다. 기기 이전 시 애착의
+     * 산물이 사라지지 않게. 미설정이면 null이라 복원 후에도 무명 카피 폴백.
+     */
+    val characterName: String? = null,
 )
 
 object BackupCodec {

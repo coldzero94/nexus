@@ -85,6 +85,8 @@ class BackupCodecTest {
                 "weeklyGoalDays",
                 "restModeEnabled",
                 "restModeSinceEpochDay",
+                // 캐릭터 이름 (#216) — 설정값(건강 파생 아님), 기기 이전 시 호명 보존
+                "characterName",
             ),
             root.getValue("snapshot").jsonObject.keys,
         )

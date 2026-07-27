@@ -263,8 +263,8 @@ private fun WidgetPinCard() {
 
 /**
  * 캐릭터 이름 (#216, E14-6) — 지어준 이름을 앱 카피가 호명하게 하는 진입점. 저장 규칙은
- * core [CharacterName](1~12자·공백 방지), 저장은 로컬 [IdentityStore]. 이름은 기기에만 남는다
- * (텔레메트리·크래시 페이로드·서버 전송 없음).
+ * core [CharacterName](1~12자·공백 방지), 저장은 로컬 [IdentityStore]. 이름은 앱이 전송하지 않는다
+ * (텔레메트리·크래시 페이로드·서버 전송 없음 — Android 자동 백업은 사용자 본인 계정 표면).
  */
 @Composable
 private fun CharacterNameCard() {
@@ -279,7 +279,8 @@ private fun CharacterNameCard() {
         OutlinedTextField(
             value = input,
             onValueChange = {
-                input = it
+                // 저장 시점이 아니라 입력 시점에 상한 — 40자 치고 나서야 알게 되지 않도록(#216 리뷰)
+                if (it.length <= CharacterName.MAX_LENGTH) input = it
                 invalid = false
             },
             label = { Text(stringResource(R.string.settings_name_label, CharacterName.MAX_LENGTH)) },
@@ -299,8 +300,15 @@ private fun CharacterNameCard() {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Button(
-                onClick = {
+            NameActions(
+                canClear = saved != null,
+                onClear = {
+                    store.clear()
+                    saved = null
+                    input = ""
+                    invalid = false
+                },
+                onSave = {
                     if (store.setName(input)) {
                         saved = store.name
                         input = saved.orEmpty()
@@ -309,10 +317,19 @@ private fun CharacterNameCard() {
                         invalid = true
                     }
                 },
-            ) {
-                Text(stringResource(R.string.settings_name_save))
-            }
+            )
         }
+    }
+}
+
+/** 이름 카드 액션 (#216) — 지우기(설정돼 있을 때만)와 저장. 지운 뒤엔 무명 카피로 돌아간다. */
+@Composable
+private fun NameActions(canClear: Boolean, onClear: () -> Unit, onSave: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm)) {
+        if (canClear) {
+            TextButton(onClick = onClear) { Text(stringResource(R.string.settings_name_clear)) }
+        }
+        Button(onClick = onSave) { Text(stringResource(R.string.settings_name_save)) }
     }
 }
 

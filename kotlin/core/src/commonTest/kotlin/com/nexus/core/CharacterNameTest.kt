@@ -28,6 +28,21 @@ class CharacterNameTest {
     }
 
     @Test
+    fun `보이지 않는 문자만으로는 무효 - 투명 이름 방지`() {
+        assertFalse(CharacterName.isValid("  ")) // NBSP
+        assertFalse(CharacterName.isValid("​")) // ZERO WIDTH SPACE
+        assertFalse(CharacterName.isValid("﻿")) // BOM
+        assertFalse(CharacterName.isValid("⁠")) // WORD JOINER
+        assertFalse(CharacterName.isValid("　")) // 전각 공백
+    }
+
+    @Test
+    fun `전각·비단절 공백도 내부에서 한 칸으로 접힌다`() {
+        assertEquals("모 모", CharacterName.normalize("모　　모"))
+        assertEquals("모 모", CharacterName.normalize("모  모"))
+    }
+
+    @Test
     fun `길이 경계 - 1자 유효, 12자 유효, 13자 무효`() {
         assertTrue(CharacterName.isValid("모"))
         assertTrue(CharacterName.isValid("가".repeat(CharacterName.MAX_LENGTH)))

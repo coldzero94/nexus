@@ -12,6 +12,7 @@ import com.nexus.app.home.EveningJournalStore
 import com.nexus.app.home.MorningCardStore
 import com.nexus.app.home.SettlementStore
 import com.nexus.app.settings.GoalStore
+import com.nexus.app.settings.IdentityStore
 import com.nexus.app.settings.RestModeStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +81,7 @@ object BackupManager {
                 weeklyGoalDays = GoalStore(context).weeklyGoalDays,
                 restModeEnabled = RestModeStore(context).enabled,
                 restModeSinceEpochDay = RestModeStore(context).sinceEpochDay.takeIf { it != 0L },
+                characterName = IdentityStore(context).name,
             ),
         )
     }
@@ -107,6 +109,8 @@ object BackupManager {
             morningLastShownEpochDay?.let { MorningCardStore(context).markShown(it) }
             journalLastShownEpochDay?.let { EveningJournalStore(context).markShown(it) }
             weeklyGoalDays?.let { GoalStore(context).weeklyGoalDays = it }
+            // 이름은 검증을 통과할 때만 반영(손상 백업이 투명 이름을 심지 않게) — 실패 시 무명 폴백
+            characterName?.let { IdentityStore(context).setName(it) }
             // 시작일까지 복원 — 복원일로 리셋되면 이전 휴식일이 면제에서 빠져 컨디션이 왜곡된다(#51 리뷰 F2)
             if (restModeEnabled && restModeSinceEpochDay != null) {
                 RestModeStore(context).setEnabled(true, restModeSinceEpochDay)
