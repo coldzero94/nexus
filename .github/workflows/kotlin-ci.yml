@@ -32,7 +32,7 @@ jobs:
           java-version: "21"
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
       # 포맷·정적분석·Android Lint (#242) — Lint는 매니페스트 권한·backup_rules 오설정·HC 회귀를
-      # 잡는 무료 게이트. error 0건 상태라 baseline 없이 abortOnError로 새 error를 즉시 차단한다.
+      # 잡는 무료 게이트. error 0건 상태라 baseline 없이 새 error를 즉시 차단한다(abortOnError는 AGP 기본값).
       - name: Quality gates (format + static analysis + lint)
         run: ./gradlew spotlessCheck detekt :app:lintDebug
       # core: JVM 테스트(케이스 테이블) + iOS klib 컴파일(commonMain 오염 차단, 리눅스에서 가능)
@@ -45,7 +45,10 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: lint-report
-          path: kotlin/app/build/reports/lint-results-*.html
+          # lintDebug는 reports/에 html·xml, lintVital은 intermediates/에 txt를 쓴다 (#242 리뷰)
+          path: |
+            kotlin/app/build/reports/lint-results-*.*
+            kotlin/app/build/intermediates/lint_vital_intermediate_text_report/**/lint-results-*.txt
           if-no-files-found: ignore
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -74,8 +77,9 @@ jobs:
         run: |
           # 서명 property는 4종을 모두 주거나 하나도 주지 않는다 — 일부만 주면 빌드가 실패한다(의도된 가드).
           # Secret 미설정(#11 대기) 시엔 아무것도 넘기지 않아 debug 폴백으로 빌드된다.
-          # lintVitalRelease = Play가 실제로 돌리는 검사 — 업로드 전에 여기서 걸러낸다 (#242)
-          ARGS=(":app:lintVitalRelease" ":app:assembleRelease" "-Pnexus.versionCode=${{ github.run_number }}")
+          # lintVital(Play가 실제로 돌리는 검사)은 checkReleaseBuilds 기본값으로 assembleRelease에
+          # 자동 연결돼 있어 따로 부르지 않는다 — PR의 assembleRelease에서도 이미 돈다 (#242 리뷰)
+          ARGS=(":app:assembleRelease" "-Pnexus.versionCode=${{ github.run_number }}")
           if [ "$HAS_UPLOAD_KEY" = "true" ]; then
             ARGS+=(
               "-Pnexus.upload.storeFile=upload.jks"

@@ -2,7 +2,6 @@ package com.nexus.app.settings
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.RemoteException
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -382,11 +381,11 @@ private fun ReminderCard() {
                     when {
                         !checked -> apply(false)
 
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                            ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS,
-                            ) != PackageManager.PERMISSION_GRANTED ->
+                        // minSdk 34라 POST_NOTIFICATIONS(33+)는 항상 런타임 권한 — 버전 가드 불필요(#242 lint)
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS,
+                        ) != PackageManager.PERMISSION_GRANTED ->
                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
 
                         else -> apply(true)
