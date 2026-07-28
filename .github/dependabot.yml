@@ -1,0 +1,52 @@
+# 의존성 자동 갱신 (#244, E15-16)
+#
+# 건강 데이터를 다루고 네트워크 egress(Sentry·TelemetryDeck)가 있어, 직렬화·네트워크 SDK의
+# 트랜지티브 CVE가 무감시로 남으면 원값 유출·MITM의 실질 경로가 된다.
+#
+# 2인 팀이라 PR 홍수를 피하는 게 중요: 주 1회, minor/patch는 한 PR로 묶고(그룹핑),
+# major는 개별 PR로 분리해 리뷰 부담을 나눈다. open-pull-requests-limit으로 상한도 건다.
+version: 2
+updates:
+  # Gradle — 루트가 kotlin/ (docs/ARCHITECTURE.md 모노레포 배치)
+  - package-ecosystem: gradle
+    directory: /kotlin
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 5
+    groups:
+      # 자잘한 버전업은 한 PR로 — 개별 PR이 쌓이면 아무도 안 본다
+      gradle-minor-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - dependencies
+    ignore:
+      # AGP·Kotlin major는 연 1회 마이그레이션 버퍼에서 다룬다(STACK §9) — 상시 PR은 소음
+      - dependency-name: com.android.tools.build:gradle
+        update-types: ["version-update:semver-major"]
+      - dependency-name: org.jetbrains.kotlin:*
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions — 액션은 SHA 핀으로 쓰고 있어(공급망 방어) 갱신도 Dependabot에 맡긴다
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    open-pull-requests-limit: 3
+    groups:
+      actions-all:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - dependencies
