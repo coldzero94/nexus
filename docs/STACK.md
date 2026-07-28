@@ -97,7 +97,9 @@
 ## 9. 컨벤션·코드 품질
 
 - **포맷팅**: ktlint(코틀린 공식 스타일) — Spotless로 실행, `.editorconfig`로 IDE 동기화. 로컬 `spotlessApply` 자동 수정 / CI `spotlessCheck` 차단 → 포맷 논쟁이 PR에서 사라짐.
-- **정적 분석**: detekt(+Compose 룰셋) — 코드 스멜·복잡도·Compose 함정(remember 누락 등). Android Lint는 AGP 내장(CI 포함).
+- **정적 분석**: detekt(+Compose 룰셋) — 코드 스멜·복잡도·Compose 함정(remember 누락 등).
+- **Android Lint (#242)**: CI가 PR마다 `:app:lintDebug`를 명시 실행하고, **`lintVital`(Play가 실제로 돌리는 검사)은 `checkReleaseBuilds` 기본값으로 `assembleRelease`에 자동 연결**돼 PR·main 양쪽에서 함께 돈다. 새 error는 빌드 실패(`abortOnError`는 AGP 기본값이며 `app/build.gradle.kts`에서 의도를 명시적으로 고정), warning은 보고만. 리포트는 CI 아티팩트 `lint-report`(lintDebug의 html·xml + lintVital의 txt).
+- **lint baseline을 두지 않는다** — 도입 시점 error 0건이라 격리할 레거시가 없고, baseline이 있으면 새 error가 조용히 묻힌다(detekt-baseline과 다른 판단). **`updateLintBaseline` 계열 태스크를 실행하지 않는다** — 빨간 빌드는 그 자리에서 고치거나, 정당한 사유와 함께 해당 검사만 `disable`한다. AGP 업그레이드로 새 error 검사가 들어오면 §9의 "연 1회 마이그레이션 버퍼"에서 흡수한다.
 - **적용 방식**: 루트 `kotlin/build.gradle.kts`에 일괄 적용(3모듈 규모에선 이게 단순 — #131). 모듈이 늘어 모듈별 설정이 필요해지면 `nexus.kotlin.quality` 컨벤션 플러그인으로 승격. detekt는 type resolution 없는 일괄 태스크라 TR 전용 룰은 미실행(detekt.yml 주석 참고).
 - **아키텍처 규칙**: core 순수성은 KMP 타깃 분리가 컴파일러로 강제. Konsist(모듈 경계 유닛 테스트)는 보류 — 도입 트리거: 경계 위반이 리뷰에서 2회 잡히면.
 - 상태: Compose + ViewModel(+ Flow). 테스트: JUnit5 + core는 케이스 테이블 기반.

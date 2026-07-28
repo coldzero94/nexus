@@ -134,7 +134,6 @@
     <string name="notify_expedition_title">캐릭터가 돌아왔어요!</string>
     <string name="notify_expedition_body">모험 이야기가 도착했어요 — 열어볼까요?</string>
     <string name="onboarding_next">다음</string>
-    <string name="onboarding_start">시작하기</string>
 
     <!-- 온보딩: 권한 설명 -->
     <string name="permission_rationale_title">건강 데이터 연결이 필요해요</string>
@@ -153,7 +152,6 @@
     <string name="samsung_health_done">연결했어요</string>
 
     <!-- 상태 / 데모 모드 -->
-    <string name="status_connected">건강 데이터 연결됨 — 이제 움직이면 캐릭터가 자라요</string>
     <string name="status_demo_title">데모 모드로 둘러보기</string>
     <string name="status_demo_body">권한 없이도 앱을 미리 볼 수 있어요. 나중에 설정에서 연결하면 실제 데이터로 자라요.</string>
     <string name="status_unavailable_title">Health Connect를 쓸 수 없어요</string>

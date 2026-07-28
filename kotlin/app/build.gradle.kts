@@ -101,6 +101,18 @@ android {
         }
     }
 
+    // Android Lint 게이트 (#242) — 매니페스트 권한·backup_rules 오설정·HealthConnect 회귀를 알파 전에
+    // 잡는 무료 검사. 현재 error 0건이라 baseline을 두지 않는다(detekt와 달리 격리할 레거시가 없음) —
+    // 새 error가 생기면 그 자리에서 고친다. warning은 보고만 하되 목록은 리포트에서 관리.
+    // lintVitalRelease는 Play가 실제로 돌리는 검사라 릴리스 경로에서 함께 돈다(스토어 승격 리스크 선차단).
+    lint {
+        abortOnError = true
+        warningsAsErrors = false
+        // 리포트는 CI 아티팩트로 확인
+        htmlReport = true
+        xmlReport = true
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
