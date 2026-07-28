@@ -47,3 +47,15 @@ tasks.wrapper {
     gradleVersion = "9.6.1"
     validateDistributionUrl = false
 }
+
+// 의존성 락 (#244) — 런타임 클래스패스만 잠근다. 전 configuration을 잠그면 Gradle·AGP가 끌어오는
+// 빌드 도구(netty·bouncycastle 등)까지 락파일에 들어가, 앱에 출하되지도 않는 CVE가 스캔 결과를
+// 뒤덮는다(#244 실측: 전체 락 시 다수 → 런타임만 락 시 2건). 락파일은 OSV-Scanner의 입력이다.
+// 락은 버전을 strictly로 고정한다 — 카탈로그에서 버전을 바꿔도 락파일 값이 이긴다(실측).
+// 그래서 의존성을 올린 뒤에는 반드시 `./gradlew :app:dependencies --write-locks`로 갱신해야
+// 실제로 반영된다. Dependabot PR도 이 갱신을 포함해야 한다.
+subprojects {
+    configurations.matching { it.name.endsWith("RuntimeClasspath") }.configureEach {
+        resolutionStrategy.activateDependencyLocking()
+    }
+}
