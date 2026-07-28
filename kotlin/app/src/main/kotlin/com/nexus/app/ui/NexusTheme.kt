@@ -1,6 +1,5 @@
 package com.nexus.app.ui
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -26,7 +25,8 @@ fun NexusTheme(
 ) {
     val context = LocalContext.current
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+        // minSdk 34라 다이내믹 컬러(31+)는 항상 사용 가능 — 버전 가드 불필요(#242 lint)
+        dynamicColor ->
             if (useDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
 
         useDarkTheme -> NexusDarkColors
