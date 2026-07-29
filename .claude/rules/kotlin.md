@@ -16,6 +16,10 @@ paths:
 - Never hardcode the dataOrigin allowlist — remotely configurable, include `getCurrentDeviceDataSource()` alongside `"android"` (June 2026 SPN change).
 - Never put health-derived values into analytics event payloads — events record occurrence only (allowlist enforced by tests).
 - No hardcoded strings (resources, Korean default). No colors/dimensions outside design tokens.
+- **Colors come from tokens only** (#267): define in `ui/NexusColors.kt` (M3 scheme) or `ui/VizColors.kt`
+  (data-viz palette) and reference by name. `Color(0x…)` anywhere else is rejected by
+  `ColorTokenGuardTest` — a literal in a screen means dark theme and palette changes skip that one spot.
+  Dimensions follow the same rule via `ui/NexusSpacing.kt` (not yet test-enforced).
 - Every screen must work with Health Connect permissions denied (demo mode).
 
 ## Testing
