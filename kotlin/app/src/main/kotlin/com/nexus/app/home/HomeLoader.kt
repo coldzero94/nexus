@@ -15,6 +15,8 @@ import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionEngine
 import com.nexus.core.FirstRun
 import com.nexus.core.GreetingSelector
+import com.nexus.core.GrowthCalculator
+import com.nexus.core.LevelCurve
 import com.nexus.core.SessionInput
 import com.nexus.core.XpEngine
 import com.nexus.core.XpExplainer
@@ -134,6 +136,7 @@ private suspend fun assembleHomeState(
     // 마지막 활동 이후 경과일 — 활동 이력이 없으면 인사 변주를 시도하지 않는다(0으로 두면 '오늘 움직임'과 섞인다)
     val lastActiveDay = sessions.filter { it.type != null }.maxOfOrNull { it.epochDay }
     val daysSinceActive = lastActiveDay?.let { (todayEpoch - it).toInt().coerceAtLeast(0) } ?: 0
+    val growthSummary = GrowthCalculator.compute(sessions)
     val awaiting = FirstRun.isAwaitingFirstData(
         lifetimeXp = cappedTotal,
         hasAnyHealthData = todaySteps > 0L || sessions.any { it.type != null },
@@ -163,6 +166,10 @@ private suspend fun assembleHomeState(
         awaitingFirstData = awaiting,
         firstSessionCue = resolveFirstSessionCue(stores.onboarding, cappedTotal, todayXp, awaiting),
         // 맥락 인사 (#220) — 3일+ 공백은 복귀 환영 씬(#30)이 맡아 select가 알아서 비켜준다
+        // 성장 요약 (#219) — 레벨은 원장 누적 기준(성장 탭과 동일), 능력치·성향은 28일 창 계산
+        level = LevelCurve.displayLevel(cappedTotal),
+        stats = growthSummary.stats,
+        affinity = growthSummary.affinity,
         greeting = GreetingSelector.select(
             hour = LocalTime.now().hour,
             todayActiveMin = todayActiveMin,

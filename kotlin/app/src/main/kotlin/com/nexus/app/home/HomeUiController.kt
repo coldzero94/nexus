@@ -11,6 +11,7 @@ import com.nexus.app.data.EnergyStore
 import com.nexus.app.data.ExpeditionStore
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
+import com.nexus.app.growth.GrowthStateStore
 import com.nexus.app.notify.ExpeditionReturnWorker
 import com.nexus.app.onboarding.OnboardingStore
 import com.nexus.app.settings.GoalStore
@@ -19,6 +20,9 @@ import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.EnergyEngine
+import com.nexus.core.FirstSessionCue
+import com.nexus.core.Stat
+import com.nexus.core.StatDelta
 import kotlin.math.roundToInt
 
 /**
@@ -37,6 +41,10 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
     var journalVisible by mutableStateOf(false)
         private set
 
+    /** 레벨업 축하 (#219) — 감지되면 레벨과 상승 스탯. 없으면 null. */
+    var levelUp by mutableStateOf<LevelUpState?>(null)
+        private set
+
     /** 기분 배선 (#212) — 렌더 상태(표정 아트 or idle/walk 폴백)와 채택 기분 대사 풀. */
     var spriteState by mutableStateOf("idle")
         private set
@@ -50,26 +58,38 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
      * **카드마다 따로** 들고 있다. 하나로 묶으면 "코치 확인 → 걷기 → 축하"가 같은 세션에서
      * 닫히지 않는다 — 코치를 끈 플래그가 축하까지 삼킨다. 그 한 세션이 이 티켓의 P0다.
      */
-    var coachVisible by mutableStateOf(true)
-        private set
-    var firstXpVisible by mutableStateOf(true)
+    var firstSessionVisible by mutableStateOf(true)
         private set
 
-    /** 코치를 확인함 — 다시 뜨지 않는다. */
-    fun dismissCoach() {
-        stores.onboarding.firstCoachShown = true
-        coachVisible = false
+    /**
+     * 레벨업 축하 확인 (#219) — 그 순간 기준점을 소비한다.
+     *
+     * 감지 시점이 아니라 확인 시점에 갱신하는 이유는 #61과 같다: 감지 때 갱신하면 회전·프로세스
+     * 사망으로 카드가 영영 소실된다. 홈·성장이 같은 마커를 쓰므로 여기서 소비하면 성장 탭도 조용해진다.
+     */
+    fun dismissLevelUp(state: HomeUiState) {
+        stores.growth.recordSeen(state.level, state.affinity, state.stats)
+        levelUp = null
     }
 
     /**
-     * 첫 XP 축하를 확인함 — 코치도 함께 소진한다.
+     * 첫 세션 카드 확인 (#211) — 코치와 축하는 상호 배타라 한 진입점으로 소비한다.
      *
-     * 첫 성장을 이미 축하한 사용자에게 며칠 뒤 "첫 성장까지, 10분"이 뜨면 카드 문구 자체가 거짓이 된다.
+     * 축하를 확인하면 코치도 함께 소진한다: 첫 성장을 이미 축하한 사용자에게 며칠 뒤
+     * "첫 성장까지, 10분"이 뜨면 카드 문구 자체가 거짓이 된다.
      */
-    fun dismissFirstXp() {
-        stores.onboarding.firstXpCelebrated = true
-        stores.onboarding.firstCoachShown = true
-        firstXpVisible = false
+    fun dismissFirstSession(cue: FirstSessionCue) {
+        when (cue) {
+            FirstSessionCue.Coach -> stores.onboarding.firstCoachShown = true
+
+            FirstSessionCue.FirstXp -> {
+                stores.onboarding.firstXpCelebrated = true
+                stores.onboarding.firstCoachShown = true
+            }
+
+            FirstSessionCue.None -> return
+        }
+        firstSessionVisible = false
     }
 
     /** 카드가 "어느 날"의 것인지 — dismiss가 노출 판정과 같은 날짜를 소비(자정 경계, #70 리뷰 N3). */
@@ -78,6 +98,7 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
     suspend fun onLoaded(loaded: HomeLoad) {
         load = loaded
         if (loaded is HomeLoad.Success) {
+            levelUp = detectLevelUp(stores.growth, loaded.state)
             // 기분 평가 (#212) — 표정/대사 결정, 표정 아트 없으면 idle/walk 폴백. 홈·위젯 동일 상태.
             val mood = MoodResolver.resolveMood(context, loaded.state.moodContext)
             spriteState = MoodResolver.renderState(
@@ -168,4 +189,28 @@ internal class HomeStores(context: android.content.Context) {
     val goal = GoalStore(context)
     val streak = StreakStore(context)
     val onboarding = OnboardingStore(context)
+
+    // 홈·성장이 공유하는 레벨 마커 (#219) — 어느 쪽이 먼저 보든 한 번만 축하한다
+    val growth = GrowthStateStore(context)
+}
+
+/** 레벨업 축하 상태 (#219) — 도달 레벨과 이번에 오른 스탯. */
+internal data class LevelUpState(val level: Int, val risenStats: Map<Stat, Int>)
+
+/**
+ * 레벨업 감지 (#219) — 홈·성장이 **같은 마커**([GrowthStateStore])를 읽어 중복 축하를 막는다.
+ *
+ * 마커는 단조 증가라 표시 레벨이 창 이탈로 내려가도 축하 기준점은 내려가지 않는다 — 같은 레벨을
+ * 두 번 축하하지 않기 위함(#61). 최초 방문(마커 0)은 축하 없이 기준점만 세운다.
+ */
+private fun detectLevelUp(store: GrowthStateStore, state: HomeUiState): LevelUpState? {
+    val level = state.level
+    val lastSeen = store.lastSeenLevel
+    if (lastSeen == 0) {
+        // 기준점 없음 — 지금 값을 박아두고 다음 상승부터 축하한다
+        store.recordSeen(level, state.affinity, state.stats)
+        return null
+    }
+    if (level <= lastSeen) return null
+    return LevelUpState(level = level, risenStats = StatDelta.risen(store.lastSeenStats, state.stats))
 }

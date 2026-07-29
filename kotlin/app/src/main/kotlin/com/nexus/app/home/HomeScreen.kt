@@ -25,10 +25,12 @@ import com.nexus.app.ui.FirstRunNotice
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
+import com.nexus.core.ClassAffinity
 import com.nexus.core.ConditionEngine
 import com.nexus.core.ExpeditionState
 import com.nexus.core.FirstSessionCue
 import com.nexus.core.GreetingVariant
+import com.nexus.core.Stat
 
 /** 홈 상태 (#32, E4-8) — 3초 내 파악할 것들만. */
 internal data class HomeUiState(
@@ -56,6 +58,10 @@ internal data class HomeUiState(
     val firstSessionCue: FirstSessionCue,
     /** 인사 변주 (#220) — 시간대·마지막 활동 경과를 반영한 말풍선 맥락. */
     val greeting: GreetingVariant,
+    /** 레벨업 축하(#219)에 필요한 성장 스냅샷 — 성장 탭과 같은 계산(원장 누적 XP 기준). */
+    val level: Int,
+    val stats: Map<Stat, Int>,
+    val affinity: ClassAffinity,
 )
 
 /**
@@ -119,18 +125,27 @@ private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
         FirstRunNotice(onSyncFinished = ui::refreshAfterSync)
         // 빈 상태의 대상이 곧 코치의 대상이다 (#211) — 이력이 전혀 없는 완전 신규가 여기 온다.
         // 빈 상태만 두면 "기다리세요"로 끝나고, 정작 P0인 '첫 행동 다리'가 첫 세션에 안 걸린다.
-        if (ui.coachVisible && state.firstSessionCue == FirstSessionCue.Coach) {
-            FirstCoachCard(onDismiss = ui::dismissCoach)
+        if (ui.firstSessionVisible && state.firstSessionCue == FirstSessionCue.Coach) {
+            FirstCoachCard { ui.dismissFirstSession(FirstSessionCue.Coach) }
         }
+        return
+    }
+    // 레벨업이 있으면 그것만 (#219 AC: 다른 오버레이와 동시 스택 금지) — 축하가 카드 더미에 묻히지 않게
+    ui.levelUp?.let { up ->
+        LevelUpCard(up.level, up.risenStats, visible = true) { ui.dismissLevelUp(state) }
         return
     }
     if (ui.morningVisible) MorningCard(state, onDismiss = ui::dismissMorning)
     // 첫 세션 루프 (#211) — 코치와 축하는 상호 배타(core 판정), 각각 1회
     when (state.firstSessionCue) {
-        FirstSessionCue.Coach -> if (ui.coachVisible) FirstCoachCard(onDismiss = ui::dismissCoach)
+        FirstSessionCue.Coach ->
+            if (ui.firstSessionVisible) FirstCoachCard { ui.dismissFirstSession(FirstSessionCue.Coach) }
 
         // visible을 넘겨 exit 연출을 살린다 — 노드를 즉시 빼면 fadeOut이 생략된다
-        FirstSessionCue.FirstXp -> FirstXpCard(ui.spriteState, ui.firstXpVisible, ui::dismissFirstXp)
+        FirstSessionCue.FirstXp ->
+            FirstXpCard(ui.spriteState, ui.firstSessionVisible) {
+                ui.dismissFirstSession(FirstSessionCue.FirstXp)
+            }
 
         FirstSessionCue.None -> Unit
     }
