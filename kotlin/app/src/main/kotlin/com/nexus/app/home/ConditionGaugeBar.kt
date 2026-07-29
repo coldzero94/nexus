@@ -2,6 +2,7 @@ package com.nexus.app.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.ui.NexusSpacing
@@ -60,7 +66,17 @@ internal fun ConditionGaugeBar(condition: Double, restMode: Boolean, modifier: M
         },
     )
 
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs)) {
+    // 회전·테마 전환에도 열린 설명이 닫히지 않게 (#222 패턴)
+    var explaining by rememberSaveable { mutableStateOf(false) }
+    val openLabel = stringResource(R.string.condition_explain_open)
+
+    Column(
+        modifier
+            .fillMaxWidth()
+            // 게이지 전체가 설명 진입점 — 숫자만 있고 이유가 없으면 하락이 처벌로 읽힌다 (#223)
+            .clickable(onClickLabel = openLabel, role = Role.Button) { explaining = true },
+        verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
+    ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.home_condition_title), style = MaterialTheme.typography.titleMedium)
             Text(
@@ -78,6 +94,9 @@ internal fun ConditionGaugeBar(condition: Double, restMode: Boolean, modifier: M
             drawGauge(ratio, zoneColor, viz.conditionTrack, viz.floorMarker, restMode)
         }
         ConditionLegend(zoneColor, zoneLabel, restMode)
+    }
+    if (explaining) {
+        ConditionExplainDialog(restMode = restMode, onDismiss = { explaining = false })
     }
 }
 

@@ -189,6 +189,16 @@
     <string name="session_no_hr">심박 없음</string>
     <string name="session_datetime_format">M월 d일 HH:mm</string>
     <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
+    <!-- 컨디션 설명 (#223) — 유일한 손실 표면을 처벌 아닌 리듬으로. 죄책감 톤 금지 -->
+    <string name="condition_explain_open">컨디션 설명</string>
+    <string name="condition_explain_title">컨디션이 뭔가요?</string>
+    <string name="condition_explain_what">며칠 움직였는지에 따라 살짝 오르내리는 컨디션이에요. 오늘의 리듬을 보여주는 값이지 점수가 아니에요.</string>
+    <string name="condition_explain_never_down">레벨과 XP는 절대 내려가지 않아요. 지금까지 쌓은 성장은 그대로예요 — 오르내리는 건 컨디션 하나뿐이에요.</string>
+    <string name="condition_explain_down">며칠 안 움직이면 조금씩 내려가요. %1$d 아래로는 내려가지 않아서, 오래 쉬어도 처음부터 다시 시작하지 않아요.</string>
+    <string name="condition_explain_up">가볍게 걷기만 해도 다시 올라와요. 몰아서 할 필요 없어요.</string>
+    <string name="condition_explain_rest_on">지금은 휴식 모드라 내려가지 않고 유지돼요. 움직이면 회복은 그대로 돼요.</string>
+    <string name="condition_explain_rest_hint">쉬어갈 계획이면 설정에서 휴식 모드를 켜 두면 유지돼요.</string>
+    <string name="condition_explain_close">알겠어요</string>
     <!-- 캐릭터 생동감 (#217) -->
     <string name="character_pet_action">쓰다듬기</string>
     <!-- 첫 세션 루프 (#211) — 반영 속도를 약속하지 않는다 -->
