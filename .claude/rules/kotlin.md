@@ -9,7 +9,8 @@ paths:
 - AGP 9 has built-in Kotlin — never apply `org.jetbrains.kotlin.android`.
 - `core/` is a KMP module (commonMain) — **no Android imports**; its iOS targets stay enabled so klib compilation catches contamination in CI. The XP formula exists only as pure functions in core.
 - `RewardEvent` is an immutable ledger: never mutate records; corrections are appended compensating events.
-- Changing the XP formula = one atomic set: bump formula version tag + update `docs/MVP.md §5` + update the case-table tests (spreadsheet parity, shared `balance/*.csv` fixtures).
+- Changing the XP formula = one atomic set: bump formula version tag + update `docs/MVP.md §5` + update the case-table tests (spreadsheet parity, shared `balance/*.csv` fixtures) + **add a new `balance/frozen/v{N}/` directory** (#243).
+- **Shipped formula versions are frozen**: `balance/frozen/v{N}/*.csv` records the output of a shipped `FORMULA_VERSION` and must never be edited or deleted — already-recorded ledger events are re-verified against it (BACKEND §1). If `FrozenFormulaVectorTest` fails, bump the version and add `v{N+1}/`; do not touch the existing files.
 - Read steps via `aggregate(COUNT_TOTAL)` — never `readRecords` for steps (double counting).
 - Never hardcode the dataOrigin allowlist — remotely configurable, include `getCurrentDeviceDataSource()` alongside `"android"` (June 2026 SPN change).
 - Never put health-derived values into analytics event payloads — events record occurrence only (allowlist enforced by tests).
