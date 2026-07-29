@@ -1,5 +1,7 @@
 package com.nexus.app.telemetry
 
+import com.nexus.core.HealthTermDenylist
+
 /**
  * 이벤트 파라미터 정책 (#46, E8-1) — 순수 검증 로직이라 단위 테스트로 고정된다.
  *

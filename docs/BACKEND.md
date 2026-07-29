@@ -45,6 +45,15 @@
 | 2 (기본) | **Android 자동 백업 활성 + 백업 규칙 검증** — Room 포함, 캐시·민감 파일 제외 규칙 | 공짜 안전망. 실기기 백업→복원 테스트 1회 필수 |
 | 배제 | 원본 건강 수치의 클라우드 백업 | Play 건강 데이터 정책·개인정보 최소화 원칙 — 원장에는 XP 산출값·산식 버전만 (원본은 Health Connect가 소스 오브 트루스) |
 
+**강제 장치(#238, 2026-07-30)**: egress 표면 셋(계측·크래시·백업) 중 백업만 자동 강제가 없어 `BackupEvent`에 `steps: Int`를 추가해도 CI가 통과했다. 두 가지를 붙였다.
+
+- **`BackupEgressGuardTest`** — `BackupPayload`/`BackupEvent`/`BackupSnapshot`의 **직렬화 디스크립터** 필드를 정확 집합으로 고정하고(새 필드 = CI 빨강), 이름이 원시 건강 항목을 가리키면 별도로 실패시킨다. 용어 사전은 core `HealthTermDenylist` 하나를 계측(`TelemetryPolicy`)과 공유한다 — 표면마다 따로 두면 한쪽만 갱신되는 순간 구멍이 생긴다. 계산값(`xp`·`formulaVersion`·`level`·`dataOrigin`·`recordingMethod`·`idempotencyKey`)은 명시적 허용이다.
+- **`backup_rules.xml` 경계 축소** — `sharedpref path="."`가 default-allow라 아래 둘까지 클라우드로 내보내고 있었다. cloud-backup·device-transfer **양쪽에서 제외**한다.
+  - `nexus_sync`: Health Connect changes 토큰. 다른 기기에 복원되면 그 기기에서 무효한 stale 토큰으로 델타를 읽어 동기화가 조용히 어긋난다 — 토큰 리셋 경로(#141)로 떨어져 전량 베이스라인을 다시 잡는 게 정상이다.
+  - `nexus_telemetry_firsts`: 1회성 퍼널 마커. 복원되면 새 기기의 첫 경험이 이미 발생한 것으로 집계돼 퍼널이 과소 계상된다.
+
+  원장 DB(`nexus.db`)와 #51 `idempotencyKey` 예외는 그대로 유지한다.
+
 **결정(#216, 2026-07-27)**: 사용자가 지어준 **캐릭터 이름**은 수동 백업 JSON(`BackupSnapshot.characterName`)과 자동 백업(SharedPreferences) 두 표면에 포함한다. 근거: ① 건강 파생값이 아니라 설정값이다 ② 기기 이전 시 애착의 산물(호명)이 사라지면 기능의 목적이 무너진다 ③ 두 표면 모두 사용자 본인 통제(§3의 서버·제3자 표면 아님). 단 이름은 자유 입력 PII라 **텔레메트리·크래시 페이로드·서버 전송에는 절대 싣지 않는다** — 복원 시에도 `CharacterName` 검증을 통과할 때만 반영한다.
 
 **결정(#51, 2026-07-20)**: 원장 `idempotencyKey`(HC 레코드 UUID 참조)는 **본인 통제 백업 표면**(수동 JSON 파일·본인 Google 계정 자동 백업)에 한해 포함을 허용한다. 근거: ① UUID는 무작위 식별자로 건강 수치를 담지 않는다 ② §1 멱등성 계약이 키 원형 보존을 요구한다 — 내보내기 시점에 해시하면 복원 후 재동기화가 같은 세션을 다른 키로 이중 지급한다 ③ 두 표면 모두 사용자 본인 소유·통제로, §2의 "원본 레코드 참조 금지"가 겨냥하는 서버·제3자 표면이 아니다. §2 기준은 그대로 유지하며, 2단계 원장 서버 임포트 전에 **원장 키 해시화(불투명 소스 해시, E10-12)** 를 완료한다.
