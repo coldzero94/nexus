@@ -20,9 +20,12 @@ import kotlin.random.Random
 /**
  * 캐릭터 대사 말풍선 (#29·#212) — 채택 기분의 대사 풀 우선, 비면 상태별 기본 풀 폴백. 반복 회피로
  * 한 줄. 대사는 코드가 아닌 assets JSON(데이터 테이블)이라 하드코딩 문자열 규칙의 대상이 아니다.
+ *
+ * @param override 있으면 이 줄을 대신 보여준다 — 쓰다듬기 반응(#217)처럼 사용자의 행동에 즉답할 때.
+ *   상시 대사를 밀어내는 게 아니라 잠깐 덮는 것이라, 사라지는 시점은 호출자가 정한다.
  */
 @Composable
-internal fun DialogueBubble(spriteState: String, moodLines: List<String>) {
+internal fun DialogueBubble(spriteState: String, moodLines: List<String>, override: String? = null) {
     val context = LocalContext.current
     var line by remember(spriteState, moodLines) { mutableStateOf<String?>(null) }
     LaunchedEffect(spriteState, moodLines) {
@@ -36,7 +39,7 @@ internal fun DialogueBubble(spriteState: String, moodLines: List<String>) {
             picked
         }
     }
-    line?.let {
+    (override ?: line)?.let {
         Text(
             text = stringResource(R.string.home_dialogue_format, it),
             style = MaterialTheme.typography.bodyLarge,

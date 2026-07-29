@@ -63,7 +63,11 @@
 
 - **토큰**: `ui/NexusMotion.kt` — Duration 4단(120·240·360·520)·Easing 3종(Emphasized Decelerate/
   Accelerate·Standard)·`CelebrationSpring`. 앱의 단일 '움직임 언어'. 모든 duration은 `motionDuration()`
-  경유 → `LocalMotionScale`=0f 주입 시 즉시(리듀스드모션 훅, 정책은 #228 소유). `scaledDuration`은 순수·테스트됨.
+  경유 → `LocalMotionScale`=0f 주입 시 즉시(리듀스드모션 훅). `scaledDuration`은 순수·테스트됨.
+- **모션 스케일 공급**(#217): `NexusTheme`이 `rememberSystemMotionScale()`(= `Settings.Global.ANIMATOR_DURATION_SCALE`,
+  포그라운드 복귀마다 재조회)을 `LocalMotionScale`에 주입한다. 시스템에서 애니메이션을 끄면 앱 전역 duration이 0이 되고
+  캐릭터 상시 미동(#217)은 정지 프레임으로 남는다. 0.5배 같은 부분 감속도 그대로 반영한다.
+  남은 범위는 #228 — 스프라이트 프레임 티커 정지와 축하 연출의 비모션 대체안.
 - **탭 전환**: `MainActivity` when(tab) → `Crossfade`(Standard, MEDIUM) + `SaveableStateProvider`로
   각 탭 스크롤 위치 보존.
 - **게이지 보간**: 컨디션·레벨·오늘XP를 `animatedGaugeProgress`로 감속 보간. 레벨·XP는 `upwardOnly`
