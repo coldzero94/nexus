@@ -38,6 +38,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.nexus.app.growth.GrowthScreen
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
+import com.nexus.app.health.SyncSelfHeal
 import com.nexus.app.home.AppOpenTracker
 import com.nexus.app.home.HomeScreen
 import com.nexus.app.home.WelcomeBackScene
@@ -89,6 +90,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         AppOpenTracker(applicationContext).recordOpenDay()
+        // 백그라운드 배관 자가복구 (#237) — 주기 워커가 무흔적 사망하면 재등록 지점이 없었다.
+        // 여기(전면 복귀)가 유일하게 확실한 기회다. 조용히 세우고 UI엔 아무 말도 하지 않는다.
+        SyncSelfHeal.onForeground(
+            applicationContext,
+            connected = OnboardingStore(applicationContext).connected,
+        )
     }
 }
 
