@@ -25,16 +25,15 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 class HealthSyncWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
-        if (HealthConnectClient.getSdkStatus(applicationContext) != HealthConnectClient.SDK_AVAILABLE) {
+        if (!seam.isAvailable(applicationContext)) {
             return Result.success() // HC 미가용 → 재시도 무의미
         }
-        val client = HealthConnectClient.getOrCreate(applicationContext)
         val store = TokenStore(applicationContext)
         return try {
-            val outcome = HealthConnectSync(client, store).sync()
+            val outcome = seam.sync(applicationContext, store)
             store.lastSyncEpochMillis = System.currentTimeMillis()
             store.lastChangeCount = outcome.upserts + outcome.deletions
-            appendToLedger(client, outcome.deletedRecordIds)
+            seam.appendToLedger(applicationContext, outcome.deletedRecordIds)
             Result.success()
         } catch (e: CancellationException) {
             throw e // 코루틴 취소는 전파(삼키지 않음)
@@ -61,36 +60,60 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
     }
 
     /**
-     * 원장 append (#162): 최근 세션 멱등 지급 + 삭제 감지분 보상 취소(#133).
-     * 지급 규칙은 [RewardLedgerRepository.grantSessions] 단일 진입점 (#163).
+     * 협력자 시임 (#234) — `doWork`의 예외→Result 분류를 워커 레벨에서 테스트하기 위한 이음새.
+     * **프로덕션 동작은 기본값 그대로**이고, 테스트만 [seam]을 갈아끼운다(테스트가 끝나면 복원).
+     *
+     * 경계를 셋으로 나눈 이유: 가용성·동기화·원장/위젯을 각각 실패시킬 수 있어야 매트릭스가 서고,
+     * `TokenStore` 갱신은 워커에 남겨 정상 경로에서 lastSync·lastChangeCount 검증이 가능하다.
      */
-    private suspend fun appendToLedger(client: HealthConnectClient, deletedIds: List<String>) {
-        val ledger = RewardLedgerRepository(NexusDatabase.get(applicationContext).rewardEventDao())
-        val now = System.currentTimeMillis()
-        val zone = ZoneId.systemDefault()
-        val sessions = ExerciseRepository(client).readRecentSessions(days = GRANT_WINDOW_DAYS)
-        ledger.grantSessions(sessions, zone, epochMillis = now)
-        deletedIds.forEach { id ->
-            if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
-        }
-        // 위젯 갱신 (#40): 동기화가 위젯의 유일한 백그라운드 갱신원 — 15분 준실시간 한계.
-        // 기분(#212)의 풍부한 신호(개인계수·주간목표)는 델타만 읽는 워커엔 없어 활동 기반 walk/idle만
-        // 전달한다 — 백그라운드 활동의 liveness 유지(#40의 존재 이유). 표정 아트(#66) 랜딩 시엔
-        // 홈이 쓴 표정을 워커 walk/idle이 덮어쓰지 않도록 위젯 기분 배선을 재검토해야 한다(#212 리뷰 W1).
-        val todayEpoch = LocalDate.now(zone).toEpochDay()
-        val todayActive = sessions.any {
-            it.type != null && it.start.atZone(zone).toLocalDate().toEpochDay() == todayEpoch
-        }
-        WidgetUpdater.update(
-            context = applicationContext,
-            cappedTotalXp = ledger.cappedTotalXp(),
-            todayXp = ledger.cappedXpOn(todayEpoch),
-            spriteState = if (todayActive) "walk" else "idle",
-        )
-    }
+    internal data class Seam(
+        val isAvailable: (Context) -> Boolean = { context ->
+            HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE
+        },
+        val sync: suspend (Context, TokenStore) -> SyncOutcome = { context, store ->
+            HealthConnectSync(HealthConnectClient.getOrCreate(context), store).sync()
+        },
+        val appendToLedger: suspend (Context, List<String>) -> Unit = { context, deletedIds ->
+            appendToLedgerDefault(context, deletedIds)
+        },
+    )
 
     companion object {
         private const val TAG = "HealthSyncWorker"
+
+        /** 테스트가 교체하는 협력자 — 프로덕션은 항상 기본값(#234). */
+        internal var seam: Seam = Seam()
+
+        /**
+         * 원장 append (#162): 최근 세션 멱등 지급 + 삭제 감지분 보상 취소(#133).
+         * 지급 규칙은 [RewardLedgerRepository.grantSessions] 단일 진입점 (#163).
+         */
+        private suspend fun appendToLedgerDefault(context: Context, deletedIds: List<String>) {
+            val client = HealthConnectClient.getOrCreate(context)
+            val ledger = RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao())
+            val now = System.currentTimeMillis()
+            val zone = ZoneId.systemDefault()
+            val sessions = ExerciseRepository(client).readRecentSessions(days = GRANT_WINDOW_DAYS)
+            ledger.grantSessions(sessions, zone, epochMillis = now)
+            deletedIds.forEach { id ->
+                if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
+            }
+            // 위젯 갱신 (#40): 동기화가 위젯의 유일한 백그라운드 갱신원 — 15분 준실시간 한계.
+            // 기분(#212)의 풍부한 신호(개인계수·주간목표)는 델타만 읽는 워커엔 없어 활동 기반 walk/idle만
+            // 전달한다 — 백그라운드 활동의 liveness 유지(#40의 존재 이유). 표정 아트(#66) 랜딩 시엔
+            // 홈이 쓴 표정을 워커 walk/idle이 덮어쓰지 않도록 위젯 기분 배선을 재검토해야 한다(#212 리뷰 W1).
+            val todayEpoch = LocalDate.now(zone).toEpochDay()
+            val todayActive = sessions.any {
+                it.type != null && it.start.atZone(zone).toLocalDate().toEpochDay() == todayEpoch
+            }
+            WidgetUpdater.update(
+                context = context,
+                cappedTotalXp = ledger.cappedTotalXp(),
+                todayXp = ledger.cappedXpOn(todayEpoch),
+                spriteState = if (todayActive) "walk" else "idle",
+            )
+        }
+
         private const val GRANT_WINDOW_DAYS = 7
         private const val UNIQUE_NAME = "nexus_health_sync"
 
