@@ -123,6 +123,22 @@ android {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
 
+    // MigrationTestHelper가 export된 스키마를 읽도록 테스트 자원에 포함 (#233).
+    // 이게 없으면 헬퍼가 "Cannot find the schema file" 로 죽는다.
+    sourceSets {
+        getByName("test") {
+            // 스키마 존재 검증(#233)은 클래스패스에서 읽는다.
+            resources.srcDir("$projectDir/schemas")
+            // MigrationTestHelper는 **앱 assets**에서 찾으므로 debug assets에도 노출한다.
+            assets.srcDir("$projectDir/schemas")
+        }
+    }
+    sourceSets {
+        getByName("debug") {
+            assets.srcDir("$projectDir/schemas")
+        }
+    }
+
     testOptions {
         // 단위 테스트에서 android.util.Log 등 안드로이드 API를 no-op으로 (#146)
         unitTests.isReturnDefaultValues = true
