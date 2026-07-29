@@ -7,12 +7,16 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.work.BackoffPolicy
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.widget.WidgetUpdater
+import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 import java.time.LocalDate
 import java.time.ZoneId
@@ -116,6 +120,7 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
 
         private const val GRANT_WINDOW_DAYS = 7
         private const val UNIQUE_NAME = "nexus_health_sync"
+        private const val MANUAL_UNIQUE_NAME = "nexus_health_sync_now"
 
         /** 동기화 주기(분) — HC 준실시간 한계(30~60분 지연)와 배터리 사이 절충. */
         private const val SYNC_INTERVAL_MINUTES = 15L
@@ -133,5 +138,33 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 .getInstance(context)
                 .enqueueUniquePeriodicWork(UNIQUE_NAME, ExistingPeriodicWorkPolicy.KEEP, request)
         }
+
+        /**
+         * 사용자가 '지금 확인'을 눌렀을 때의 일회성 동기화 (#221).
+         *
+         * [ExistingWorkPolicy.KEEP]이 중복 실행 가드다 — 연타해도 이 이름([MANUAL_UNIQUE_NAME])으로
+         * 이미 대기/실행 중인 요청이 있으면 새로 만들지 않는다. 재시도 백오프는 주기 워커와 같다.
+         *
+         * 가드는 **이름 단위**라 주기 워커([UNIQUE_NAME])와는 겹칠 수 있다. 둘이 동시에 돌면 같은
+         * changes 토큰으로 HC를 두 번 읽지만, 원장은 멱등키로 이중 지급을 막으므로 정합은 깨지지
+         * 않는다(비용은 중복 읽기뿐). 하나로 합치면 사용자가 누른 요청이 주기 워커에 밀려 대기하게
+         * 되므로 분리를 유지한다.
+         *
+         * 이걸 눌러도 **Health Connect가 아직 못 받은 기록은 나타나지 않는다** — 앱이 당길 수 있는
+         * 건 HC에 이미 들어온 것까지다(삼성헬스 전파 30~60분). UI 카피가 이 한계를 함께 말한다.
+         */
+        fun enqueueNow(context: Context) {
+            val request =
+                OneTimeWorkRequestBuilder<HealthSyncWorker>()
+                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_START_SECONDS, TimeUnit.SECONDS)
+                    .build()
+            WorkManager
+                .getInstance(context)
+                .enqueueUniqueWork(MANUAL_UNIQUE_NAME, ExistingWorkPolicy.KEEP, request)
+        }
+
+        /** '지금 확인' 진행 상태 구독용 (#221) — 버튼 비활성화·완료 후 갱신에 쓴다. */
+        fun manualSyncFlow(context: Context): Flow<List<WorkInfo>> =
+            WorkManager.getInstance(context).getWorkInfosForUniqueWorkFlow(MANUAL_UNIQUE_NAME)
     }
 }
