@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.core.DialogueSelector
+import com.nexus.core.GreetingVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
@@ -25,14 +26,22 @@ import kotlin.random.Random
  *   상시 대사를 밀어내는 게 아니라 잠깐 덮는 것이라, 사라지는 시점은 호출자가 정한다.
  */
 @Composable
-internal fun DialogueBubble(spriteState: String, moodLines: List<String>, override: String? = null) {
+internal fun DialogueBubble(
+    spriteState: String,
+    moodLines: List<String>,
+    override: String? = null,
+    greeting: GreetingVariant = GreetingVariant.None,
+) {
     val context = LocalContext.current
-    var line by remember(spriteState, moodLines) { mutableStateOf<String?>(null) }
-    LaunchedEffect(spriteState, moodLines) {
+    var line by remember(spriteState, moodLines, greeting) { mutableStateOf<String?>(null) }
+    LaunchedEffect(spriteState, moodLines, greeting) {
         line = withContext(Dispatchers.IO) {
-            val candidates = moodLines.ifEmpty {
-                CharacterAssets(context).loadDialoguePool().linesOrDefault(spriteState)
-            }
+            val pool = CharacterAssets(context).loadDialoguePool()
+            // 맥락 인사(#220)가 잡히면 그 풀이 먼저 — 기분 대사(#212)보다 "지금 나를 알아본" 쪽이 앞선다.
+            // 풀 키가 JSON에 없으면 linesOrDefault가 기본 상태로 떨어져 조용히 기존 동작이 된다.
+            val candidates = greeting.poolKey()
+                ?.let { pool.lines[it] }
+                ?: moodLines.ifEmpty { pool.linesOrDefault(spriteState) }
             val memory = DialogueMemory(context)
             val picked = DialogueSelector.pick(candidates, memory.recent, Random.nextInt(candidates.size))
             memory.recent = DialogueSelector.remember(memory.recent, picked, DialogueMemory.RECENT_CAPACITY)
@@ -45,4 +54,13 @@ internal fun DialogueBubble(spriteState: String, moodLines: List<String>, overri
             style = MaterialTheme.typography.bodyLarge,
         )
     }
+}
+
+/** 변주 → `dialogue.json` 풀 키 (#220). 대사 추가·수정은 JSON만(코드 무수정). */
+private fun GreetingVariant.poolKey(): String? = when (this) {
+    GreetingVariant.None -> null
+    GreetingVariant.Morning -> "greeting_morning"
+    GreetingVariant.Evening -> "greeting_evening"
+    GreetingVariant.FirstActivityToday -> "greeting_active_today"
+    GreetingVariant.BackAfterShortGap -> "greeting_back_short"
 }

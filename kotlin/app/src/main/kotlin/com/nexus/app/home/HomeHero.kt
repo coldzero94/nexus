@@ -24,6 +24,7 @@ import com.nexus.app.character.LivelyCharacter
 import com.nexus.app.character.equipRenderLayers
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.DialogueSelector
+import com.nexus.core.GreetingVariant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -35,7 +36,13 @@ import kotlin.random.Random
  * 위계를 벌린다. 정적 레이아웃 강조만 — 숨쉬기(#217)·앰비언스(#115)·축하(#219)와 비중복.
  */
 @Composable
-internal fun HomeHero(spriteState: String, moodLines: List<String>, condition: Double, restMode: Boolean) {
+internal fun HomeHero(
+    spriteState: String,
+    moodLines: List<String>,
+    condition: Double,
+    restMode: Boolean,
+    greeting: GreetingVariant = GreetingVariant.None,
+) {
     // 장착 장비를 본체 위에 반영 (#37) — 카탈로그 로드 실패 시 본체만(빈 레이어)
     val context = LocalContext.current
     val equipLayers by produceState(emptyList<String>(), spriteState) {
@@ -84,7 +91,7 @@ internal fun HomeHero(spriteState: String, moodLines: List<String>, condition: D
                     petLine = null
                 }
             }
-            DialogueBubble(spriteState, moodLines, override = petLine)
+            DialogueBubble(spriteState, moodLines, override = petLine, greeting = greeting)
             // 컨디션 게이지 (#257) — 바닥·3존 커스텀 시각화(스톡 프로그레스 대체)
             ConditionGaugeBar(condition, restMode)
         }

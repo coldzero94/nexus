@@ -28,6 +28,7 @@ import com.nexus.app.ui.RetryNotice
 import com.nexus.core.ConditionEngine
 import com.nexus.core.ExpeditionState
 import com.nexus.core.FirstSessionCue
+import com.nexus.core.GreetingVariant
 
 /** 홈 상태 (#32, E4-8) — 3초 내 파악할 것들만. */
 internal data class HomeUiState(
@@ -53,6 +54,8 @@ internal data class HomeUiState(
     val awaitingFirstData: Boolean,
     /** 첫 세션 안내 (#211) — 첫 행동 코치 또는 첫 활동 XP 축하. 둘은 상호 배타. */
     val firstSessionCue: FirstSessionCue,
+    /** 인사 변주 (#220) — 시간대·마지막 활동 경과를 반영한 말풍선 맥락. */
+    val greeting: GreetingVariant,
 )
 
 /**
@@ -155,7 +158,7 @@ private fun HomeContent(
     onSyncFinished: () -> Unit,
 ) {
     // 상단 히어로 — 캐릭터·대사·컨디션을 묶어 최상위 앵커로 (#256). 아래는 종속 상세 카드.
-    HomeHero(spriteState, moodLines, state.condition, state.moodContext.restMode)
+    HomeHero(spriteState, moodLines, state.condition, state.moodContext.restMode, state.greeting)
     StreakRow(state.streak)
     // 이번 주 목표 진척 (#215) — 기세(일 단위 연속) 다음에 주 단위 리듬
     WeeklyGoalRow(state.weeklyProgress)

@@ -14,12 +14,14 @@ import com.nexus.core.ConditionEngine
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionEngine
 import com.nexus.core.FirstRun
+import com.nexus.core.GreetingSelector
 import com.nexus.core.SessionInput
 import com.nexus.core.XpEngine
 import com.nexus.core.XpExplainer
 import kotlinx.coroutines.CancellationException
 import java.io.IOException
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
@@ -128,6 +130,10 @@ private suspend fun assembleHomeState(
     val cappedTotal = stores.ledger.cappedTotalXp()
     val todaySteps = stepRepo.readDailySteps(days = 1).firstOrNull { it.date == today }?.steps ?: 0L
     val todayXp = XpExplainer.explainDay(sessions, epochDay = todayEpoch).cappedXp
+    val todayActiveMin = sessions.filter { it.epochDay == todayEpoch && it.type != null }.sumOf { it.minutes }
+    // 마지막 활동 이후 경과일 — 활동 이력이 없으면 인사 변주를 시도하지 않는다(0으로 두면 '오늘 움직임'과 섞인다)
+    val lastActiveDay = sessions.filter { it.type != null }.maxOfOrNull { it.epochDay }
+    val daysSinceActive = lastActiveDay?.let { (todayEpoch - it).toInt().coerceAtLeast(0) } ?: 0
     val awaiting = FirstRun.isAwaitingFirstData(
         lifetimeXp = cappedTotal,
         hasAnyHealthData = todaySteps > 0L || sessions.any { it.type != null },
@@ -135,7 +141,7 @@ private suspend fun assembleHomeState(
     return HomeUiState(
         condition = condition,
         todayXp = todayXp,
-        todayActiveMinutes = sessions.filter { it.epochDay == todayEpoch && it.type != null }.sumOf { it.minutes },
+        todayActiveMinutes = todayActiveMin,
         todaySteps = todaySteps,
         energy = EnergyEngine.balance(cappedTotal, stores.energy.totalSpent),
         cappedTotalXp = cappedTotal,
@@ -156,6 +162,12 @@ private suspend fun assembleHomeState(
         // 원장 합계는 위에서 이미 구했다 — 게이트가 다시 질의하면 전체 원장 집계가 로드마다 두 번 돈다
         awaitingFirstData = awaiting,
         firstSessionCue = resolveFirstSessionCue(stores.onboarding, cappedTotal, todayXp, awaiting),
+        // 맥락 인사 (#220) — 3일+ 공백은 복귀 환영 씬(#30)이 맡아 select가 알아서 비켜준다
+        greeting = GreetingSelector.select(
+            hour = LocalTime.now().hour,
+            todayActiveMin = todayActiveMin,
+            daysSinceActivity = daysSinceActive,
+        ),
     )
 }
 
