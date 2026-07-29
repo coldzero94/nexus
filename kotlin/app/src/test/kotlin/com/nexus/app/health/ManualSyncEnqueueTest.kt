@@ -5,7 +5,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import androidx.work.testing.SynchronousExecutor
 import androidx.work.testing.WorkManagerTestInitHelper
 import org.junit.Before
 import org.junit.Test
@@ -37,10 +36,25 @@ class ManualSyncEnqueueTest {
      */
     private val neverRuns = Executor { /* 실행하지 않는다 — 워크를 대기 상태로 붙잡아 둔다 */ }
 
+    /**
+     * 이미 있으면 **재초기화하지 않고 큐만 비운다**.
+     *
+     * `initializeTestWorkManager`는 이전 인스턴스의 인메모리 DB를 닫는데, 다른 테스트 클래스가
+     * 남긴 WorkInfo 구독이 살아 있으면 "database ':memory:' is not open"으로 터진다 — 개별 실행은
+     * 통과하고 전체 스위트에서만 깨지는 오염이라 잡기 어렵다.
+     */
     @Before
-    fun initWorkManager() {
-        val config = Configuration.Builder().setExecutor(neverRuns).build()
-        WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
+    fun prepareWorkManager() {
+        runCatching { WorkManager.getInstance(context) }.onFailure {
+            WorkManagerTestInitHelper.initializeTestWorkManager(
+                context,
+                Configuration.Builder().setExecutor(neverRuns).build(),
+            )
+        }
+        WorkManager.getInstance(context).run {
+            cancelAllWork().result.get()
+            pruneWork().result.get()
+        }
     }
 
     private fun manualWorkInfos(): List<WorkInfo> =
@@ -75,19 +89,16 @@ class ManualSyncEnqueueTest {
 
     @Test
     fun `완료된 뒤에는 새 워크가 만들어진다`() {
-        // 이 검증만 워커가 실제로 끝나야 한다 — 즉시 실행기로 갈아끼운다(HC 미가용 → success)
-        WorkManagerTestInitHelper.initializeTestWorkManager(
-            context,
-            Configuration.Builder().setExecutor(SynchronousExecutor()).build(),
-        )
         HealthSyncWorker.enqueueNow(context)
+        val first = manualWorkInfos().single().id
+        // 실행기가 워크를 돌리지 않으므로 완료를 직접 만든다 — 취소도 isFinished다(KEEP 관점에서 동일)
+        WorkManager.getInstance(context).cancelWorkById(first).result.get()
         assertTrue(manualWorkInfos().all { it.state.isFinished }, "선행 조건: 첫 워크가 끝나 있어야 한다")
-        val first = manualWorkInfos().map { it.id }.toSet()
 
         HealthSyncWorker.enqueueNow(context)
 
         // KEEP은 '진행 중'만 막는다 — 끝난 뒤 재요청까지 무시하면 새로고침이 평생 한 번만 먹는다
-        val added = manualWorkInfos().map { it.id }.toSet() - first
+        val added = manualWorkInfos().map { it.id }.toSet() - setOf(first)
         assertTrue(added.isNotEmpty(), "완료 후 다시 눌렀는데 새 워크가 생기지 않았다")
     }
 

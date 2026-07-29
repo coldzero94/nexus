@@ -128,6 +128,8 @@ private fun NexusApp(manager: HealthConnectManager) {
             finished = true
             onboarding.completed = true
             onboarding.connected = isConnected
+            // 첫 세션 루프(#211)는 여기를 지난 사용자만 대상 — 기존 설치는 온보딩을 다시 밟지 않는다
+            onboarding.firstSessionEligible = true
             Telemetry.recordOnce(context, TelemetryEvent.ONBOARDING_COMPLETED)
             if (isConnected) {
                 Telemetry.recordOnce(context, TelemetryEvent.PERMISSION_GRANTED)

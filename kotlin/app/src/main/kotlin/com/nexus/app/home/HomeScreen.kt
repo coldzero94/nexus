@@ -36,6 +36,7 @@ import com.nexus.app.health.SleepRepository
 import com.nexus.app.health.StepRepository
 import com.nexus.app.health.sleepHoursOrNull
 import com.nexus.app.notify.ExpeditionReturnWorker
+import com.nexus.app.onboarding.OnboardingStore
 import com.nexus.app.settings.GoalStore
 import com.nexus.app.settings.RestModeStore
 import com.nexus.app.telemetry.Telemetry
@@ -52,6 +53,7 @@ import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionEngine
 import com.nexus.core.ExpeditionState
 import com.nexus.core.FirstRun
+import com.nexus.core.FirstSessionCue
 import com.nexus.core.SessionInput
 import com.nexus.core.XpEngine
 import com.nexus.core.XpExplainer
@@ -91,6 +93,8 @@ internal data class HomeUiState(
     val weeklyProgress: WeeklyProgress,
     /** 첫 데이터 대기 중 (#213) — 0을 나열하는 대신 '준비 중' 빈 상태를 그린다. */
     val awaitingFirstData: Boolean,
+    /** 첫 세션 안내 (#211) — 첫 행동 코치 또는 첫 활동 XP 축하. 둘은 상호 배타. */
+    val firstSessionCue: FirstSessionCue,
 )
 
 /**
@@ -167,6 +171,35 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
         private set
     var moodLines by mutableStateOf<List<String>>(emptyList())
         private set
+
+    /**
+     * 첫 세션 카드 가시성 (#211) — dismiss는 토글, 소비(플래그 기록)는 그 시점에 한 번.
+     * 노드를 즉시 제거하면 축하 exit 연출이 생략된다(#61 패턴).
+     *
+     * **카드마다 따로** 들고 있다. 하나로 묶으면 "코치 확인 → 걷기 → 축하"가 같은 세션에서
+     * 닫히지 않는다 — 코치를 끈 플래그가 축하까지 삼킨다. 그 한 세션이 이 티켓의 P0다.
+     */
+    var coachVisible by mutableStateOf(true)
+        private set
+    var firstXpVisible by mutableStateOf(true)
+        private set
+
+    /** 코치를 확인함 — 다시 뜨지 않는다. */
+    fun dismissCoach() {
+        stores.onboarding.firstCoachShown = true
+        coachVisible = false
+    }
+
+    /**
+     * 첫 XP 축하를 확인함 — 코치도 함께 소진한다.
+     *
+     * 첫 성장을 이미 축하한 사용자에게 며칠 뒤 "첫 성장까지, 10분"이 뜨면 카드 문구 자체가 거짓이 된다.
+     */
+    fun dismissFirstXp() {
+        stores.onboarding.firstXpCelebrated = true
+        stores.onboarding.firstCoachShown = true
+        firstXpVisible = false
+    }
 
     /** 카드가 "어느 날"의 것인지 — dismiss가 노출 판정과 같은 날짜를 소비(자정 경계, #70 리뷰 N3). */
     private var cardEpochDay = 0L
@@ -263,6 +296,7 @@ private class HomeStores(context: android.content.Context) {
     val journal = EveningJournalStore(context)
     val goal = GoalStore(context)
     val streak = StreakStore(context)
+    val onboarding = OnboardingStore(context)
 }
 
 /**
@@ -302,12 +336,26 @@ private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
 /** 로드 완료 상태 — 정산 카드(#35)가 있으면 콘텐츠 위에 얹는다. */
 @Composable
 private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
-    // 첫 데이터 대기 중엔 0 나열 대신 '준비 중' 하나만 (#213) — 아침 카드·정산도 보여줄 게 없다
+    // 첫 데이터 대기 중엔 0 나열 대신 '준비 중' (#213) — 아침 카드·정산도 보여줄 게 없다
     if (state.awaitingFirstData) {
         FirstRunNotice(onSyncFinished = ui::refreshAfterSync)
+        // 빈 상태의 대상이 곧 코치의 대상이다 (#211) — 이력이 전혀 없는 완전 신규가 여기 온다.
+        // 빈 상태만 두면 "기다리세요"로 끝나고, 정작 P0인 '첫 행동 다리'가 첫 세션에 안 걸린다.
+        if (ui.coachVisible && state.firstSessionCue == FirstSessionCue.Coach) {
+            FirstCoachCard(onDismiss = ui::dismissCoach)
+        }
         return
     }
     if (ui.morningVisible) MorningCard(state, onDismiss = ui::dismissMorning)
+    // 첫 세션 루프 (#211) — 코치와 축하는 상호 배타(core 판정), 각각 1회
+    when (state.firstSessionCue) {
+        FirstSessionCue.Coach -> if (ui.coachVisible) FirstCoachCard(onDismiss = ui::dismissCoach)
+
+        // visible을 넘겨 exit 연출을 살린다 — 노드를 즉시 빼면 fadeOut이 생략된다
+        FirstSessionCue.FirstXp -> FirstXpCard(ui.spriteState, ui.firstXpVisible, ui::dismissFirstXp)
+
+        FirstSessionCue.None -> Unit
+    }
     ui.settlementDelta?.let { delta ->
         SettlementCard(deltaXp = delta, onOpen = { ui.openSettlement(state.cappedTotalXp) })
     }
@@ -419,9 +467,14 @@ private suspend fun assembleHomeState(
     val todayEpoch = today.toEpochDay()
     val cappedTotal = stores.ledger.cappedTotalXp()
     val todaySteps = stepRepo.readDailySteps(days = 1).firstOrNull { it.date == today }?.steps ?: 0L
+    val todayXp = XpExplainer.explainDay(sessions, epochDay = todayEpoch).cappedXp
+    val awaiting = FirstRun.isAwaitingFirstData(
+        lifetimeXp = cappedTotal,
+        hasAnyHealthData = todaySteps > 0L || sessions.any { it.type != null },
+    )
     return HomeUiState(
         condition = condition,
-        todayXp = XpExplainer.explainDay(sessions, epochDay = todayEpoch).cappedXp,
+        todayXp = todayXp,
         todayActiveMinutes = sessions.filter { it.epochDay == todayEpoch && it.type != null }.sumOf { it.minutes },
         todaySteps = todaySteps,
         energy = EnergyEngine.balance(cappedTotal, stores.energy.totalSpent),
@@ -441,10 +494,8 @@ private suspend fun assembleHomeState(
         streak = resolveStreak(stores.ledger, stores.rest, stores.streak, today),
         weeklyProgress = resolveWeeklyProgress(sessions, today, stores.goal.weeklyGoalDays),
         // 원장 합계는 위에서 이미 구했다 — 게이트가 다시 질의하면 전체 원장 집계가 로드마다 두 번 돈다
-        awaitingFirstData = FirstRun.isAwaitingFirstData(
-            lifetimeXp = cappedTotal,
-            hasAnyHealthData = todaySteps > 0L || sessions.any { it.type != null },
-        ),
+        awaitingFirstData = awaiting,
+        firstSessionCue = resolveFirstSessionCue(stores.onboarding, cappedTotal, todayXp, awaiting),
     )
 }
 
