@@ -80,12 +80,18 @@ internal sealed interface HomeLoad {
 
 /** 홈 (#32) — 캐릭터·컨디션·오늘 요약·다음 목표. 원정 상태는 E5에서 실데이터로. */
 @Composable
-fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
+internal fun HomeScreen(
+    manager: HealthConnectManager,
+    modifier: Modifier = Modifier,
+    onReconnect: (() -> Unit)? = null,
+    // 테스트용 이음새 (#320) — 기본값은 프로덕션 조립 그대로
+    controller: HomeUiController? = null,
+) {
     val context = LocalContext.current
     val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
     val stepRepo = remember { manager.stepRepositoryOrNull() }
     val sleepRepo = remember { manager.sleepRepositoryOrNull() }
-    val ui = remember { HomeUiController(HomeStores(context), context) }
+    val ui = controller ?: remember { HomeUiController(HomeStores(context), context) }
     LaunchedEffect(exerciseRepo, stepRepo, ui.reloadKey) {
         ui.onLoaded(
             if (exerciseRepo == null || stepRepo == null) {

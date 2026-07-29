@@ -45,10 +45,17 @@ private const val WINDOW_DAYS = 7
  * HC 미가용/오류 시 에러 문구만 — 크래시 없음.
  */
 @Composable
-fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
+internal fun ActivityScreen(
+    manager: HealthConnectManager,
+    modifier: Modifier = Modifier,
+    onReconnect: (() -> Unit)? = null,
+    // 테스트가 로드 분기를 직접 세우기 위한 이음새 (#320) — 기본값은 프로덕션 조립 그대로.
+    // Robolectric엔 Health Connect가 없어 repo가 항상 null이라, 주입 없이는 미연결 분기만 렌더된다.
+    controller: ActivityUiController? = null,
+) {
     val context = LocalContext.current
     val store = remember { TokenStore(context) }
-    val ui = remember {
+    val ui = controller ?: remember {
         ActivityUiController(
             context = context,
             stepRepo = manager.stepRepositoryOrNull(),
