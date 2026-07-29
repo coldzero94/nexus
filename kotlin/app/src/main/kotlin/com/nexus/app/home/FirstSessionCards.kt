@@ -1,9 +1,7 @@
 package com.nexus.app.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
@@ -22,8 +20,8 @@ import com.nexus.app.character.CharacterComposer
 import com.nexus.app.onboarding.OnboardingStore
 import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.NexusCard
-import com.nexus.app.ui.NexusMotion
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.celebrationEnter
 import com.nexus.core.FirstSession
 import com.nexus.core.FirstSessionCue
 
@@ -68,7 +66,7 @@ internal fun FirstXpCard(fallbackSpriteState: String, visible: Boolean, onDismis
     }
     AnimatedVisibility(
         visible = visible,
-        enter = scaleIn(animationSpec = NexusMotion.CelebrationSpring) + fadeIn(),
+        enter = celebrationEnter(),
         exit = fadeOut(),
     ) {
         NexusCard(emphasis = CardEmphasis.Highlight, title = stringResource(R.string.first_xp_title)) {

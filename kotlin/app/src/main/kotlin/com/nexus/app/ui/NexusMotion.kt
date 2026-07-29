@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.nexus.core.ReduceMotion
 import kotlin.math.roundToInt
 
 /**
@@ -66,6 +67,20 @@ val LocalMotionScale = staticCompositionLocalOf { 1f }
 @Composable
 @ReadOnlyComposable
 fun motionDuration(baseMs: Int): Int = NexusMotion.scaledDuration(baseMs, LocalMotionScale.current)
+
+/**
+ * 시스템 '애니메이션 제거'가 켜져 있는가 (#228) — 판정은 core [ReduceMotion].
+ *
+ * **별도 CompositionLocal을 두지 않는다.** 같은 사실(시스템 애니메이션 배율)에 대한 진실이 둘이 되면
+ * 한쪽만 갱신되는 순간 화면끼리 어긋난다 — 실제로 #217 리뷰가 지적한 결함이 그것이었다. 여기서는
+ * [LocalMotionScale] 하나를 읽어 파생시키고, 공급은 `NexusTheme`이 한 곳에서 한다.
+ *
+ * duration이 있는 연출은 [motionDuration]만으로 충분하다(0ms = 즉시). 이 함수는 **스프링처럼
+ * duration이 없는 스펙**이나 무한 반복 티커처럼 "아예 걸지 말아야" 하는 곳에서 쓴다.
+ */
+@Composable
+@ReadOnlyComposable
+fun reduceMotion(): Boolean = ReduceMotion.isReduced(LocalMotionScale.current)
 
 /**
  * 게이지 진행값 보간 (#262 AC④) — 목표로 완만 감속 접근. 리듀스드모션(스케일 0) 시 즉시 반영.
