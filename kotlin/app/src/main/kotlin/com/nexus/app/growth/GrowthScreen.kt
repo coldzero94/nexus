@@ -1,7 +1,5 @@
 package com.nexus.app.growth
 
-import android.os.RemoteException
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
-import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.settings.IdentityStore
 import com.nexus.app.ui.CardEmphasis
@@ -43,38 +40,15 @@ import com.nexus.core.ActivityType
 import com.nexus.core.ClassAffinity
 import com.nexus.core.ClassAffinityCalculator
 import com.nexus.core.DayXpExplanation
-import com.nexus.core.GrowthCalculator
 import com.nexus.core.GrowthSummary
-import com.nexus.core.LevelCurve
-import com.nexus.core.SessionInput
-import com.nexus.core.Stat
 import com.nexus.core.StatMapping
 import com.nexus.core.XpEngine
-import com.nexus.core.XpExplainer
-import kotlinx.coroutines.CancellationException
-import java.io.IOException
-import java.time.LocalDate
-import java.time.ZoneId
-
-private const val TAG = "GrowthScreen"
 
 /** 성장 변화 연출 대상 (#61) — 성장 탭 진입 시 기준점([GrowthStateStore])과의 차이. */
 internal data class GrowthChange(val levelUpTo: Int?, val affinityChangedTo: ClassAffinity?)
 
 /** 성장 탭 화면 상태 — 요약과 오늘 XP 분해는 같은 세션 스냅샷에서 계산(불일치 방지). */
 internal data class GrowthUiState(val summary: GrowthSummary, val today: DayXpExplanation)
-
-/**
- * 성장 로드 결과 (#144): 권한 문제는 "실패"가 아니라 미연결 상태 — 에러 문구 대신
- * 데모 안내로 라우팅한다. [Failure]만 growth_error를 쓴다(#130 catch 경로).
- */
-internal sealed interface GrowthLoad {
-    data class Success(val state: GrowthUiState) : GrowthLoad
-
-    data object PermissionDenied : GrowthLoad
-
-    data object Failure : GrowthLoad
-}
 
 @Composable
 fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
@@ -84,22 +58,17 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
     val stateStore = remember { GrowthStateStore(context) }
     var load by remember { mutableStateOf<GrowthLoad?>(null) }
     var change by remember { mutableStateOf<GrowthChange?>(null) }
-    var badges by remember { mutableStateOf<BadgeState?>(null) }
+    // 상시 배지(#175) + 이달의 배지(#206) — 함께 로드해 한 상태로 들고 있는다
+    var badgeSections by remember { mutableStateOf(BadgeSectionsState()) }
     var celebrationVisible by remember { mutableStateOf(true) }
     // 로드 실패 후 재시도 트리거 (#227)
     var reloadKey by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(exerciseRepo, reloadKey) {
-        // HC 미가용(repo null)과 권한 회수(SecurityException)는 같은 "미연결" 안내로 (#144)
-        val loaded = if (exerciseRepo == null) GrowthLoad.PermissionDenied else loadGrowth(exerciseRepo, ledger)
-        load = loaded
-        if (loaded is GrowthLoad.Success) {
-            change = detectChange(stateStore, loaded.state.summary)
-            // 기준점 소비는 "확인"(dismiss) 시점 — 감지 시점에 갱신하면 회전·프로세스 사망으로
-            // 카드가 영영 소실된다(#61 리뷰). 변화가 없을 때만 여기서 기준점을 세팅(최초 방문 포함).
-            if (change == null) stateStore.recordSeen(loaded.state.summary.level, loaded.state.summary.affinity)
-            // 배지는 부가 정보 — 실패해도 성장 화면은 그대로(loadBadges가 null 반환) (#175)
-            badges = loadBadges(context, manager, cumulativeXp = loaded.state.summary.totalXp)
+        // 요약이 먼저 도착해 본문이 그려지고, 배지는 뒤이어 채워진다 (#206)
+        badgeSections = loadGrowthScreen(context, manager, exerciseRepo, ledger, stateStore) { l, c ->
+            load = l
+            change = c
         }
     }
 
@@ -144,79 +113,17 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
                 GrowthContent(current.state)
                 // 오늘 성장이 있으면 걷는 모습으로 미리보기 — 홈 캐릭터와 같은 감각 (#37)
                 EquipmentCard(spriteState = if (current.state.today.cappedXp > 0) "walk" else "idle")
-                badges?.let { BadgesCard(it) }
+                BadgeSections(badgeSections)
             }
         }
     }
 }
 
-/**
- * 기준점 대비 변화 감지 (#61): 레벨업은 상승만(최초 방문·창 이탈로 인한 하락은 무연출),
- * 성향 변화는 기준점이 있을 때만. 변화 없으면 null(카드 미노출).
- */
-private fun detectChange(store: GrowthStateStore, summary: GrowthSummary): GrowthChange? {
-    val lastLevel = store.lastSeenLevel
-    val lastAffinity = store.lastSeenAffinity
-    val levelUpTo = summary.level.takeIf { lastLevel in 1 until it }
-    val affinityChangedTo = summary.affinity.takeIf { lastAffinity != null && lastAffinity != it }
-    if (levelUpTo == null && affinityChangedTo == null) return null
-    return GrowthChange(levelUpTo, affinityChangedTo)
-}
-
-/**
- * ActivityScreen.loadActivity와 같은 catch 계약 (#130 — 실패는 드러내고 취소는 전파).
- * 단 SecurityException은 실패가 아닌 [GrowthLoad.PermissionDenied]로 — 권한 회수는
- * 데모 안내+재연결 유도가 맞다(#144).
- */
-private suspend fun loadGrowth(repo: ExerciseRepository, ledger: RewardLedgerRepository): GrowthLoad = try {
-    val zone = ZoneId.systemDefault()
-    val raw = repo.readRecentSessions(days = ClassAffinityCalculator.WINDOW_DAYS)
-    // 화면 로드도 원장을 최신으로(멱등) — 워커 주기를 기다리지 않고 표시가 원장과 일치 (#163)
-    ledger.grantSessions(raw, zone, epochMillis = System.currentTimeMillis())
-    val sessions = raw.map {
-        SessionInput(
-            type = it.type,
-            minutes = it.durationMinutes.toInt(),
-            tier = it.trustTier,
-            // 일일 상한 그룹핑 키 — 사용자 시간대 기준 날짜 (GrowthCalculator KDoc)
-            epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
-        )
-    }
-    // 누적 XP·레벨은 전 기간 원장 합산 (#163) — 28일 창 이탈로 레벨이 내려가던 v1 한계 해소.
-    // 성향·능력치·오늘 분해는 스펙대로 28일 창 유지.
-    val ledgerTotal = ledger.cappedTotalXp()
-    val summary = GrowthCalculator.compute(sessions)
-    GrowthLoad.Success(
-        GrowthUiState(
-            summary = summary.copy(
-                totalXp = ledgerTotal,
-                level = LevelCurve.displayLevel(ledgerTotal),
-                progress = LevelCurve.progressToNextLevel(ledgerTotal),
-            ),
-            today = XpExplainer.explainDay(sessions, epochDay = LocalDate.now(zone).toEpochDay()),
-        ),
-    )
-} catch (e: CancellationException) {
-    throw e
-} catch (e: IOException) {
-    Log.w(TAG, "growth load IO failure", e)
-    GrowthLoad.Failure
-} catch (e: RemoteException) {
-    Log.w(TAG, "growth load remote failure", e)
-    GrowthLoad.Failure
-} catch (e: SecurityException) {
-    Log.w(TAG, "growth load permission failure", e)
-    GrowthLoad.PermissionDenied
-} catch (e: IllegalArgumentException) {
-    Log.w(TAG, "growth load invalid-argument failure", e)
-    GrowthLoad.Failure
-} catch (e: IllegalStateException) {
-    Log.w(TAG, "growth load state failure", e)
-    GrowthLoad.Failure
-} catch (e: android.database.SQLException) {
-    // 원장 DB 문제(디스크·손상)는 화면 크래시 대신 에러 표시 (#163)
-    Log.w(TAG, "growth ledger db failure", e)
-    GrowthLoad.Failure
+/** 배지 영역 (#175·#206) — 상시 배지 + 이달의 배지. 각각 부가 정보라 없으면 그 카드만 생략한다. */
+@Composable
+private fun BadgeSections(state: BadgeSectionsState) {
+    state.standard?.let { BadgesCard(it) }
+    state.monthly?.let { MonthlyBadgesCard(it) }
 }
 
 @Composable

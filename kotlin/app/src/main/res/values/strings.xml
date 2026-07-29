@@ -231,6 +231,9 @@
     <string name="equip_slot_head">머리</string>
     <string name="equip_slot_accessory">장식</string>
     <string name="growth_badges_title">배지 %1$d / %2$d</string>
+    <!-- 월 한정 배지 (#206) -->
+    <string name="growth_monthly_badges_title">%1$d월의 배지 %2$d/%3$d</string>
+    <string name="growth_monthly_badges_hint">이번 달에만 열리는 배지예요. 한 번 얻으면 계속 남아요.</string>
     <string name="growth_badge_locked">%1$s · 잠김</string>
     <string name="xp_explain_today_format">오늘 XP %1$,d pt</string>
     <string name="xp_explain_show">환산 설명</string>
