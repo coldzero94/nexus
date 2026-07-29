@@ -20,4 +20,7 @@ object NexusSpacing {
 
     /** 캐릭터 히어로 스프라이트 크기 — 홈 히어로와 빈 상태(#213)가 같은 크기를 쓴다. */
     val heroSprite = 140.dp
+
+    /** 카드 안에 곁들이는 캐릭터 크기 — 첫 XP 축하(#211)처럼 문구와 나란히 놓일 때. */
+    val inlineSprite = 56.dp
 }

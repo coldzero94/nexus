@@ -8,7 +8,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.WorkManager
-import androidx.work.testing.SynchronousExecutor
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.nexus.core.FirstRun
 import org.junit.Before
@@ -37,6 +36,10 @@ class FirstRunNoticeTest {
      * 이미 있으면 **다시 만들지 않는다**: 재초기화는 이전 인스턴스의 인메모리 DB를 닫는데, 앞 테스트가
      * 남긴 WorkInfo 구독이 아직 살아 있으면 "database ':memory:' is not open"으로 터진다
      * (개별 실행은 통과하고 전체 스위트에서만 깨지는 테스트 간 오염).
+     *
+     * 실행기는 [ManualSyncEnqueueTest]와 **같은 '실행하지 않는' 것**을 쓴다 — 인스턴스를 공유하는 이상
+     * 어느 클래스가 먼저 도느냐에 따라 실행기가 달라지면 KEEP 가드 검증이 조용히 무너진다.
+     * 이 테스트는 워크가 실제로 돌 필요가 없다(구독만 한다).
      */
     @Before
     fun initWorkManagerIfAbsent() {
@@ -44,7 +47,7 @@ class FirstRunNoticeTest {
         runCatching { WorkManager.getInstance(context) }.onFailure {
             WorkManagerTestInitHelper.initializeTestWorkManager(
                 context,
-                Configuration.Builder().setExecutor(SynchronousExecutor()).build(),
+                Configuration.Builder().setExecutor { /* 실행하지 않는다 */ }.build(),
             )
         }
     }
