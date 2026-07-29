@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
+import com.nexus.app.data.ExpeditionStore
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.core.Badge
@@ -34,20 +35,25 @@ internal data class BadgeState(val table: BadgeTable, val unlocked: Set<String>,
 /**
  * 배지 해금 로드 (#175) — 부가 정보라 실패는 null(성장 화면 유지, #130 catch 계약). 원장 누적 XP는
  * 성장 요약에서 받아 레벨을 화면과 일치시킨다([BadgeSignals.build]). 획득 집합은 [BadgeProgressStore]에 영속.
- * expeditionsCompleted는 완료 카운트 소스 마련 전까지 0(원정 배지 후속).
+ * expeditionsCompleted는 [ExpeditionStore]의 개봉 카운터(#204) — 이게 0으로 하드코딩돼 있던 동안
+ * 탐험가 배지가 영구 잠김이었다.
  */
 internal suspend fun loadBadges(context: Context, manager: HealthConnectManager, cumulativeXp: Int): BadgeState? = try {
     val repo = manager.growthRepositoryOrNull() ?: return null
     val inputs = repo.computeBadgeInputs()
-    // 에셋 파싱·프리퍼런스 최초 로드는 디스크 IO — 메인 밖에서 (#177 리뷰)
-    val (table, store) = withContext(Dispatchers.IO) {
-        CharacterAssets(context).loadBadgeTable() to BadgeProgressStore(context)
+    // 에셋 파싱·프리퍼런스 최초 로드는 모두 디스크 IO — 한 번의 컨텍스트 전환으로 묶는다
+    val (table, store, expeditionsCompleted) = withContext(Dispatchers.IO) {
+        Triple(
+            CharacterAssets(context).loadBadgeTable(),
+            BadgeProgressStore(context),
+            ExpeditionStore(context).completedCount,
+        )
     }
     val signals = BadgeSignals.build(
         cumulativeXp = cumulativeXp,
         dailyActive = inputs.dailyActive,
         bestDaySteps = inputs.bestDaySteps,
-        expeditionsCompleted = 0,
+        expeditionsCompleted = expeditionsCompleted,
     )
     val currently = BadgeEvaluator.unlocked(table, signals)
     val newly = currently - store.earned

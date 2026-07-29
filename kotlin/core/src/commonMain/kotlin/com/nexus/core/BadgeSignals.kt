@@ -61,7 +61,7 @@ object BadgeSignals {
      * @param cumulativeXp 원장 상한 적용 누적 XP(성장 탭과 동일 소스)
      * @param dailyActive 창 내 일별 활동 여부(오래된→최신). activeDaysTotal·streakDays의 입력
      * @param bestDaySteps 창 내 하루 최대 걸음(#7)
-     * @param expeditionsCompleted 완료 원정 수(카운트 소스 마련 전엔 0)
+     * @param expeditionsCompleted 완료 원정 수 — 앱의 ExpeditionStore 개봉 카운터가 소스(#204)
      */
     fun build(
         cumulativeXp: Int,
