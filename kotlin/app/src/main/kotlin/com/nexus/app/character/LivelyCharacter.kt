@@ -21,8 +21,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import com.nexus.app.R
 import com.nexus.app.ui.LocalMotionScale
 import com.nexus.app.ui.NexusMotion
@@ -84,12 +82,9 @@ internal fun LivelyCharacter(
     val throttle = remember { PetReactionThrottle() }
     val haptics = LocalHapticFeedback.current
     val pressDuration = NexusMotion.scaledDuration(NexusMotion.DURATION_SHORT, motionScale)
-    val label = stringResource(R.string.character_content_desc)
 
     Box(
         modifier = modifier
-            // 스프라이트 로드 전에는 하위에 설명 노드가 없어 "버튼"으로만 읽힌다 — 바깥에서 보장한다
-            .semantics { contentDescription = label }
             .graphicsLayer {
                 val scale = breath.value * reaction.value
                 scaleX = scale

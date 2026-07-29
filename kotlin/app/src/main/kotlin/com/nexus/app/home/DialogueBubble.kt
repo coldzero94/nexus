@@ -8,8 +8,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.core.DialogueSelector
@@ -52,6 +56,9 @@ internal fun DialogueBubble(
         Text(
             text = stringResource(R.string.home_dialogue_format, it),
             style = MaterialTheme.typography.bodyLarge,
+            // 대사가 바뀌면 낭독한다 (#224) — Polite: 진행 중 발화를 끊지 않고 뒤에 붙인다.
+            // 쓰다듬기 반응(#217)·맥락 인사(#220)가 시각 채널에만 남으면 반응이 없는 것과 같다.
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         )
     }
 }

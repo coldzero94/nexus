@@ -34,6 +34,7 @@ import com.nexus.app.R
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.VizColors
 import com.nexus.app.ui.animatedGaugeProgress
+import com.nexus.app.ui.gaugeSemantics
 import com.nexus.core.ConditionEngine
 import com.nexus.core.ConditionGauge
 import kotlin.math.roundToInt
@@ -70,15 +71,25 @@ internal fun ConditionGaugeBar(condition: Double, restMode: Boolean, modifier: M
     var explaining by rememberSaveable { mutableStateOf(false) }
     val openLabel = stringResource(R.string.condition_explain_open)
 
+    // 라벨·값·바·존이 흩어져 읽히면 "78퍼센트"만 들린다 — 한 노드로 묶어 한 문장으로 (#224)
+    val a11yState = stringResource(
+        R.string.a11y_condition_state,
+        value,
+        ConditionEngine.MAX.roundToInt(),
+        zoneLabel,
+    )
+    val title = stringResource(R.string.home_condition_title)
+
     Column(
         modifier
             .fillMaxWidth()
             // 게이지 전체가 설명 진입점 — 숫자만 있고 이유가 없으면 하락이 처벌로 읽힌다 (#223)
-            .clickable(onClickLabel = openLabel, role = Role.Button) { explaining = true },
+            .clickable(onClickLabel = openLabel, role = Role.Button) { explaining = true }
+            .gaugeSemantics(label = title, stateText = a11yState),
         verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(stringResource(R.string.home_condition_title), style = MaterialTheme.typography.titleMedium)
+            Text(title, style = MaterialTheme.typography.titleMedium)
             Text(
                 // 값은 ink(onSurface) — 존색 재사용 금지(가독 대비, #257 AC)
                 stringResource(R.string.home_condition_value, value),

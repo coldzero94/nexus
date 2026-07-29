@@ -43,12 +43,13 @@ internal fun XpGauge(todayXp: Int, modifier: Modifier = Modifier) {
     } else {
         stringResource(R.string.xp_gauge_to_knee, knee, (knee - todayXp).coerceAtLeast(0))
     }
-    val cd = stringResource(R.string.xp_gauge_desc, todayXp, knee)
+    // 캡션이 따로 읽히면 값과 이어지지 않는다 — 라벨+상태 한 문장으로 묶는다 (#224)
+    val a11yState = stringResource(R.string.a11y_today_xp_state, todayXp, knee)
 
     Column(
         modifier
             .fillMaxWidth()
-            .semantics { contentDescription = cd },
+            .gaugeSemantics(label = stringResource(R.string.a11y_today_xp_gauge), stateText = a11yState),
         verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
     ) {
         Canvas(

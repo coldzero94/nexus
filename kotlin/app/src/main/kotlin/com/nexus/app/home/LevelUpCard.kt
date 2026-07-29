@@ -8,7 +8,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import com.nexus.app.R
 import com.nexus.app.growth.labelRes
 import com.nexus.app.ui.CardEmphasis
@@ -31,7 +35,12 @@ import com.nexus.core.Stat
 @Composable
 internal fun LevelUpCard(level: Int, risenStats: Map<Stat, Int>, visible: Boolean, onDismiss: () -> Unit) {
     AnimatedVisibility(visible = visible, enter = celebrationEnter(), exit = fadeOut()) {
-        NexusCard(emphasis = CardEmphasis.Highlight, title = stringResource(R.string.levelup_title, level)) {
+        NexusCard(
+            emphasis = CardEmphasis.Highlight,
+            title = stringResource(R.string.levelup_title, level),
+            // 축하가 나타났음을 낭독한다 (#224) — 시각 채널에만 남으면 축하가 도달하지 않는다
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        ) {
             Text(stringResource(R.string.levelup_body), style = MaterialTheme.typography.bodyMedium)
             Column(verticalArrangement = Arrangement.spacedBy(com.nexus.app.ui.NexusSpacing.xs)) {
                 risenStats.forEach { (stat, delta) ->

@@ -189,6 +189,16 @@
     <string name="session_no_hr">심박 없음</string>
     <string name="session_datetime_format">M월 d일 HH:mm</string>
     <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
+    <!-- 접근성 낭독 문구 (#224) — 화면 표시가 아니라 TalkBack 전용 -->
+    <string name="a11y_condition_state">%1$d, %2$d점 만점 · %3$s</string>
+    <string name="a11y_level_gauge">레벨 진행</string>
+    <string name="a11y_level_state">레벨 %1$d · 누적 %2$d XP</string>
+    <string name="a11y_today_xp_gauge">오늘 XP 진행</string>
+    <string name="a11y_today_xp_state">%1$d XP · 하루 목표 %2$d XP</string>
+    <string name="a11y_axis_state">%1$d 퍼센트</string>
+    <string name="a11y_sprite_idle">쉬고 있어요</string>
+    <string name="a11y_sprite_walk">걷고 있어요</string>
+    <string name="a11y_widget_progress">오늘 XP %1$d, 하루 목표 %2$d XP</string>
     <!-- 레벨업 홈 축하 (#219) — 무엇이 올랐는지 공개 -->
     <string name="levelup_title">레벨 %1$d 달성!</string>
     <string name="levelup_body">움직인 만큼 이 아이가 자랐어요.</string>

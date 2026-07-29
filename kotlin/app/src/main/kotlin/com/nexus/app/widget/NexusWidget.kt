@@ -22,6 +22,8 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.nexus.app.R
@@ -91,7 +93,17 @@ private fun WidgetContent(context: Context, snapshot: WidgetSnapshot, sprite: an
             // 장치 ③ 일일 진행바 — 오늘 성장(니 200pt 기준) (#72)
             LinearProgressIndicator(
                 progress = (snapshot.todayXp / XpEngine.DAILY_KNEE).toFloat().coerceIn(0f, 1f),
-                modifier = GlanceModifier.fillMaxWidth().padding(top = 4.dp),
+                // 텍스트 대체가 없어 진행바가 낭독에서 통째로 빠졌다 (#224)
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .semantics {
+                        contentDescription = context.getString(
+                            R.string.a11y_widget_progress,
+                            snapshot.todayXp,
+                            XpEngine.DAILY_KNEE.toInt(),
+                        )
+                    },
                 color = GlanceTheme.colors.primary,
                 backgroundColor = GlanceTheme.colors.surfaceVariant,
             )
