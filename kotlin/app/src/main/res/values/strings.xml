@@ -189,6 +189,14 @@
     <string name="session_no_hr">심박 없음</string>
     <string name="session_datetime_format">M월 d일 HH:mm</string>
     <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
+    <!-- 데이터 신선도 (#221) — 실시간 약속 금지, 꾸짖는 톤 배제 -->
+    <string name="freshness_just_now">방금 반영했어요</string>
+    <string name="freshness_minutes_ago">%1$d분 전에 반영했어요</string>
+    <string name="freshness_hours_ago">%1$d시간 전에 반영했어요</string>
+    <string name="freshness_delay_notice">기록이 앱에 도착하기까지 30~60분 걸릴 수 있어요. 그보다 오래 걸린다면 절전 설정이나 연결 상태를 확인해 주세요. 기다리는 동안 쌓인 활동은 사라지지 않아요.</string>
+    <string name="freshness_check_failed">방금 확인이 끝나지 못했어요. 연결이 풀렸는지 확인해 주세요. 쌓인 활동은 사라지지 않아요.</string>
+    <string name="freshness_check_now">지금 확인</string>
+    <string name="freshness_checking">확인 중…</string>
     <string name="sync_never">백그라운드 동기화 대기 중 (15분 주기)</string>
     <string name="sync_time_format">HH:mm</string>
 

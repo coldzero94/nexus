@@ -221,6 +221,16 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
         reloadKey++
     }
 
+    /**
+     * 수동 동기화 완료 후 재로드 (#221) — 원장이 갱신됐으니 화면 수치도 다시 읽는다.
+     *
+     * [retry]와 달리 `load`를 비우지 않는다: 이미 보이는 값이 있는데 스피너로 되돌리면 "지금 확인"이
+     * 화면을 깜빡이게 만든다. 갱신되면 조용히 바뀌는 편이 낫다.
+     */
+    fun refreshAfterSync() {
+        reloadKey++
+    }
+
     fun depart(currentXp: Int) {
         if (stores.energy.trySpend(currentXp, EnergyEngine.EXPEDITION_COST)) {
             stores.expedition.start(System.currentTimeMillis())
@@ -298,6 +308,7 @@ private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
         moodLines = ui.moodLines,
         onDepart = { ui.depart(state.cappedTotalXp) },
         onOpen = ui::openExpedition,
+        onSyncFinished = ui::refreshAfterSync,
     )
     if (ui.journalVisible) EveningJournalCard(state, onDismiss = ui::dismissJournal)
 }
@@ -309,6 +320,7 @@ private fun HomeContent(
     moodLines: List<String>,
     onDepart: () -> Unit,
     onOpen: () -> Unit,
+    onSyncFinished: () -> Unit,
 ) {
     // 상단 히어로 — 캐릭터·대사·컨디션을 묶어 최상위 앵커로 (#256). 아래는 종속 상세 카드.
     HomeHero(spriteState, moodLines, state.condition, state.moodContext.restMode)
@@ -321,6 +333,8 @@ private fun HomeContent(
     NexusCard {
         Text(text = nextGoalText(state), style = MaterialTheme.typography.bodyMedium)
     }
+    // 신선도는 푸터 위치 (#221) — 평소엔 조용한 한 줄, 오래 밀렸을 때만 안내 카드로 커진다
+    FreshnessRow(onSyncFinished = onSyncFinished)
 }
 
 @Composable
