@@ -117,6 +117,11 @@ private fun ConditionLegend(zoneColor: Color, zoneLabel: String, restMode: Boole
 /**
  * 트랙 → 채움 → 바닥 마커(→ 휴식 테두리) 순으로 그린다. 채움은 최소 한 캡 폭 이상 유지(ratio 0에서도
  * 소멸 없음 = 불퇴행). 좌측 바닥 마커는 "이 왼쪽 끝은 0이 아니라 바닥"임을 표식.
+ *
+ * 마커는 **트랙색으로 그려 채움에 파인 홈**처럼 보이게 한다 (#308). 채움 최소 폭이 한 캡(=높이)이라
+ * 마커 위치(높이의 0.5배)는 **항상 채움 위**에 놓이는데, 마커를 단색 토큰으로 칠하면 3존 채움색 중
+ * 어느 것과도 명도가 비슷해져(라이트 0.02·다크 0.01 차) 사실상 보이지 않았다. 트랙색은 모든 존과
+ * 명도차 0.35 이상이라 존이 바뀌어도 대비가 유지된다.
  */
 private fun DrawScope.drawGauge(
     ratio: Float,
@@ -132,10 +137,10 @@ private fun DrawScope.drawGauge(
     // 최소 한 캡(=높이) 이상 → 바닥에서도 눈에 보이는 채움. w<h(0폭 첫 프레임 등)에서도 coerceIn 안전.
     val fillW = (w * ratio).coerceIn(minOf(h, w), w)
     drawRoundRect(color = fillColor, cornerRadius = radius, size = Size(fillW, h))
-    // 바닥 마커 — 좌측 캡 안쪽 짧은 세로 눈금(0이 아니라 바닥선)
+    // 바닥 마커 — 좌측 캡 안쪽 짧은 세로 눈금(0이 아니라 바닥선). 채움에 파인 홈으로 (#308)
     val markerX = h * FLOOR_MARKER_X_FACTOR
     drawLine(
-        color = floorColor,
+        color = trackColor,
         start = Offset(markerX, h * FLOOR_MARKER_INSET),
         end = Offset(markerX, h * (1f - FLOOR_MARKER_INSET)),
         strokeWidth = h * FLOOR_MARKER_WIDTH,

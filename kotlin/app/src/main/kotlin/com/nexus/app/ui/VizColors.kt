@@ -15,6 +15,10 @@ import androidx.compose.ui.graphics.Color
  * 재사용하지 않는다(가독 대비 확보 위해 ink=onSurface 사용, #257 AC).
  *
  * 컨디션 존은 무처벌 원칙상 **적색 계열 금지** — 회복중도 따뜻한 테라코타(경고가 아니라 '쉬는 중').
+ *
+ * `floorMarker`는 **휴식 모드 테두리 전용** 강조색이다. 컨디션 게이지의 바닥 마커는 트랙색으로
+ * 그린다 — 단색 토큰으로 칠하면 3존 채움색 중 어느 것과도 명도가 겹쳐 보이지 않았다
+ * (#308, [com.nexus.app.home.ConditionGaugeBar]).
  */
 @Immutable
 data class VizPalette(
