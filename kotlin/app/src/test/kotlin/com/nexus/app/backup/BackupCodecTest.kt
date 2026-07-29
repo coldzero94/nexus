@@ -87,6 +87,8 @@ class BackupCodecTest {
                 "restModeSinceEpochDay",
                 // 캐릭터 이름 (#216) — 설정값(건강 파생 아님), 기기 이전 시 호명 보존
                 "characterName",
+                // 완료 원정 수 (#204) — 탐험가 배지의 유일한 근거, 복원 시 소실 방지
+                "expeditionsCompleted",
             ),
             root.getValue("snapshot").jsonObject.keys,
         )

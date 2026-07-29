@@ -223,7 +223,8 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
     }
 
     fun openExpedition() {
-        stores.expedition.open() // 보상 지급·연출은 E5-7(#68)에서 이 지점에 연결
+        // 열 원정이 없으면(연타 등) 계측·후속 보상까지 건너뛴다 — 반복 참여 지표가 부풀지 않게(#204 리뷰)
+        if (!stores.expedition.open()) return // 보상 지급·연출은 E5-7(#68)에서 이 지점에 연결
         ExpeditionReturnWorker.cancel(context) // 이미 확인한 원정은 알리지 않는다 (#71)
         Telemetry.record(TelemetryEvent.EXPEDITION_OPENED) // 반복 참여 지표 겸 퍼널 종점 (#47)
         reloadKey++

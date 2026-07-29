@@ -41,12 +41,14 @@ internal data class BadgeState(val table: BadgeTable, val unlocked: Set<String>,
 internal suspend fun loadBadges(context: Context, manager: HealthConnectManager, cumulativeXp: Int): BadgeState? = try {
     val repo = manager.growthRepositoryOrNull() ?: return null
     val inputs = repo.computeBadgeInputs()
-    // 에셋 파싱·프리퍼런스 최초 로드는 디스크 IO — 메인 밖에서 (#177 리뷰)
-    val (table, store) = withContext(Dispatchers.IO) {
-        CharacterAssets(context).loadBadgeTable() to BadgeProgressStore(context)
+    // 에셋 파싱·프리퍼런스 최초 로드는 모두 디스크 IO — 한 번의 컨텍스트 전환으로 묶는다
+    val (table, store, expeditionsCompleted) = withContext(Dispatchers.IO) {
+        Triple(
+            CharacterAssets(context).loadBadgeTable(),
+            BadgeProgressStore(context),
+            ExpeditionStore(context).completedCount,
+        )
     }
-    // 원정 완료 수 (#204) — 프리퍼런스 읽기라 메인 밖에서
-    val expeditionsCompleted = withContext(Dispatchers.IO) { ExpeditionStore(context).completedCount }
     val signals = BadgeSignals.build(
         cumulativeXp = cumulativeXp,
         dailyActive = inputs.dailyActive,

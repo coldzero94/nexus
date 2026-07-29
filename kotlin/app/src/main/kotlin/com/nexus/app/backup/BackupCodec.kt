@@ -48,6 +48,11 @@ data class BackupSnapshot(
      * 산물이 사라지지 않게. 미설정이면 null이라 복원 후에도 무명 카피 폴백.
      */
     val characterName: String? = null,
+    /**
+     * 완료 원정 수 (#204) — 앱이 센 계산값(건강 파생 아님). 탐험가 배지의 유일한 근거라 빠지면
+     * 복원 후 그 배지만 소리 없이 사라진다(다른 배지는 원장·HC에서 재계산된다).
+     */
+    val expeditionsCompleted: Int = 0,
 )
 
 object BackupCodec {
