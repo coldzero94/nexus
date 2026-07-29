@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 자동 백업 규칙 (#51, E8-6) — Room 원장·프리퍼런스 포함. 원본 건강 "수치"는 앱에 없고
-     (Health Connect가 소스), 원장의 idempotencyKey(HC 레코드 UUID 참조)는 본인 계정 백업에
-     한해 명시적 예외로 허용 — 근거·해시화 후속은 BACKEND.md §3 (#51 결정). -->
+<!-- 자동 백업 규칙 (#51, E8-6 / #238 경계 잠금) — Room 원장·프리퍼런스 포함. 원본 건강 "수치"는
+     앱에 없고(Health Connect가 소스), 원장의 idempotencyKey(HC 레코드 UUID 참조)는 본인 계정 백업에
+     한해 명시적 예외로 허용 — 근거·해시화 후속은 BACKEND.md §3 (#51 결정).
+
+     #238: sharedpref path="."는 default-allow라 아래 둘까지 클라우드로 내보내고 있었다.
+     - nexus_sync: Health Connect changes 토큰. 다른 기기에 복원되면 그 기기에서 유효하지 않은
+       stale 토큰으로 델타를 읽어 동기화가 조용히 어긋난다(토큰 리셋 경로 #141로 떨어져야 정상).
+     - nexus_telemetry_firsts: 1회성 퍼널 마커. 복원되면 새 기기의 첫 경험이 이미 발생한 것으로
+       집계돼 퍼널이 과소 계상된다. -->
 <data-extraction-rules>
     <cloud-backup>
         <include domain="database" path="." />
         <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="nexus_sync.xml" />
+        <exclude domain="sharedpref" path="nexus_telemetry_firsts.xml" />
     </cloud-backup>
     <device-transfer>
         <include domain="database" path="." />
         <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="nexus_sync.xml" />
+        <exclude domain="sharedpref" path="nexus_telemetry_firsts.xml" />
     </device-transfer>
 </data-extraction-rules>
