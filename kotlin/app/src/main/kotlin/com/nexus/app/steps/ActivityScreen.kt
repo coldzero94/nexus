@@ -1,5 +1,6 @@
 package com.nexus.app.steps
 
+import android.content.Context
 import android.os.RemoteException
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.nexus.app.R
+import com.nexus.app.data.NexusDatabase
+import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.DailySteps
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.ExerciseSummary
@@ -34,10 +37,12 @@ import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.StepRepository
 import com.nexus.app.health.TokenStore
 import com.nexus.app.ui.ConnectNotice
+import com.nexus.app.ui.FirstRunNotice
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
 import com.nexus.app.ui.TrustTierChip
 import com.nexus.core.ActivityType
+import com.nexus.core.FirstRun
 import com.nexus.core.TrustExplainer
 import java.io.IOException
 import java.time.Instant
@@ -69,7 +74,7 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
         load = if (stepRepo == null || exerciseRepo == null) {
             ActivityLoad.PermissionDenied
         } else {
-            loadActivity(stepRepo, exerciseRepo)
+            loadActivity(context, stepRepo, exerciseRepo)
         }
     }
     val current = load
@@ -81,6 +86,11 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
             .verticalScroll(rememberScrollState())
             .padding(NexusSpacing.screen),
     ) {
+        // 첫 데이터 대기 중엔 빈 차트·빈 세션 목록 대신 '준비 중' 하나만 (#213)
+        if (data?.awaitingFirstData == true) {
+            FirstRunNotice(onSyncFinished = { reloadKey++ })
+            return@Column
+        }
         // ── 걸음 (#7·#258) ──
         Text(stringResource(R.string.steps_title), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(NexusSpacing.xs))
@@ -128,6 +138,8 @@ private data class ActivityData(
     val steps: List<DailySteps>,
     val manualSteps: Long,
     val sessions: List<ExerciseSummary>,
+    /** 첫 데이터 대기 중 (#213) — 빈 차트·빈 세션 목록 대신 '준비 중'. */
+    val awaitingFirstData: Boolean,
 )
 
 /** 활동 로드 결과 (#152) — 권한 문제는 미연결 안내, [Failure]만 steps_error (#144 패턴). */
@@ -143,12 +155,24 @@ private sealed interface ActivityLoad {
  * 활동 데이터 로드 — 실패 시 로그 후 Failure(#130 침묵 실패 제거, 구체 예외).
  * SecurityException(권한 회수)만 미연결 안내로 라우팅(#152, #144 패턴).
  */
-private suspend fun loadActivity(stepRepo: StepRepository, exerciseRepo: ExerciseRepository): ActivityLoad = try {
+private suspend fun loadActivity(
+    context: Context,
+    stepRepo: StepRepository,
+    exerciseRepo: ExerciseRepository,
+): ActivityLoad = try {
+    val ledger = RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao())
+    val steps = stepRepo.readDailySteps(WINDOW_DAYS)
+    val sessions = exerciseRepo.readRecentSessions(WINDOW_DAYS)
     ActivityLoad.Success(
         ActivityData(
-            steps = stepRepo.readDailySteps(WINDOW_DAYS),
+            steps = steps,
             manualSteps = stepRepo.readManualStepCount(WINDOW_DAYS),
-            sessions = exerciseRepo.readRecentSessions(WINDOW_DAYS),
+            sessions = sessions,
+            // 걸음 막대가 하나라도 있으면 보여줄 게 있는 것 — 실데이터를 빈 상태로 가리면 안 된다
+            awaitingFirstData = FirstRun.isAwaitingFirstData(
+                lifetimeXp = ledger.cappedTotalXp(),
+                hasAnyHealthData = steps.any { it.steps > 0L } || sessions.isNotEmpty(),
+            ),
         ),
     )
 } catch (e: CancellationException) {

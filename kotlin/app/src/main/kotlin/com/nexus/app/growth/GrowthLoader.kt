@@ -7,6 +7,7 @@ import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.core.ClassAffinityCalculator
+import com.nexus.core.FirstRun
 import com.nexus.core.GrowthCalculator
 import com.nexus.core.GrowthSummary
 import com.nexus.core.LevelCurve
@@ -61,6 +62,8 @@ internal suspend fun loadGrowthScreen(
     // 소실된다(#61 리뷰). 변화가 없을 때만 여기서 기준점을 세팅(최초 방문 포함).
     if (change == null) stateStore.recordSeen(loaded.state.summary.level, loaded.state.summary.affinity)
     onSummary(loaded, change)
+    // 빈 상태에선 배지 영역을 그리지 않는다 — assets 파싱·걸음 집계·원장 조회를 헛돌릴 이유가 없다 (#213)
+    if (loaded.state.awaitingFirstData) return BadgeSectionsState()
 
     // 두 배지 로더는 서로 독립 — 순차로 돌리면 HC 걸음 집계를 두 번 기다린다 (#175·#206)
     return coroutineScope {
@@ -117,6 +120,8 @@ private suspend fun loadGrowth(repo: ExerciseRepository, ledger: RewardLedgerRep
                 progress = LevelCurve.progressToNextLevel(ledgerTotal),
             ),
             today = XpExplainer.explainDay(sessions, epochDay = LocalDate.now(zone).toEpochDay()),
+            // 누적 XP는 위에서 이미 구했다(ledgerTotal) — 게이트가 재질의하면 집계가 두 번 돈다
+            awaitingFirstData = FirstRun.isAwaitingFirstData(ledgerTotal, hasAnyHealthData = sessions.isNotEmpty()),
         ),
     )
 } catch (e: CancellationException) {

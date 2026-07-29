@@ -42,7 +42,7 @@ internal fun HomeHero(spriteState: String, moodLines: List<String>, condition: D
         ) {
             CharacterComposer.CharacterSprite(
                 state = spriteState,
-                modifier = Modifier.size(140.dp),
+                modifier = Modifier.size(NexusSpacing.heroSprite),
                 equipLayers = equipLayers,
             )
             DialogueBubble(spriteState, moodLines)

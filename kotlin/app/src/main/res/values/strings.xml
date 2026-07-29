@@ -189,6 +189,9 @@
     <string name="session_no_hr">심박 없음</string>
     <string name="session_datetime_format">M월 d일 HH:mm</string>
     <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
+    <!-- 첫 연결·첫 동기화 대기 빈 상태 (#213) — 실시간 약속 금지 -->
+    <string name="first_run_title">곧 함께 자라기 시작해요</string>
+    <string name="first_run_body">연동한 기록이 앱에 도착하기까지 30~60분 걸릴 수 있어요. 오늘 움직인 건 그대로 쌓이는 중이에요.</string>
     <!-- 데이터 신선도 (#221) — 실시간 약속 금지, 꾸짖는 톤 배제 -->
     <string name="freshness_just_now">방금 반영했어요</string>
     <string name="freshness_minutes_ago">%1$d분 전에 반영했어요</string>

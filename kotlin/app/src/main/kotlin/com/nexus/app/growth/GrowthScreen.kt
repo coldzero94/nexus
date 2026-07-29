@@ -32,6 +32,7 @@ import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.settings.IdentityStore
 import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.ConnectNotice
+import com.nexus.app.ui.FirstRunNotice
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
@@ -48,7 +49,12 @@ import com.nexus.core.XpEngine
 internal data class GrowthChange(val levelUpTo: Int?, val affinityChangedTo: ClassAffinity?)
 
 /** 성장 탭 화면 상태 — 요약과 오늘 XP 분해는 같은 세션 스냅샷에서 계산(불일치 방지). */
-internal data class GrowthUiState(val summary: GrowthSummary, val today: DayXpExplanation)
+internal data class GrowthUiState(
+    val summary: GrowthSummary,
+    val today: DayXpExplanation,
+    /** 첫 데이터 대기 중 (#213) — 레벨 1·0 XP 나열 대신 '준비 중'. */
+    val awaitingFirstData: Boolean = false,
+)
 
 @Composable
 fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
@@ -100,6 +106,10 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
                     load = null
                     reloadKey++
                 }
+
+            is GrowthLoad.Success if current.state.awaitingFirstData ->
+                // 첫 데이터 대기 중엔 레벨·능력치 0 나열 대신 '준비 중' 하나만 (#213)
+                FirstRunNotice(onSyncFinished = { reloadKey++ })
 
             is GrowthLoad.Success -> {
                 change?.let { c ->
