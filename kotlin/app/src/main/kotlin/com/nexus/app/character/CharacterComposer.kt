@@ -18,6 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import com.nexus.app.R
+import com.nexus.app.ui.reduceMotion
 import com.nexus.core.CharacterAnimationSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -57,16 +58,26 @@ object CharacterComposer {
         }
     }
 
-    /** 본체 애니메이션 프레임 — 상태별 프레임 티커(2~4프레임). */
+    /**
+     * 본체 애니메이션 프레임 — 상태별 프레임 티커(2~4프레임).
+     *
+     * 시스템 '애니메이션 제거'가 켜져 있으면 **티커를 아예 기동하지 않는다**(#228) — 프레임 0 정지.
+     * 표를 읽어 상태를 해석하는 일은 그대로 하므로 스프라이트는 정상적으로 그려지고, 움직임만 없다.
+     * 홈·성장·초기 레벨 씬이 모두 이 한 곳을 지나므로 여기서 막으면 앱 전체가 함께 멈춘다.
+     */
     @Composable
     private fun BaseSprite(state: String, modifier: Modifier) {
         val context = LocalContext.current
         val assets = remember { CharacterAssets(context) }
         var set by remember { mutableStateOf<CharacterAnimationSet?>(null) }
-        var frame by remember(state) { mutableIntStateOf(0) }
+        val reduced = reduceMotion()
+        // reduced를 키에 포함해야 토글 순간의 프레임에 굳지 않는다 — 그러면 걷는 중간 자세로 멈추고
+        // 프레임 0을 쓰는 위젯과도 어긋난다(#228 리뷰). 켜고 끌 때 모두 0에서 다시 시작한다.
+        var frame by remember(state, reduced) { mutableIntStateOf(0) }
 
-        LaunchedEffect(state) {
+        LaunchedEffect(state, reduced) {
             val loaded = set ?: withContext(Dispatchers.IO) { assets.loadAnimationSet() }.also { set = it }
+            if (reduced) return@LaunchedEffect // 표는 읽되 티커는 돌리지 않는다 — 정지 프레임 (#228)
             val anim = loaded.stateOrDefault(state)
             var elapsed = 0L
             while (anim.frames > 1) {

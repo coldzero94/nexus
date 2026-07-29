@@ -26,6 +26,8 @@ import androidx.compose.ui.semantics.semantics
 import com.nexus.app.R
 import com.nexus.app.ui.LocalMotionScale
 import com.nexus.app.ui.NexusMotion
+import com.nexus.app.ui.reduceMotion
+import com.nexus.core.ReduceMotion
 import kotlinx.coroutines.launch
 
 /** 숨쉬기 한 주기(ms) — 사람 호흡에 가깝게 느리게. 빠르면 초조해 보인다. */
@@ -67,7 +69,7 @@ internal fun LivelyCharacter(
     onPet: () -> Unit = {},
 ) {
     val motionScale = LocalMotionScale.current
-    val animated = motionScale > 0f
+    val animated = !reduceMotion() // 경계 판정은 core ReduceMotion 하나로 (#228)
 
     val breath = rememberBreathScale(motionScale)
 
@@ -125,7 +127,7 @@ internal fun LivelyCharacter(
  */
 @Composable
 private fun rememberBreathScale(motionScale: Float): State<Float> {
-    if (motionScale <= 0f) return remember { mutableFloatStateOf(1f) }
+    if (ReduceMotion.isReduced(motionScale)) return remember { mutableFloatStateOf(1f) }
     val transition = rememberInfiniteTransition(label = "breath")
     return transition.animateFloat(
         initialValue = 1f,

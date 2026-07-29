@@ -67,11 +67,17 @@
 - **모션 스케일 공급**(#217): `NexusTheme`이 `rememberSystemMotionScale()`(= `Settings.Global.ANIMATOR_DURATION_SCALE`,
   포그라운드 복귀마다 재조회)을 `LocalMotionScale`에 주입한다. 시스템에서 애니메이션을 끄면 앱 전역 duration이 0이 되고
   캐릭터 상시 미동(#217)은 정지 프레임으로 남는다. 0.5배 같은 부분 감속도 그대로 반영한다.
-  남은 범위는 #228 — 스프라이트 프레임 티커 정지와 축하 연출의 비모션 대체안.
+- **모션 감축 정책**(#228): 경계 판정은 core `ReduceMotion.isReduced` 하나 — 스케일이 **정확히 0**일 때만
+  '제거'다(0.5배는 "느리게"이지 "없애라"가 아니라 연출을 유지). 앱에서는 `reduceMotion()`으로 읽으며,
+  **별도 CompositionLocal을 두지 않는다** — 같은 사실의 진실이 둘이면 한쪽만 갱신될 때 화면이 어긋난다.
+  적용: ① 캐릭터 프레임 티커 미기동(`CharacterComposer.BaseSprite` 한 곳 → 홈·성장·초기레벨·복귀 씬 전부,
+  위젯은 원래 정적) ② 축하 카드는 `celebrationEnter()`로 scaleIn 대신 fadeIn(콘텐츠 동일)
+  ③ duration 기반 연출은 `motionDuration()`이 0ms로 만들어 이미 즉시.
 - **탭 전환**: `MainActivity` when(tab) → `Crossfade`(Standard, MEDIUM) + `SaveableStateProvider`로
   각 탭 스크롤 위치 보존.
 - **게이지 보간**: 컨디션·레벨·오늘XP를 `animatedGaugeProgress`로 감속 보간. 레벨·XP는 `upwardOnly`
   (하락=레벨업 리셋·일일 경계 시 즉시 스냅, 뒤로 안 빠짐=불퇴행), 컨디션은 양방향 완만 감속.
-- **축하**: `GrowthCelebration` 등장 스프링을 `NexusMotion.CelebrationSpring` 토큰 참조로.
+- **축하**: 등장 전환은 `ui/CelebrationEnter.kt`의 `celebrationEnter()` 하나를 공유한다(성장 레벨업·첫 XP).
+  기본은 `CelebrationSpring` 스케일+페이드, 모션 감축 시 페이드만 — 위치·크기가 변하지 않는 대체안.
 
 _각 항목은 해당 E16 티켓이 랜딩할 때 이 문서를 같은 PR에서 갱신한다._
