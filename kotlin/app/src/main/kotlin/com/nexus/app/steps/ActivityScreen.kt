@@ -3,12 +3,9 @@ package com.nexus.app.steps
 import android.content.Context
 import android.os.RemoteException
 import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -18,15 +15,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import com.nexus.app.R
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
@@ -40,15 +33,8 @@ import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.FirstRunNotice
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
-import com.nexus.app.ui.TrustTierChip
-import com.nexus.core.ActivityType
 import com.nexus.core.FirstRun
-import com.nexus.core.TrustExplainer
 import java.io.IOException
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 
 private const val TAG = "ActivityScreen"
@@ -61,24 +47,15 @@ private const val WINDOW_DAYS = 7
 @Composable
 fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
     val context = LocalContext.current
-    val stepRepo = remember { manager.stepRepositoryOrNull() }
-    val exerciseRepo = remember { manager.exerciseRepositoryOrNull() }
     val store = remember { TokenStore(context) }
-
-    var load by remember { mutableStateOf<ActivityLoad?>(null) }
-    // 로드 실패 후 재시도 트리거 (#227) — 키가 바뀌면 LaunchedEffect가 다시 돈다
-    var reloadKey by remember { mutableIntStateOf(0) }
-
-    LaunchedEffect(stepRepo, exerciseRepo, reloadKey) {
-        // 권한 문제는 실패가 아닌 미연결 안내로 (#152, #144 패턴)
-        load = if (stepRepo == null || exerciseRepo == null) {
-            ActivityLoad.PermissionDenied
-        } else {
-            loadActivity(context, stepRepo, exerciseRepo)
-        }
+    val ui = remember {
+        ActivityUiController(
+            context = context,
+            stepRepo = manager.stepRepositoryOrNull(),
+            exerciseRepo = manager.exerciseRepositoryOrNull(),
+        )
     }
-    val current = load
-    val data = (current as? ActivityLoad.Success)?.data
+    LaunchedEffect(ui.reloadKey) { ui.load() }
 
     Column(
         modifier = modifier
@@ -87,54 +64,51 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
             .padding(NexusSpacing.screen),
     ) {
         // 첫 데이터 대기 중엔 빈 차트·빈 세션 목록 대신 '준비 중' 하나만 (#213)
-        if (data?.awaitingFirstData == true) {
-            FirstRunNotice(onSyncFinished = { reloadKey++ })
+        if (ui.data?.awaitingFirstData == true) {
+            FirstRunNotice(onSyncFinished = ui::refreshAfterSync)
             return@Column
         }
-        // ── 걸음 (#7·#258) ──
-        Text(stringResource(R.string.steps_title), style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(NexusSpacing.xs))
-        Text(stringResource(R.string.steps_subtitle), style = MaterialTheme.typography.bodySmall)
-        Spacer(Modifier.height(NexusSpacing.md))
-        when (current) {
-            null -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
-
-            ActivityLoad.PermissionDenied ->
-                ConnectNotice(onReconnect, body = stringResource(R.string.activity_demo_body))
-
-            ActivityLoad.Failure ->
-                RetryNotice(stringResource(R.string.steps_error)) {
-                    load = null
-                    reloadKey++
-                }
-
-            is ActivityLoad.Success -> {
-                StepBarChart(current.data.steps)
-                if (current.data.manualSteps > 0L) {
-                    Spacer(Modifier.height(NexusSpacing.sm))
-                    Text(
-                        text = stringResource(R.string.steps_manual_excluded, current.data.manualSteps),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
-        }
-
+        StepsSection(ui, onReconnect)
         Spacer(Modifier.height(NexusSpacing.xxl))
-
         // ── 운동 세션 (#8) ──
         Text(stringResource(R.string.sessions_title), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(NexusSpacing.md))
-        if (data != null) SessionsSection(data.sessions)
-
+        ui.data?.let { SessionsSection(it.sessions) }
         Spacer(Modifier.height(NexusSpacing.xxl))
-
         // ── 동기화 상태 (#8) ──
         Text(text = syncFooter(store), style = MaterialTheme.typography.bodySmall)
     }
 }
 
-private data class ActivityData(
+/** 걸음 섹션 (#7·#258) — 제목·부제·로드 분기·막대 차트. */
+@Composable
+private fun StepsSection(ui: ActivityUiController, onReconnect: (() -> Unit)?) {
+    Text(stringResource(R.string.steps_title), style = MaterialTheme.typography.headlineSmall)
+    Spacer(Modifier.height(NexusSpacing.xs))
+    Text(stringResource(R.string.steps_subtitle), style = MaterialTheme.typography.bodySmall)
+    Spacer(Modifier.height(NexusSpacing.md))
+    when (val current = ui.load) {
+        null -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
+
+        ActivityLoad.PermissionDenied ->
+            ConnectNotice(onReconnect, body = stringResource(R.string.activity_demo_body))
+
+        ActivityLoad.Failure -> RetryNotice(stringResource(R.string.steps_error), ui::retry)
+
+        is ActivityLoad.Success -> {
+            StepBarChart(current.data.steps)
+            if (current.data.manualSteps > 0L) {
+                Spacer(Modifier.height(NexusSpacing.sm))
+                Text(
+                    text = stringResource(R.string.steps_manual_excluded, current.data.manualSteps),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+}
+
+internal data class ActivityData(
     val steps: List<DailySteps>,
     val manualSteps: Long,
     val sessions: List<ExerciseSummary>,
@@ -143,7 +117,7 @@ private data class ActivityData(
 )
 
 /** 활동 로드 결과 (#152) — 권한 문제는 미연결 안내, [Failure]만 steps_error (#144 패턴). */
-private sealed interface ActivityLoad {
+internal sealed interface ActivityLoad {
     data class Success(val data: ActivityData) : ActivityLoad
 
     data object PermissionDenied : ActivityLoad
@@ -155,7 +129,7 @@ private sealed interface ActivityLoad {
  * 활동 데이터 로드 — 실패 시 로그 후 Failure(#130 침묵 실패 제거, 구체 예외).
  * SecurityException(권한 회수)만 미연결 안내로 라우팅(#152, #144 패턴).
  */
-private suspend fun loadActivity(
+internal suspend fun loadActivity(
     context: Context,
     stepRepo: StepRepository,
     exerciseRepo: ExerciseRepository,
@@ -193,84 +167,4 @@ private suspend fun loadActivity(
 } catch (e: IllegalStateException) {
     Log.w(TAG, "activity load state failure", e)
     ActivityLoad.Failure
-}
-
-@Composable
-private fun SessionsSection(sessions: List<ExerciseSummary>) {
-    if (sessions.isEmpty()) {
-        Text(stringResource(R.string.sessions_empty), style = MaterialTheme.typography.bodyMedium)
-    } else {
-        val dtPattern = stringResource(R.string.session_datetime_format)
-        val dtFormatter = remember(dtPattern) { DateTimeFormatter.ofPattern(dtPattern, Locale.KOREAN) }
-        sessions.forEach { session -> SessionRow(session, dtFormatter) }
-    }
-}
-
-@Composable
-private fun SessionRow(session: ExerciseSummary, dtFormatter: DateTimeFormatter) {
-    val zone = remember { ZoneId.systemDefault() }
-    val whenLabel = remember(session.start) { session.start.atZone(zone).format(dtFormatter) }
-    val typeLabel = typeLabel(session.type)
-    val hrLabel = session.avgHeartRate?.let { stringResource(R.string.session_hr_format, it) }
-        ?: stringResource(R.string.session_no_hr)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = NexusSpacing.sm),
-    ) {
-        Text(whenLabel, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-        Text(
-            text = stringResource(R.string.session_meta_format, typeLabel, session.durationMinutes) + " · " + hrLabel,
-            style = MaterialTheme.typography.bodySmall,
-        )
-        // 등급은 탭하면 '왜 이 등급인지' 설명 (#222) — 근거는 이 세션의 실제 판정 입력에서 도출.
-        // 간격은 레이아웃이 준다(리소스 앞뒤 공백은 aapt2가 제거해 라벨이 붙어버린다, #222 리뷰)
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TrustTierChip(
-                tier = session.trustTier,
-                reason = TrustExplainer.reasonFor(
-                    recordingMethod = session.recordingMethod,
-                    dataOrigin = session.dataOrigin,
-                    hasHeartRate = session.avgHeartRate != null,
-                ),
-            )
-            Text(
-                text = stringResource(R.string.session_source_suffix, sourceLabel(session.dataOrigin)),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-    }
-}
-
-@Composable
-private fun sourceLabel(packageName: String): String = when (packageName) {
-    "com.sec.android.app.shealth" -> stringResource(R.string.source_samsung_health)
-    "com.samsung.android.wear.shealth" -> stringResource(R.string.source_samsung_watch)
-    else -> packageName
-}
-
-@Composable
-private fun typeLabel(type: ActivityType?): String = stringResource(
-    when (type) {
-        ActivityType.WALKING -> R.string.session_type_walking
-        ActivityType.RUNNING -> R.string.session_type_running
-        ActivityType.STRENGTH -> R.string.session_type_strength
-        null -> R.string.session_type_other
-    },
-)
-
-@Composable
-private fun syncFooter(store: TokenStore): String {
-    val millis = store.lastSyncEpochMillis
-    return if (millis <= 0L) {
-        stringResource(R.string.sync_never)
-    } else {
-        val pattern = stringResource(R.string.sync_time_format)
-        val formatter = remember(pattern) { DateTimeFormatter.ofPattern(pattern, Locale.KOREAN) }
-        val time = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).format(formatter)
-        stringResource(R.string.sync_footer_format, time, store.lastChangeCount)
-    }
 }

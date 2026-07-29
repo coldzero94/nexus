@@ -1,0 +1,212 @@
+package com.nexus.app.settings
+
+import android.os.RemoteException
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.nexus.app.R
+import com.nexus.app.backup.BackupManager
+import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.ui.NexusCard
+import com.nexus.app.ui.NexusSpacing
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import java.io.IOException
+
+/**
+ * 설정 — 연동·데이터 카드 (#311 분리): 건강 연동 상태·위젯 추가·백업·데이터 삭제.
+ *
+ * 화면 파일에서 뗀 이유는 카드가 늘 때 `SettingsScreen.kt`의 함수 수가 detekt 임계로 밀렸기 때문이다.
+ * 각 카드는 자기 상태만 들고 있어(공유 상태 없음) 파일 경계로 나누는 게 자연스럽다.
+ */
+private const val TAG = "SettingsCards"
+
+/**
+ * 연동 상태 (#49, E8-4) — 권한 보유 여부만 표시(값 조회 없음). 미연결이면 온보딩 권한
+ * 플로우로 복귀([onReconnect] — 홈 ConnectNotice와 같은 경로).
+ */
+@Composable
+internal fun HealthStatusCard(manager: HealthConnectManager, onReconnect: (() -> Unit)?) {
+    var connected by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(Unit) {
+        connected = if (manager.isAvailable()) checkPermissionsOrFalse(manager) else false
+    }
+    NexusCard(title = stringResource(R.string.settings_health_title)) {
+        when (connected) {
+            null -> Text(
+                stringResource(R.string.settings_health_checking),
+                style = MaterialTheme.typography.bodySmall,
+            )
+
+            true -> Text(
+                stringResource(R.string.settings_health_connected),
+                style = MaterialTheme.typography.bodySmall,
+            )
+
+            false -> {
+                Text(
+                    stringResource(R.string.settings_health_disconnected),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                if (onReconnect != null) {
+                    Button(onClick = onReconnect) {
+                        Text(stringResource(R.string.action_retry_permission))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 권한 확인 — 실패는 미연결로(안내가 뜨는 안전 방향, #130 catch 계약). */
+private suspend fun checkPermissionsOrFalse(manager: HealthConnectManager): Boolean = try {
+    manager.hasAllPermissions()
+} catch (e: CancellationException) {
+    throw e
+} catch (e: IOException) {
+    Log.w(TAG, "permission check IO failure", e)
+    false
+} catch (e: RemoteException) {
+    Log.w(TAG, "permission check remote failure", e)
+    false
+} catch (e: SecurityException) {
+    Log.w(TAG, "permission check denied", e)
+    false
+} catch (e: IllegalStateException) {
+    Log.w(TAG, "permission check state failure", e)
+    false
+}
+
+/** 위젯 추가 유도 (#40) — 런처 핀 요청. 위젯은 최상위 리텐션 표면(Finch 4대 장치). */
+@Composable
+internal fun WidgetPinCard() {
+    val context = LocalContext.current
+    val pinSupported = remember {
+        android.appwidget.AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported
+    }
+    if (!pinSupported) return // 미지원 런처 — 무반응 버튼 대신 카드 자체를 숨김 (#40 리뷰 N1)
+    NexusCard(title = stringResource(R.string.settings_widget)) {
+        Text(stringResource(R.string.settings_widget_desc), style = MaterialTheme.typography.bodySmall)
+        Button(onClick = {
+            val manager = android.appwidget.AppWidgetManager.getInstance(context)
+            val provider = android.content.ComponentName(
+                context,
+                com.nexus.app.widget.NexusWidgetReceiver::class.java,
+            )
+            if (manager.isRequestPinAppWidgetSupported) {
+                manager.requestPinAppWidget(provider, null, null)
+            }
+        }) {
+            Text(stringResource(R.string.settings_widget_add))
+        }
+    }
+}
+
+/**
+ * 수동 백업 (#51, E8-6) — SAF로 JSON 내보내기/가져오기. 계산된 원장만 담는다
+ * ([com.nexus.app.backup.BackupCodec] — 원본 건강 수치 배제).
+ */
+@Composable
+internal fun BackupCard() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    fun toast(resId: Int) = android.widget.Toast.makeText(context, resId, android.widget.Toast.LENGTH_SHORT).show()
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json"),
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val ok = BackupManager.exportTo(context, it)
+                toast(if (ok) R.string.backup_export_done else R.string.backup_export_failed)
+            }
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val ok = BackupManager.importFrom(context, it)
+                toast(if (ok) R.string.backup_import_done else R.string.backup_import_failed)
+            }
+        }
+    }
+
+    NexusCard(title = stringResource(R.string.settings_backup_title)) {
+        Text(stringResource(R.string.settings_backup_desc), style = MaterialTheme.typography.bodySmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(NexusSpacing.sm)) {
+            Button(onClick = { exportLauncher.launch("nexus-backup.json") }) {
+                Text(stringResource(R.string.backup_export))
+            }
+            val importTypes = arrayOf("application/json", "application/octet-stream")
+            TextButton(onClick = { importLauncher.launch(importTypes) }) {
+                Text(stringResource(R.string.backup_import))
+            }
+        }
+    }
+}
+
+/**
+ * 데이터 삭제 (#49, E8-4) — OS 수준 전체 삭제([ActivityManager.clearApplicationUserData]):
+ * 원장 DB·프리퍼런스·WorkManager 큐까지 한 번에, 누락 위험 없음(Play Data safety의 삭제 제공).
+ * 성공 시 프로세스가 즉시 종료되고 다음 실행은 온보딩부터. HC 원본 기록은 앱이 저장하지
+ * 않으므로 삭제 대상 자체가 없다(카피에 명시).
+ */
+@Composable
+internal fun DeleteDataCard() {
+    val context = LocalContext.current
+    var confirming by remember { mutableStateOf(false) }
+    NexusCard(title = stringResource(R.string.settings_delete_title)) {
+        Text(stringResource(R.string.settings_delete_desc), style = MaterialTheme.typography.bodySmall)
+        TextButton(onClick = { confirming = true }) {
+            Text(
+                stringResource(R.string.settings_delete_button),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+    if (confirming) {
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text(stringResource(R.string.delete_confirm_title)) },
+            text = { Text(stringResource(R.string.delete_confirm_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirming = false
+                    val am = context.getSystemService(android.app.ActivityManager::class.java)
+                    if (!am.clearApplicationUserData()) { // 성공 시엔 프로세스가 종료된다
+                        Log.w(TAG, "clearApplicationUserData refused")
+                        android.widget.Toast
+                            .makeText(context, R.string.delete_failed, android.widget.Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }) {
+                    Text(stringResource(R.string.delete_confirm_yes), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirming = false }) {
+                    Text(stringResource(R.string.delete_confirm_no))
+                }
+            },
+        )
+    }
+}
