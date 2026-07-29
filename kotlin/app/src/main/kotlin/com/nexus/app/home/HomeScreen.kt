@@ -43,6 +43,7 @@ import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.RetryNotice
 import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.ConditionEngine
 import com.nexus.core.DialogueSelector
@@ -134,7 +135,7 @@ fun HomeScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onR
             HomeLoad.PermissionDenied -> ConnectNotice(onReconnect)
 
             HomeLoad.Failure ->
-                Text(stringResource(R.string.home_error), style = MaterialTheme.typography.bodyMedium)
+                RetryNotice(stringResource(R.string.home_error)) { ui.retry() }
 
             is HomeLoad.Success -> HomeLoaded(state = current.state, ui = ui)
         }
@@ -214,6 +215,12 @@ private class HomeUiController(val stores: HomeStores, private val context: andr
     }
 
     /** 출발 = 에너지 확정 소모(#67) + 시작 시각 기록(#34) + 완료 알림 예약(#71). */
+    // 로드 실패 후 재시도 (#227) — 기존 reloadKey를 재사용해 LaunchedEffect를 다시 태운다
+    fun retry() {
+        load = null // 로딩 인디케이터로 되돌려 "눌렸다"는 피드백을 준다
+        reloadKey++
+    }
+
     fun depart(currentXp: Int) {
         if (stores.energy.trySpend(currentXp, EnergyEngine.EXPEDITION_COST)) {
             stores.expedition.start(System.currentTimeMillis())

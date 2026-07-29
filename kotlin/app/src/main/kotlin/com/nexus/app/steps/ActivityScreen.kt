@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +35,7 @@ import com.nexus.app.health.StepRepository
 import com.nexus.app.health.TokenStore
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.RetryNotice
 import com.nexus.app.ui.TrustTierChip
 import com.nexus.core.ActivityType
 import com.nexus.core.TrustExplainer
@@ -59,8 +61,10 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
     val store = remember { TokenStore(context) }
 
     var load by remember { mutableStateOf<ActivityLoad?>(null) }
+    // 로드 실패 후 재시도 트리거 (#227) — 키가 바뀌면 LaunchedEffect가 다시 돈다
+    var reloadKey by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(stepRepo, exerciseRepo) {
+    LaunchedEffect(stepRepo, exerciseRepo, reloadKey) {
         // 권한 문제는 실패가 아닌 미연결 안내로 (#152, #144 패턴)
         load = if (stepRepo == null || exerciseRepo == null) {
             ActivityLoad.PermissionDenied
@@ -89,7 +93,10 @@ fun ActivityScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
                 ConnectNotice(onReconnect, body = stringResource(R.string.activity_demo_body))
 
             ActivityLoad.Failure ->
-                Text(stringResource(R.string.steps_error), style = MaterialTheme.typography.bodyMedium)
+                RetryNotice(stringResource(R.string.steps_error)) {
+                    load = null
+                    reloadKey++
+                }
 
             is ActivityLoad.Success -> {
                 StepBarChart(current.data.steps)

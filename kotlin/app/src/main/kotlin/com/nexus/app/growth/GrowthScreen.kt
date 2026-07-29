@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,6 +37,7 @@ import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.RetryNotice
 import com.nexus.app.ui.animatedGaugeProgress
 import com.nexus.core.ActivityType
 import com.nexus.core.ClassAffinity
@@ -84,8 +86,10 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
     var change by remember { mutableStateOf<GrowthChange?>(null) }
     var badges by remember { mutableStateOf<BadgeState?>(null) }
     var celebrationVisible by remember { mutableStateOf(true) }
+    // 로드 실패 후 재시도 트리거 (#227)
+    var reloadKey by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(exerciseRepo) {
+    LaunchedEffect(exerciseRepo, reloadKey) {
         // HC 미가용(repo null)과 권한 회수(SecurityException)는 같은 "미연결" 안내로 (#144)
         val loaded = if (exerciseRepo == null) GrowthLoad.PermissionDenied else loadGrowth(exerciseRepo, ledger)
         load = loaded
@@ -123,7 +127,10 @@ fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, o
                 )
 
             GrowthLoad.Failure ->
-                Text(stringResource(R.string.growth_error), style = MaterialTheme.typography.bodyMedium)
+                RetryNotice(stringResource(R.string.growth_error)) {
+                    load = null
+                    reloadKey++
+                }
 
             is GrowthLoad.Success -> {
                 change?.let { c ->
