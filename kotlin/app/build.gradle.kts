@@ -126,6 +126,8 @@ android {
     testOptions {
         // 단위 테스트에서 android.util.Log 등 안드로이드 API를 no-op으로 (#146)
         unitTests.isReturnDefaultValues = true
+        // Robolectric이 매니페스트·리소스를 읽어야 실 Room/Compose를 JVM에서 띄울 수 있다 (#232)
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -150,4 +152,12 @@ dependencies {
 
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    // 호스트측 하네스 (#232) — 에뮬 없이 실 Room·WorkManager·Compose. CI가 ubuntu에서 그대로 돌린다.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.work.testing)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

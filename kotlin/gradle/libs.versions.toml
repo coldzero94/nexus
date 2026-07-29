@@ -12,6 +12,9 @@ compileSdk = "37"
 minSdk = "34"
 targetSdk = "36"
 
+robolectric = "4.16"
+androidxTest = "1.7.0"
+
 spotless = "8.8.0"
 detekt = "1.23.8"
 ktlint = "1.8.0"
@@ -27,6 +30,13 @@ compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeB
 compose-material3 = { module = "androidx.compose.material3:material3" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+# 호스트측(JVM) 테스트 하네스 (#232) — 에뮬 없이 실 Room·WorkManager·Compose를 돌린다
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTest" }
+room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
+work-testing = { module = "androidx.work:work-testing", version.ref = "workManager" }
+compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version = "1.10.2" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.10.0" }
