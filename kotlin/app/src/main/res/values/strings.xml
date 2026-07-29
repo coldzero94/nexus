@@ -189,6 +189,11 @@
     <string name="session_no_hr">심박 없음</string>
     <string name="session_datetime_format">M월 d일 HH:mm</string>
     <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
+    <!-- 레벨업 홈 축하 (#219) — 무엇이 올랐는지 공개 -->
+    <string name="levelup_title">레벨 %1$d 달성!</string>
+    <string name="levelup_body">움직인 만큼 이 아이가 자랐어요.</string>
+    <string name="levelup_stat_delta">%1$s +%2$d</string>
+    <string name="levelup_dismiss">확인</string>
     <!-- 컨디션 설명 (#223) — 유일한 손실 표면을 처벌 아닌 리듬으로. 죄책감 톤 금지 -->
     <string name="condition_explain_open">컨디션 설명</string>
     <string name="condition_explain_title">컨디션이 뭔가요?</string>
