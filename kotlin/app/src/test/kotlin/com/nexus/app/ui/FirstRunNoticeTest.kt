@@ -9,7 +9,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
-import com.nexus.core.FirstRun
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -18,10 +17,12 @@ import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertEquals
 
 /**
- * 빈 상태 3분기 렌더 (#213 완료 기준) — 데이터 없음·0XP / 걸음만 있고 0XP / 기존 사용자.
+ * 빈 상태 컴포넌트 자체의 계약 (#213) — 렌더되는가, 문구가 실시간을 약속하지 않는가.
  *
- * 가운데 분기가 이 티켓의 핵심이다: 걸음은 XP를 만들지 않으므로 걷기만 하는 사용자는 XP가 계속 0인데,
- * 여기서 빈 상태를 띄우면 실제 걸음 막대를 가려 **고치려던 "고장처럼 보임"을 오히려 만든다**.
+ * **노출 조건 검증은 여기 없다.** 이전에는 이 파일이 `FirstRun.isAwaitingFirstData` 분기를 로컬에
+ * 다시 구현해 검증했는데, 그건 화면을 타지 않아 "분기 배치를 지워도 통과"했다(#213 리뷰 지적).
+ * 지금은 실제 화면 렌더 테스트가 그 계약을 검증한다 —
+ * `ActivityScreenRenderTest`·`GrowthScreenRenderTest`(#320). 규칙 자체는 core `FirstRunTest`.
  *
  * 에뮬 불요(#232 하네스) — Robolectric + compose ui-test.
  */
@@ -50,37 +51,6 @@ class FirstRunNoticeTest {
                 Configuration.Builder().setExecutor { /* 실행하지 않는다 */ }.build(),
             )
         }
-    }
-
-    /**
-     * 화면들이 하는 것과 같은 분기 — 판정은 core, 렌더는 여기.
-     *
-     * 한계: 세 화면 각각의 분기 **배치**(어느 로드 상태 앞뒤에 놓였는지)는 이 테스트가 잡지 못한다.
-     * 화면 컴포저블이 HealthConnectManager를 요구해 호스트에서 세울 수 없어서다. 현재는 실기기
-     * 3탭 확인으로 대신하며, 화면 단위 렌더 하네스는 후속 티켓으로 분리했다.
-     */
-    @Composable
-    private fun Subject(lifetimeXp: Int, hasAnyHealthData: Boolean) {
-        if (FirstRun.isAwaitingFirstData(lifetimeXp, hasAnyHealthData)) FirstRunNotice()
-    }
-
-    @Test
-    fun `데이터 없음 0XP — 빈 상태를 그린다`() {
-        composeRule.setContent { Subject(lifetimeXp = 0, hasAnyHealthData = false) }
-        composeRule.onNodeWithTag(FIRST_RUN_NOTICE_TAG).assertIsDisplayed()
-    }
-
-    @Test
-    fun `걸음만 있고 0XP — 빈 상태를 그리지 않는다`() {
-        // 걸음은 XP를 만들지 않는다 — 여기서 빈 상태를 띄우면 실제 걸음 막대를 가린다
-        composeRule.setContent { Subject(lifetimeXp = 0, hasAnyHealthData = true) }
-        composeRule.onNodeWithTag(FIRST_RUN_NOTICE_TAG).assertDoesNotExist()
-    }
-
-    @Test
-    fun `기존 사용자 — 빈 상태를 그리지 않는다`() {
-        composeRule.setContent { Subject(lifetimeXp = 250, hasAnyHealthData = true) }
-        composeRule.onNodeWithTag(FIRST_RUN_NOTICE_TAG).assertDoesNotExist()
     }
 
     @Test

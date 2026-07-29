@@ -44,9 +44,16 @@ internal data class GrowthUiState(
 )
 
 @Composable
-fun GrowthScreen(manager: HealthConnectManager, modifier: Modifier = Modifier, onReconnect: (() -> Unit)? = null) {
+internal fun GrowthScreen(
+    manager: HealthConnectManager,
+    modifier: Modifier = Modifier,
+    onReconnect: (() -> Unit)? = null,
+    // 테스트가 로드 분기를 직접 세우기 위한 이음새 (#320) — 기본값은 프로덕션 조립 그대로.
+    // Robolectric엔 Health Connect가 없어 repo가 항상 null이라, 주입 없이는 미연결 분기만 렌더된다.
+    controller: GrowthUiController? = null,
+) {
     val context = LocalContext.current
-    val ui = remember {
+    val ui = controller ?: remember {
         GrowthUiController(
             context = context,
             manager = manager,
