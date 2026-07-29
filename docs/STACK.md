@@ -62,6 +62,9 @@
 - 계측(에뮬레이터) 테스트는 CI에서 제외(분수 폭증) — 로컬/야간.
 - 워치 앱 배포는 Play 내부 트랙 또는 adb 사이드로드 (릴리즈 APK 직설치는 폰 전용).
 
+**호스트측 테스트 하네스 (#232)**: 앱 레이어 테스트는 **Robolectric으로 JVM에서** 돈다 — 에뮬레이터 불요. CI가 이미 ubuntu에서 `:app:testDebugUnitTest`를 돌리므로 그대로 들어맞는다. 실 Room(`room-testing`)·WorkManager(`work-testing`)·Compose(`ui-test-junit4`)를 붙여, 손수 만든 페이크로 진짜 구현을 흉내 내던 한계(예: 유니크 제약 수동 재현)를 없앤다. `HostHarnessCanaryTest`가 이 셋의 배관을 지킨다 — 거기서 실패하면 앱 로직이 아니라 하네스가 깨진 것이다.
+
+**커버리지는 아직 미가시화**: Kover 0.9.2가 AGP 9.2.1에서 Android variant를 인식하지 못해(리포트가 빈 채로 생성) 도입을 보류했다 — #296에서 재시도한다.
 ## 6. 개발 환경 (맥·윈도우 혼성 팀)
 
 - **찬영 = 맥, 치완 = 윈도우** — 우리 스택은 윈도우 1급 지원(Android Studio·에뮬레이터·gradlew.bat·삼성 기기 드라이버). 우분투 전환 불필요. iOS 관련 태스크만 맥/CI 전담(역할 분담과 일치). 줄바꿈은 `.gitattributes`로 LF 강제.
