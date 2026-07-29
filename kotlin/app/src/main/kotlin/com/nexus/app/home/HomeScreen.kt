@@ -41,6 +41,7 @@ import com.nexus.app.settings.RestModeStore
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.ConnectNotice
+import com.nexus.app.ui.FirstRunNotice
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
@@ -50,6 +51,7 @@ import com.nexus.core.DialogueSelector
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionEngine
 import com.nexus.core.ExpeditionState
+import com.nexus.core.FirstRun
 import com.nexus.core.SessionInput
 import com.nexus.core.XpEngine
 import com.nexus.core.XpExplainer
@@ -87,6 +89,8 @@ internal data class HomeUiState(
     val streak: com.nexus.core.StreakStatus,
     /** 이번 주 목표 진척 (#215) — 활동일 M / 목표 N, 주 남은 날. 월요일 KST 경계. */
     val weeklyProgress: WeeklyProgress,
+    /** 첫 데이터 대기 중 (#213) — 0을 나열하는 대신 '준비 중' 빈 상태를 그린다. */
+    val awaitingFirstData: Boolean,
 )
 
 /**
@@ -298,6 +302,11 @@ private fun settleOnLoad(store: SettlementStore, currentXp: Int): Int? {
 /** 로드 완료 상태 — 정산 카드(#35)가 있으면 콘텐츠 위에 얹는다. */
 @Composable
 private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
+    // 첫 데이터 대기 중엔 0 나열 대신 '준비 중' 하나만 (#213) — 아침 카드·정산도 보여줄 게 없다
+    if (state.awaitingFirstData) {
+        FirstRunNotice(onSyncFinished = ui::refreshAfterSync)
+        return
+    }
     if (ui.morningVisible) MorningCard(state, onDismiss = ui::dismissMorning)
     ui.settlementDelta?.let { delta ->
         SettlementCard(deltaXp = delta, onOpen = { ui.openSettlement(state.cappedTotalXp) })
@@ -409,11 +418,12 @@ private suspend fun assembleHomeState(
 ): HomeUiState {
     val todayEpoch = today.toEpochDay()
     val cappedTotal = stores.ledger.cappedTotalXp()
+    val todaySteps = stepRepo.readDailySteps(days = 1).firstOrNull { it.date == today }?.steps ?: 0L
     return HomeUiState(
         condition = condition,
         todayXp = XpExplainer.explainDay(sessions, epochDay = todayEpoch).cappedXp,
         todayActiveMinutes = sessions.filter { it.epochDay == todayEpoch && it.type != null }.sumOf { it.minutes },
-        todaySteps = stepRepo.readDailySteps(days = 1).firstOrNull { it.date == today }?.steps ?: 0L,
+        todaySteps = todaySteps,
         energy = EnergyEngine.balance(cappedTotal, stores.energy.totalSpent),
         cappedTotalXp = cappedTotal,
         expedition = ExpeditionEngine.stateAt(stores.expedition.startedAtMillis, System.currentTimeMillis()),
@@ -430,6 +440,11 @@ private suspend fun assembleHomeState(
         ),
         streak = resolveStreak(stores.ledger, stores.rest, stores.streak, today),
         weeklyProgress = resolveWeeklyProgress(sessions, today, stores.goal.weeklyGoalDays),
+        // 원장 합계는 위에서 이미 구했다 — 게이트가 다시 질의하면 전체 원장 집계가 로드마다 두 번 돈다
+        awaitingFirstData = FirstRun.isAwaitingFirstData(
+            lifetimeXp = cappedTotal,
+            hasAnyHealthData = todaySteps > 0L || sessions.any { it.type != null },
+        ),
     )
 }
 

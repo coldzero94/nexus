@@ -20,16 +20,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.work.WorkInfo
 import com.nexus.app.R
-import com.nexus.app.health.HealthSyncWorker
 import com.nexus.app.health.TokenStore
 import com.nexus.app.ui.NexusCard
+import com.nexus.app.ui.rememberManualSync
 import com.nexus.core.SyncFreshness
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import java.util.UUID
 
 /** 신선도 표시 갱신 주기 — "N분 전"이 화면에 머무는 동안 굳지 않게 (#221). */
 private const val TICK_MILLIS = 60_000L
@@ -52,15 +50,9 @@ private const val TICK_MILLIS = 60_000L
 internal fun FreshnessRow(onSyncFinished: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val store = remember { TokenStore(context) }
+    val sync = rememberManualSync(onSyncFinished)
 
-    // Flow는 호출마다 새 인스턴스라 remember 없이는 리컴포지션마다 구독이 끊겼다 재생성된다
-    val manualFlow = remember(context) { HealthSyncWorker.manualSyncFlow(context) }
-    val manualInfos by manualFlow.collectAsStateWithLifecycle(initialValue = emptyList())
-
-    val running = manualInfos.any { it.isInFlight() }
-    val failed = manualInfos.lastOrNull()?.state == WorkInfo.State.FAILED
-
-    // 최초 1회는 동기 읽기 — produceState의 초기값(Never)으로 한 프레임 비웠다 그리면 스크롤이 튄다
+    // 최초 1회는 동기 읽기 — 초기값을 비웠다 그리면 한 프레임 뒤 스크롤이 튄다
     var freshness by remember {
         mutableStateOf(SyncFreshness.evaluate(store.lastSyncEpochMillis, System.currentTimeMillis()))
     }
@@ -68,7 +60,7 @@ internal fun FreshnessRow(onSyncFinished: () -> Unit, modifier: Modifier = Modif
     // 워크 상태가 바뀔 때마다 다시 읽는다. `running`의 true→false 전이에 걸면, 워크가 즉시 끝나
     // ENQUEUED를 한 번도 관측하지 못한 경우(HC 미가용 등) 갱신 신호를 통째로 놓친다.
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    LaunchedEffect(manualInfos, lifecycle) {
+    LaunchedEffect(sync.running, sync.failed, lifecycle) {
         // 포그라운드에서만 tick — 백그라운드에서 1분마다 깨울 이유가 없고, 복귀 시 즉시 한 번 읽는다
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             while (true) {
@@ -79,44 +71,12 @@ internal fun FreshnessRow(onSyncFinished: () -> Unit, modifier: Modifier = Modif
         }
     }
 
-    // 사용자가 누른 시점의 워크 id들 — 이후 여기 없던 id가 완료되면 "이번에 누른 것"이 끝난 것이다.
-    // 단순히 "완료된 워크가 있으면"으로 잡으면 지난 세션에 끝난 워크 탓에 홈 진입마다 헛읽기가 돈다.
-    var baselineIds by remember { mutableStateOf<Set<UUID>?>(null) }
-    val newlyFinished = baselineIds?.let { base ->
-        manualInfos.any { it.state.isFinished && it.id !in base }
-    } == true
-
-    // 완료된 수동 동기화는 원장을 갱신했을 수 있다 — 화면 수치도 함께 다시 읽는다
-    LaunchedEffect(newlyFinished) {
-        if (newlyFinished) {
-            baselineIds = null
-            onSyncFinished()
-        }
-    }
-
-    val onCheckNow = {
-        baselineIds = manualInfos.mapTo(mutableSetOf()) { it.id }
-        HealthSyncWorker.enqueueNow(context)
-    }
-
     val synced = freshness as? SyncFreshness.Synced ?: return
     when {
-        failed -> FailureNotice(synced, running, onCheckNow, modifier)
-        synced.delayed -> DelayedNotice(synced, running, onCheckNow, modifier)
-        else -> FreshLine(synced, running, onCheckNow, modifier)
+        sync.failed -> FailureNotice(synced, sync.running, sync.checkNow, modifier)
+        synced.delayed -> DelayedNotice(synced, sync.running, sync.checkNow, modifier)
+        else -> FreshLine(synced, sync.running, sync.checkNow, modifier)
     }
-}
-
-/**
- * '진행 중'으로 볼 상태 (#221) — RUNNING이거나 **첫 시도 대기**인 것만.
- *
- * 재시도로 되돌아온 ENQUEUED(runAttemptCount > 0)까지 진행 중으로 치면, 백오프가 최대 5시간까지
- * 늘어나는 동안 버튼이 "확인 중…"으로 굳어 눌리지 않는다. 사용자에겐 고장으로 보인다.
- */
-private fun WorkInfo.isInFlight(): Boolean = when (state) {
-    WorkInfo.State.RUNNING -> true
-    WorkInfo.State.ENQUEUED -> runAttemptCount == 0
-    else -> false
 }
 
 /** 최신에 가까울 때 — 조용한 한 줄. 카드로 키우면 아무 문제 없을 때도 시선을 뺏는다. */
