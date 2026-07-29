@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 /**
@@ -64,7 +66,12 @@ fun NexusCard(
                                     modifier = Modifier.size(TITLE_ICON_DP.dp),
                                 )
                             }
-                            Text(title, style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.titleMedium,
+                                // 카드 제목은 구조 표지 (#224) — TalkBack이 제목 단위로 훑을 수 있게
+                                modifier = Modifier.semantics { heading() },
+                            )
                         }
                     }
                     trailing?.invoke(this)

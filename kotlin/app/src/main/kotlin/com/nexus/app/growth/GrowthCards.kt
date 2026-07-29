@@ -17,6 +17,7 @@ import com.nexus.app.R
 import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.animatedGaugeProgress
+import com.nexus.app.ui.gaugeSemantics
 import com.nexus.core.ActivityType
 import com.nexus.core.ClassAffinityCalculator
 import com.nexus.core.GrowthSummary
@@ -44,7 +45,15 @@ internal fun GrowthContent(data: GrowthUiState) {
 @Composable
 private fun LevelCard(data: GrowthSummary) {
     // 성장 탭의 히어로 — 레벨 수는 titleLarge로 크게, 카드는 Highlight로 강조(형제 카드와 위계 차)
-    NexusCard(emphasis = CardEmphasis.Highlight) {
+    // 레벨 라벨·바·누적 XP를 한 노드로 (#224) — 따로 읽히면 "40퍼센트"만 들린다
+    val levelState = stringResource(R.string.a11y_level_state, data.level, data.totalXp)
+    NexusCard(
+        emphasis = CardEmphasis.Highlight,
+        modifier = Modifier.gaugeSemantics(
+            label = stringResource(R.string.a11y_level_gauge),
+            stateText = levelState,
+        ),
+    ) {
         Text(
             stringResource(R.string.growth_level_format, data.level),
             style = MaterialTheme.typography.titleLarge,
@@ -75,7 +84,12 @@ private fun AffinityCard(data: GrowthSummary) {
 
 @Composable
 private fun ShareRow(label: String, share: Double) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    // 막대에 텍스트 대체가 없어 축 이름조차 안 읽혔다 (#224)
+    val state = stringResource(R.string.a11y_axis_state, (share * PERCENT).toInt())
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.gaugeSemantics(label = label, stateText = state),
+    ) {
         Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(64.dp))
         LinearProgressIndicator(
             progress = { share.toFloat() },
@@ -109,3 +123,6 @@ private fun StatRow(label: String, value: Int) {
         )
     }
 }
+
+/** 비율 → 퍼센트 낭독 변환 (#224). */
+private const val PERCENT = 100

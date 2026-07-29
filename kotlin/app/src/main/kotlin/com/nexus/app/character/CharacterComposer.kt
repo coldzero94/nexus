@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.core.content.ContextCompat
 import com.nexus.app.R
 import com.nexus.app.ui.reduceMotion
@@ -74,6 +76,7 @@ object CharacterComposer {
         // reduced를 키에 포함해야 토글 순간의 프레임에 굳지 않는다 — 그러면 걷는 중간 자세로 멈추고
         // 프레임 0을 쓰는 위젯과도 어긋난다(#228 리뷰). 켜고 끌 때 모두 0에서 다시 시작한다.
         var frame by remember(state, reduced) { mutableIntStateOf(0) }
+        val placeholderDesc = stringResource(R.string.character_content_desc)
 
         LaunchedEffect(state, reduced) {
             val loaded = set ?: withContext(Dispatchers.IO) { assets.loadAnimationSet() }.also { set = it }
@@ -91,7 +94,9 @@ object CharacterComposer {
 
         val loaded = set
         if (loaded == null) {
-            Box(modifier) // 로드 전 자리 예약 — 스프라이트 등장 시 레이아웃 점프 방지 (#26 리뷰)
+            // 로드 전 자리 예약 — 레이아웃 점프 방지(#26). 이 순간에도 설명은 있어야 한다: 없으면
+            // 탭 가능한 캐릭터(#217)가 TalkBack에 "버튼"으로만 읽힌다 (#224).
+            Box(modifier.semantics { contentDescription = placeholderDesc })
             return
         }
         val resolvedState = if (state in loaded.states) state else loaded.defaultState
@@ -100,7 +105,10 @@ object CharacterComposer {
             ?: return
         Image(
             painter = painterResource(resId),
-            contentDescription = stringResource(R.string.character_content_desc),
+            // 고정 '내 캐릭터'만 읽으면 기분·활동 상태가 시각 채널에만 남는다 (#224).
+            // 상태 키(idle·walk·표정)를 사람이 읽는 라벨로 덧붙인다.
+            contentDescription = stringResource(R.string.character_content_desc) +
+                spriteStateSuffix(resolvedState),
             modifier = modifier,
         )
     }
@@ -123,4 +131,15 @@ object CharacterComposer {
         }
         return bitmap
     }
+}
+
+/** 스프라이트 상태를 낭독용 접미사로 (#224) — 모르는 상태는 접미사 없이 기본 설명만. */
+@Composable
+private fun spriteStateSuffix(state: String): String {
+    val res = when (state) {
+        "walk" -> R.string.a11y_sprite_walk
+        "idle" -> R.string.a11y_sprite_idle
+        else -> null
+    } ?: return ""
+    return ", " + stringResource(res)
 }
