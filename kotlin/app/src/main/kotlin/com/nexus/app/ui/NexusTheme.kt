@@ -34,7 +34,12 @@ fun NexusTheme(
         else -> NexusLightColors
     }
     // 데이터 시각화 팔레트(#257)는 M3 스킴 밖 토큰 — 동일 다크 판정에 묶어 주입.
-    CompositionLocalProvider(LocalVizColors provides VizColors.palette(useDarkTheme)) {
+    // 모션 스케일(#217)은 시스템 '애니메이션 제거'를 앱 전역에 알린다 — motionDuration()의 입력.
+    // 정책 전반(캐릭터 티커·축하 연출 대체안)은 #228 소유이고, 여기선 공급 지점만 세운다.
+    CompositionLocalProvider(
+        LocalVizColors provides VizColors.palette(useDarkTheme),
+        LocalMotionScale provides rememberSystemMotionScale(),
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = NexusTypography,

@@ -189,6 +189,8 @@
     <string name="session_no_hr">심박 없음</string>
     <string name="session_datetime_format">M월 d일 HH:mm</string>
     <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
+    <!-- 캐릭터 생동감 (#217) -->
+    <string name="character_pet_action">쓰다듬기</string>
     <!-- 첫 세션 루프 (#211) — 반영 속도를 약속하지 않는다 -->
     <string name="first_coach_title">첫 성장까지, 10분</string>
     <string name="first_coach_body">잠깐 걷기만 해도 오늘 안에 첫 성장이 기록돼요. 무엇을 할지 고르지 않아도 돼요 — 움직이면 알아서 쌓여요.</string>
