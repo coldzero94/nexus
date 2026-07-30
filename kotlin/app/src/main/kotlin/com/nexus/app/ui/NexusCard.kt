@@ -84,8 +84,12 @@ fun NexusCard(
 
 private const val TITLE_ICON_DP = 20
 
+/**
+ * 강조 → M3 컨테이너 롤. `internal`인 이유는 세 단계가 서로 다른 색인지 테스트가 확인하기
+ * 때문이다(#263) — 히어로와 축하 카드가 같은 색이 되는 사고가 실제로 있었다.
+ */
 @Composable
-private fun CardEmphasis.colors(): CardColors = when (this) {
+internal fun CardEmphasis.colors(): CardColors = when (this) {
     // 종속 카드는 surfaceContainerLow(밝음) — 히어로(surfaceContainerHigh, 진함)보다 물러나게
     // (M3 filled Card 기본값 surfaceContainerHighest는 히어로보다 진해 위계가 역전됐다, #256 리뷰)
     CardEmphasis.Neutral -> CardDefaults.cardColors(

@@ -204,7 +204,6 @@
     <string name="a11y_level_state">레벨 %1$d · 누적 %2$d XP</string>
     <string name="a11y_today_xp_gauge">오늘 XP 진행</string>
     <string name="a11y_today_xp_state">%1$d XP · 하루 목표 %2$d XP</string>
-    <string name="a11y_axis_state">%1$d 퍼센트</string>
     <string name="a11y_sprite_idle">쉬고 있어요</string>
     <string name="a11y_sprite_walk">걷고 있어요</string>
     <string name="a11y_widget_progress">오늘 XP %1$d, 하루 목표 %2$d XP</string>
@@ -276,6 +275,16 @@
     <string name="growth_xp_format">누적 %1$,d XP · 산식 v%2$d</string>
     <string name="growth_affinity_format">클래스 성향: %1$s</string>
     <string name="growth_stats_title">능력치</string>
+    <!-- 성향 비중 범례 (#263) — 색만으로 구분하지 않기 위해 라벨·퍼센트를 항상 병기 -->
+    <string name="growth_axis_legend_format">%1$s %2$d%%</string>
+    <!-- 히어로 능력치 바의 접근성 상태 (#263) — 값과 최대치를 함께, 원시 퍼센트 낭독 금지 -->
+    <!-- 능력치 낭독 (#263) — 절대 상한이 없는 값이라 "30 중 30"처럼 만점을 말하면 거짓이 된다.
+         가장 높은 축은 그 사실을, 나머지는 기준값을 함께 읽는다. -->
+    <string name="a11y_stat_state_top">%1$,d · 능력치 중 가장 높음</string>
+    <string name="a11y_stat_state_relative">%1$,d · 가장 높은 %2$,d 대비</string>
+    <string name="a11y_stat_state_alone">%1$,d</string>
+    <!-- 비중이 전부 0일 때 — 빈 바를 그리면 '0%'가 아니라 '깨진 바'로 보인다 -->
+    <string name="growth_affinity_empty">운동을 기록하면 성향 구성이 여기에 나타나요.</string>
     <string name="growth_stat_value_format">%1$,d</string>
     <string name="growth_stat_locked_format">%1$s — 잠김 (후속 해금)</string>
     <string name="growth_scope_note">최근 %1$d일 운동 세션 기준 · 걸음 XP는 원장 배선 후 합산</string>

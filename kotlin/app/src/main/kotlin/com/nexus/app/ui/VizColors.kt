@@ -32,7 +32,14 @@ data class VizPalette(
     val conditionGood: Color,
     /** 바닥 마커 선 — 불퇴행 하한 표식. */
     val floorMarker: Color,
-    /** 걷기 카테고리(#258~) — 강조(오늘) 막대. */
+    /**
+     * 걷기 카테고리(#258~) — 강조(오늘) 막대.
+     *
+     * 라이트 톤을 #263에서 한 단계 낮췄다(8A6D2E → 6E5724, 색조는 그대로). 성향 비중바에서 걷기와
+     * 달리기가 **맞닿기** 때문인데, 원래 두 색은 적록 색약에서 색조가 붕괴하는 데다 명도까지
+     * 거의 같아서(대비 1.01:1) 이색형 시야에서 한 덩어리로 보였다. 색조를 바꾸지 않고 명도만 내려
+     * **명도 채널로 분리**한다(달리기 대비 1.42:1). 서피스 대비도 3.96→5.59로 함께 오른다.
+     */
     val walking: Color,
     /** 걷기 물러난 톤(#258) — 과거 활동일 막대. 알파 감쇠는 라이트에서 3:1 붕괴라 **고정 톤**으로 정의. */
     val walkingMuted: Color,
@@ -58,7 +65,7 @@ private val LightViz = VizPalette(
     conditionStable = Color(0xFF8A6614),
     conditionGood = Color(0xFF4F7A2F),
     floorMarker = Color(0xFF7A5B2E),
-    walking = Color(0xFF8A6D2E),
+    walking = Color(0xFF6E5724),
     walkingMuted = Color(0xFFA5854A),
     running = Color(0xFFB5562F),
     strength = Color(0xFF2F6E6A),

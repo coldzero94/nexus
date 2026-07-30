@@ -3,6 +3,7 @@ package com.nexus.app.ui
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.stateDescription
 
 /**
@@ -17,8 +18,13 @@ import androidx.compose.ui.semantics.stateDescription
  *
  * @param label 무엇의 게이지인지("컨디션"·"레벨 진행" 등).
  * @param stateText 현재 상태를 사람이 읽는 문장("78, 100점 만점"·"레벨 3까지 40 XP" 등).
+ * @param heading 이 노드가 화면 구조의 표제인가. `clearAndSetSemantics`가 하위를 지우므로,
+ *   게이지가 카드의 대표 콘텐츠인 경우(#263 성장 히어로) 이걸 켜지 않으면 그 카드가 TalkBack
+ *   표제 단위 이동에서 **아예 건너뛰어진다** — 가장 중요한 카드가 도달 불가가 된다.
  */
-fun Modifier.gaugeSemantics(label: String, stateText: String): Modifier = clearAndSetSemantics {
-    contentDescription = label
-    stateDescription = stateText
-}
+fun Modifier.gaugeSemantics(label: String, stateText: String, heading: Boolean = false): Modifier =
+    clearAndSetSemantics {
+        contentDescription = label
+        stateDescription = stateText
+        if (heading) heading()
+    }
