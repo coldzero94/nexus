@@ -20,6 +20,8 @@ import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.EnergyEngine
+import com.nexus.core.ExpeditionReward
+import com.nexus.core.ExpeditionRewardPicker
 import com.nexus.core.FirstSessionCue
 import com.nexus.core.Stat
 import com.nexus.core.StatDelta
@@ -33,6 +35,15 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
     var load by mutableStateOf<HomeLoad?>(null)
         private set
     var reloadKey by mutableIntStateOf(0)
+        private set
+
+    /**
+     * 방금 개봉한 원정의 보상 (#68) — null이면 개봉 카드가 없다.
+     *
+     * 영속하지 않는다: 보상은 **개봉하는 순간의 연출**이고, 도감으로 남기는 건 #112(후속)다.
+     * 지금 영속하면 아직 없는 수집 UI를 전제로 저장 포맷이 굳는다.
+     */
+    var reward by mutableStateOf<ExpeditionReward?>(null)
         private set
     var settlementDelta by mutableStateOf<Int?>(null)
         private set
@@ -127,14 +138,28 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
         }
     }
 
-    fun dismissMorning() {
-        stores.morning.markShown(cardEpochDay)
-        morningVisible = false
-    }
+    /**
+     * 홈의 단발 카드 닫기 (#68) — 아침·저녁·개봉 결과를 한 진입점으로.
+     *
+     * 카드가 늘 때마다 `dismissX()`를 하나씩 붙이면 "닫으면 무엇이 사라지는가"가 여러 곳에 흩어지고
+     * 컨트롤러 함수 수도 계속 는다. 아침·저녁은 **오늘 다시 안 뜨게** 마커를 남기고, 개봉 결과는
+     * 표시 전용이라 상태만 지운다 — 그 차이가 한눈에 보이는 게 이 형태의 값이다.
+     */
+    fun dismissCard(card: HomeCard) {
+        when (card) {
+            HomeCard.MORNING -> {
+                stores.morning.markShown(cardEpochDay)
+                morningVisible = false
+            }
 
-    fun dismissJournal() {
-        stores.journal.markShown(cardEpochDay)
-        journalVisible = false
+            HomeCard.JOURNAL -> {
+                stores.journal.markShown(cardEpochDay)
+                journalVisible = false
+            }
+
+            // 보상은 영속하지 않는다 — 다음 개봉에 새로 뽑힌다
+            HomeCard.EXPEDITION_REWARD -> reward = null
+        }
     }
 
     /** 개봉한 순간이 기준점 — 확인 전 재진입엔 다시 뜬다 (#61 패턴). */
@@ -168,9 +193,23 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
         }
     }
 
+    /**
+     * 개봉 (#34·#68) — 상태 소비 + 보상 추첨.
+     *
+     * 보상은 **개봉 시각을 seed로** 뽑는다. core가 난수원을 갖지 않기 때문이다([ExpeditionRewardPicker]).
+     *
+     * 표를 못 읽어도 개봉 자체는 성공시킨다 — 보상은 연출이고, 그것 때문에 원정이 안 열리면
+     * 8시간을 기다린 사용자가 상태에 갇힌다. 부가 정보 실패는 조용히 넘긴다(#130 catch 계약).
+     */
     fun openExpedition() {
-        // 열 원정이 없으면(연타 등) 계측·후속 보상까지 건너뛴다 — 반복 참여 지표가 부풀지 않게(#204 리뷰)
-        if (!stores.expedition.open()) return // 보상 지급·연출은 E5-7(#68)에서 이 지점에 연결
+        // 열 원정이 없으면(연타 등) 계측·보상까지 건너뛴다 — 반복 참여 지표가 부풀지 않게(#204 리뷰)
+        if (!stores.expedition.open()) return
+        reward = runCatching {
+            ExpeditionRewardPicker.pick(
+                table = CharacterAssets(context).loadExpeditionRewards(),
+                seed = System.currentTimeMillis(),
+            )
+        }.getOrNull()
         ExpeditionReturnWorker.cancel(context) // 이미 확인한 원정은 알리지 않는다 (#71)
         Telemetry.record(TelemetryEvent.EXPEDITION_OPENED) // 반복 참여 지표 겸 퍼널 종점 (#47)
         reloadKey++

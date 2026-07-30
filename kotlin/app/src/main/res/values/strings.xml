@@ -38,6 +38,9 @@
     <string name="expedition_remaining_format">%1$d시간 %2$d분</string>
     <string name="expedition_ready_body">다녀왔어요! 이야기가 도착했어요.</string>
     <string name="expedition_open">개봉하기</string>
+    <!-- 원정 개봉 연출 (#68, E5-7) — 제목·본문은 expeditions.json에서 온다(하드코딩 금지) -->
+    <string name="expedition_result_title">원정에서 돌아왔어요</string>
+    <string name="expedition_result_dismiss">잘 다녀왔어</string>
     <string name="settlement_title">🎁 새 성장이 도착했어요</string>
     <string name="settlement_body">그동안의 움직임이 +%1$,d XP로 새겨졌어요.</string>
     <string name="settlement_open">확인</string>
