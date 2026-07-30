@@ -19,7 +19,10 @@ paths:
 - **Colors come from tokens only** (#267): define in `ui/NexusColors.kt` (M3 scheme) or `ui/VizColors.kt`
   (data-viz palette) and reference by name. `Color(0x…)` anywhere else is rejected by
   `ColorTokenGuardTest` — a literal in a screen means dark theme and palette changes skip that one spot.
-  Dimensions follow the same rule via `ui/NexusSpacing.kt` (not yet test-enforced).
+  Dimensions follow the same rule via `ui/NexusSpacing.kt`.
+- **Vertical rhythm inside the 4 tabs comes from `Arrangement.spacedBy(NexusSpacing…)`, never a manual `Spacer`** (#260). `TabRhythmGuardTest` scans the whole `home`/`steps`/`growth`/`settings` packages — scanning only the root screen files missed a real case, because sections live in separate files here (#311). Full-screen scenes (onboarding, welcome-back, initial-level) are exempt and listed explicitly in the test.
+- **`ConnectNotice`/`RetryNotice`/`FirstRunNotice` are already `NexusCard`s** — place them as siblings in the screen `Column`, never inside a section card. Nesting gives two same-colored cards and two `heading()` nodes, which reads as a rendering failure.
+- List rows use `ui/NexusListRow` + `ui/NexusDividedList`. A right-aligned value column must stay in the **same merged semantics node** as its label (`docs/A11Y-TALKBACK.md`) — otherwise TalkBack reads the value last, with no antecedent.
 - Every screen must work with Health Connect permissions denied (demo mode).
 - **Debug-only tooling goes in `app/src/debug/`, never behind `BuildConfig.DEBUG` in main** (#245). A `BuildConfig.DEBUG` branch still ships the code and its strings in the release APK — that put a "wipe the ledger" button in a reverse-engineerable form next to the crown jewel. Pattern: real implementation in `src/debug`, a same-signature no-op in `src/release`, and main calls it unconditionally. `DeveloperToolsGateTest` pins release absence (source scan — unit tests build the debug variant and can't inspect a release APK).
 - Debug seeds write **synthetic ledger rows** (`synthetic-` key prefix), never real Health Connect records — a seeded record becomes an indistinguishable health-derived value in an append-only ledger.

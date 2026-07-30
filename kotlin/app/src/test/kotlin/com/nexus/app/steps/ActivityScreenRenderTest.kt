@@ -10,14 +10,21 @@ import androidx.work.Configuration
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.nexus.app.R
+import com.nexus.app.health.DailySteps
+import com.nexus.app.health.ExerciseSummary
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.ui.FIRST_RUN_NOTICE_TAG
 import com.nexus.app.ui.NexusTheme
+import com.nexus.core.ActivityType
+import com.nexus.core.RecordingMethod
+import com.nexus.core.TrustTier
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.time.Instant
+import java.time.LocalDate
 import java.util.concurrent.Executor
 
 /**
@@ -71,6 +78,8 @@ class ActivityScreenRenderTest {
 
     private fun string(id: Int) = context.getString(id)
 
+    private fun string(id: Int, vararg args: Any) = context.getString(id, *args)
+
     @Test
     fun `미연결이면 연결 안내를 그린다`() {
         render(ActivityLoad.PermissionDenied)
@@ -86,11 +95,103 @@ class ActivityScreenRenderTest {
         composeRule.onNodeWithText(string(R.string.action_retry)).assertIsDisplayed()
     }
 
+    private fun session(minutes: Long, startEpochSecond: Long) = ExerciseSummary(
+        id = "session-$startEpochSecond",
+        type = ActivityType.WALKING,
+        exerciseTypeRaw = 0,
+        start = Instant.ofEpochSecond(startEpochSecond),
+        end = Instant.ofEpochSecond(startEpochSecond + minutes * 60),
+        durationMinutes = minutes,
+        avgHeartRate = null,
+        dataOrigin = "com.sec.android.app.shealth",
+        recordingMethod = RecordingMethod.AUTO_RECORDED,
+        trustTier = TrustTier.B,
+    )
+
+    /**
+     * 세 섹션이 **제목을 가진 카드로** 구획됐는지 (#260). 이전에는 동기화 상태가 제목 없는
+     * 푸터 한 줄이라 무슨 값인지 알 수 없었다.
+     */
+    @Test
+    fun `성공이면 걸음·운동·동기화 세 섹션 제목이 모두 보인다`() {
+        render(
+            ActivityLoad.Success(
+                ActivityData(steps = emptyList(), manualSteps = 0L, sessions = emptyList(), awaitingFirstData = false),
+            ),
+        )
+
+        composeRule.onNodeWithText(string(R.string.steps_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.sessions_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.sync_title)).assertIsDisplayed()
+    }
+
+    /**
+     * 안내는 섹션 카드 **안이 아니라 형제로** 온다 (#260).
+     *
+     * `RetryNotice`·`ConnectNotice`가 이미 `NexusCard`라서 섹션 카드 안에 넣으면 같은 색 카드가
+     * 두 겹으로 겹치고 제목도 두 개가 되어 렌더 오류처럼 보인다. 홈·성장이 형제로 두는 이유가
+     * 그것이고, 활동도 같은 배치를 쓴다 — 섹션 제목이 함께 뜨지 **않아야** 맞다.
+     */
+    @Test
+    fun `실패하면 안내만 그리고 섹션 카드는 그리지 않는다`() {
+        render(ActivityLoad.Failure)
+
+        composeRule.onNodeWithText(string(R.string.steps_error)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.action_retry)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.steps_title)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.sessions_title)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.sync_title)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `미연결이면 안내만 그리고 섹션 카드는 그리지 않는다`() {
+        // 제목만 있고 내용이 빈 카드는 빈 상태가 아니라 고장으로 읽힌다
+        render(ActivityLoad.PermissionDenied)
+
+        composeRule.onNodeWithText(string(R.string.activity_demo_body)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.sessions_title)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.sync_title)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `세션이 있으면 시간을 우측 값 열로 그린다`() {
+        // 종류·심박과 한 문장으로 붙어 있으면 목록에서 시간을 세로로 비교할 수 없다 (#260)
+        render(
+            ActivityLoad.Success(
+                ActivityData(
+                    steps = emptyList(),
+                    manualSteps = 0L,
+                    sessions = listOf(session(minutes = 42, startEpochSecond = 1_700_000_000L)),
+                    awaitingFirstData = false,
+                ),
+            ),
+        )
+
+        composeRule.onNodeWithText(string(R.string.session_duration_format, 42)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.sessions_empty)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `세션이 없으면 빈 문구를 그린다`() {
+        render(
+            ActivityLoad.Success(
+                ActivityData(steps = emptyList(), manualSteps = 0L, sessions = emptyList(), awaitingFirstData = false),
+            ),
+        )
+
+        composeRule.onNodeWithText(string(R.string.sessions_empty)).assertIsDisplayed()
+    }
+
     @Test
     fun `데이터가 있으면 걸음·세션 섹션을 그린다`() {
         render(
             ActivityLoad.Success(
-                ActivityData(steps = emptyList(), manualSteps = 0L, sessions = emptyList(), awaitingFirstData = false),
+                ActivityData(
+                    steps = listOf(DailySteps(LocalDate.of(2026, 7, 30), 8_000L)),
+                    manualSteps = 0L,
+                    sessions = listOf(session(minutes = 30, startEpochSecond = 1_700_000_000L)),
+                    awaitingFirstData = false,
+                ),
             ),
         )
 

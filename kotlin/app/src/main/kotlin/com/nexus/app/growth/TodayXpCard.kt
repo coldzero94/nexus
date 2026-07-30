@@ -3,9 +3,7 @@ package com.nexus.app.growth
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,7 +58,6 @@ private fun ExplanationDetail(explanation: DayXpExplanation) {
             explanation.lines.forEach { XpLineRow(it) }
             CapNotes(explanation)
         }
-        Spacer(Modifier.height(NexusSpacing.xs))
         Text(
             stringResource(
                 R.string.xp_explain_formula_note,

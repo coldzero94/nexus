@@ -20,7 +20,11 @@
 
 ## 4. 컴포넌트 (#254, E16-4)
 
-- `NexusCard`(헤더 제목+우측 값 슬롯+본문 슬롯, 내부 패딩·간격 토큰) + `CardEmphasis`(Neutral=surface / Highlight=primaryContainer / Celebration=secondaryContainer). HomeCards 6·Growth Level(Highlight)/Affinity/Stats·Settings 카드·ConnectNotice·StreakRow·홈 다음목표 이관 → 정보 경중이 색으로 읽힘(2단계 위계). NexusListRow·NexusIcons·VizColors는 후속.
+- `NexusCard`(헤더 제목+우측 값 슬롯+본문 슬롯, 내부 패딩·간격 토큰) + `CardEmphasis`(Neutral=surface / Highlight=primaryContainer / Celebration=secondaryContainer). HomeCards 6·Growth Level(Highlight)/Affinity/Stats·Settings 카드·ConnectNotice·StreakRow·홈 다음목표 이관 → 정보 경중이 색으로 읽힘(2단계 위계).
+- **`NexusListRow` + `NexusDividedList` (#260, E16-10)**: 목록 행의 단일 규격 — 라벨(SemiBold 앵커) + 보조 + **우측 정렬 값**(bodySmall, 라벨보다 낮은 위계), 라벨 묶음 아래 본문 슬롯. 값 열을 만든 이유는 목록을 훑을 때 "얼마나 했나"를 **세로로 비교**할 수 있어야 하기 때문 — 종류·시간·심박이 한 문장으로 붙어 있으면 그게 안 된다. 라벨·보조·값은 `mergeDescendants`로 **한 노드로 묶는다**(A11Y-TALKBACK §판정: 라벨과 값이 끊겨 들리면 안 된다); 탭 가능한 요소(신뢰 등급 칩 #222)가 오는 본문 슬롯은 묶음 밖에 둬서 동작이 흡수되지 않게 한다. 구분선은 `NexusDividedList`가 **행 사이에만** 넣는다(마지막 뒤는 컨테이너 여백과 겹쳐 두 겹 경계로 보인다).
+- **`NexusSwitchCard` (#260)**: 제목+설명+우측 스위치 카드. 설정 탭의 휴식 모드·리마인더가 같은 모양을 각자 조립하고 있었다 — **모양만 통일하고 동작은 호출부에 남긴다**(리마인더는 켤 때 알림 권한 런처를 타므로, 그 분기를 컴포넌트로 들이면 다음 스위치가 또 예외가 된다).
+- **탭 세로 리듬 (#260)**: 4탭 모두 `padding(NexusSpacing.screen)` + `Arrangement.spacedBy(NexusSpacing.lg)`. 활동 탭만 수동 `Spacer(28/12/4dp)`를 쓰다가 밀도가 이질적이었다 → 걸음·운동·동기화 3섹션을 `NexusCard`로 구획. **미연결·실패·첫실행 안내는 섹션 카드 안이 아니라 화면 Column의 형제**로 둔다(`ConnectNotice`·`RetryNotice`가 이미 카드라 중첩하면 같은 색 카드 두 겹 + 제목 두 개가 된다 — 홈·성장과 같은 배치). `TabRhythmGuardTest`가 탭 패키지 전체를 훑어 수동 세로 Spacer 0개를 고정한다.
+- `NexusIcons`는 §6, `VizColors`는 §5.
 
 ## 5. 데이터 시각화 (#257~)
 

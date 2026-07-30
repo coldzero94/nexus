@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,6 +27,7 @@ import com.nexus.app.notify.ReminderWorker
 import com.nexus.app.ui.GoalDayChooser
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.NexusSwitchCard
 import com.nexus.core.CharacterName
 import kotlinx.coroutines.launch
 
@@ -144,28 +144,23 @@ internal fun ReminderCard() {
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) apply(true) }
 
-    NexusCard(
+    NexusSwitchCard(
         title = stringResource(R.string.settings_reminder),
-        trailing = {
-            Switch(
-                checked = enabled,
-                onCheckedChange = { checked ->
-                    when {
-                        !checked -> apply(false)
+        description = stringResource(R.string.settings_reminder_desc),
+        checked = enabled,
+        onCheckedChange = { checked ->
+            when {
+                !checked -> apply(false)
 
-                        // minSdk 34라 POST_NOTIFICATIONS(33+)는 항상 런타임 권한 — 버전 가드 불필요(#242 lint)
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.POST_NOTIFICATIONS,
-                        ) != PackageManager.PERMISSION_GRANTED ->
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                // minSdk 34라 POST_NOTIFICATIONS(33+)는 항상 런타임 권한 — 버전 가드 불필요(#242 lint)
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) != PackageManager.PERMISSION_GRANTED ->
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
 
-                        else -> apply(true)
-                    }
-                },
-            )
+                else -> apply(true)
+            }
         },
-    ) {
-        Text(stringResource(R.string.settings_reminder_desc), style = MaterialTheme.typography.bodySmall)
-    }
+    )
 }

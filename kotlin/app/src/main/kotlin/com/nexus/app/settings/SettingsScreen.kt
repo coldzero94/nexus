@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,8 +19,8 @@ import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
 import com.nexus.app.diag.DeveloperToolsCard
 import com.nexus.app.health.HealthConnectManager
-import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.NexusSwitchCard
 
 /** 설정 (#31·#33·#49) — 연동 상태·휴식 모드·리마인더·목표·위젯·데이터 삭제. 백업은 E8-6(#51). */
 @Composable
@@ -41,20 +40,15 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
         HealthStatusCard(manager, onReconnect)
         OpenDaysCard()
         CharacterNameCard()
-        NexusCard(
+        NexusSwitchCard(
             title = stringResource(R.string.settings_rest_mode),
-            trailing = {
-                Switch(
-                    checked = restEnabled,
-                    onCheckedChange = { checked ->
-                        store.setEnabled(checked)
-                        restEnabled = checked
-                    },
-                )
+            description = stringResource(R.string.settings_rest_mode_desc),
+            checked = restEnabled,
+            onCheckedChange = { checked ->
+                store.setEnabled(checked)
+                restEnabled = checked
             },
-        ) {
-            Text(stringResource(R.string.settings_rest_mode_desc), style = MaterialTheme.typography.bodySmall)
-        }
+        )
         ReminderCard()
         WeeklyGoalCard()
         WidgetPinCard()
