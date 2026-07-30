@@ -3,10 +3,9 @@ package com.nexus.app.steps
 import android.content.Context
 import android.os.RemoteException
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,9 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -32,6 +29,7 @@ import com.nexus.app.health.StepRepository
 import com.nexus.app.health.TokenStore
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.FirstRunNotice
+import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
 import com.nexus.core.FailureCategory
@@ -43,8 +41,19 @@ private const val TAG = "ActivityScreen"
 private const val WINDOW_DAYS = 7
 
 /**
- * 실데이터 활동 화면 (#7 걸음 + #8 운동 세션·동기화 상태). 실제 홈은 E4에서 대체.
- * HC 미가용/오류 시 에러 문구만 — 크래시 없음.
+ * 활동 화면 (#7 걸음 + #8 운동 세션·동기화 상태).
+ *
+ * ## 섹션 구조 (#260)
+ *
+ * 걸음·운동·동기화를 **각각 카드로 구획**한다([ActivitySections]). 이전에는 셋이 한 Column에 맨
+ * 텍스트로 이어져 있고 사이를 수동 `Spacer(28/12/4dp)`가 벌려서, 4탭 중 유일하게 밀도와 리듬이
+ * 달랐다 — 어디까지가 한 섹션인지 경계가 없어 전체가 하나의 텍스트 덤프로 읽혔다.
+ *
+ * 세로 리듬은 홈·성장·설정과 **같은 스케일**(`spacedBy(lg)` + `padding(screen)`)을 쓴다. 수동 Spacer를
+ * 없앤 이유가 그것이다: 화면마다 손으로 값을 고르면 같은 앱 안에서 탭을 옮길 때 간격이 튄다.
+ *
+ * 로드 분기(로딩·미연결·실패·첫 데이터 대기)도 홈·성장과 같이 **화면 Column의 형제**로 둔다 —
+ * 이유는 [ActivitySections] KDoc.
  */
 @Composable
 internal fun ActivityScreen(
@@ -71,49 +80,52 @@ internal fun ActivityScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(NexusSpacing.screen),
+        verticalArrangement = Arrangement.spacedBy(NexusSpacing.lg),
     ) {
-        // 첫 데이터 대기 중엔 빈 차트·빈 세션 목록 대신 '준비 중' 하나만 (#213)
-        if (ui.data?.awaitingFirstData == true) {
-            FirstRunNotice(onSyncFinished = ui::refreshAfterSync)
-            return@Column
+        when (val current = ui.load) {
+            null -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
+
+            ActivityLoad.PermissionDenied ->
+                ConnectNotice(onReconnect, body = stringResource(R.string.activity_demo_body))
+
+            ActivityLoad.Failure -> RetryNotice(stringResource(R.string.steps_error), ui::retry)
+
+            // 첫 데이터 대기 중엔 빈 차트·빈 세션 목록 대신 '준비 중' 하나만 (#213)
+            is ActivityLoad.Success if current.data.awaitingFirstData ->
+                FirstRunNotice(onSyncFinished = ui::refreshAfterSync)
+
+            is ActivityLoad.Success -> ActivitySections(current.data, store)
         }
-        StepsSection(ui, onReconnect)
-        Spacer(Modifier.height(NexusSpacing.xxl))
-        // ── 운동 세션 (#8) ──
-        Text(stringResource(R.string.sessions_title), style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(NexusSpacing.md))
-        ui.data?.let { SessionsSection(it.sessions) }
-        Spacer(Modifier.height(NexusSpacing.xxl))
-        // ── 동기화 상태 (#8) ──
-        Text(text = syncFooter(store), style = MaterialTheme.typography.bodySmall)
     }
 }
 
-/** 걸음 섹션 (#7·#258) — 제목·부제·로드 분기·막대 차트. */
+/**
+ * 세 섹션 (#260) — 걸음·운동·동기화. **성공 분기에서만** 그린다.
+ *
+ * 미연결·실패 안내를 이 카드들 안에 넣지 않는 게 중요하다. `ConnectNotice`·`RetryNotice`가 이미
+ * [NexusCard]라서 섹션 카드 안에 넣으면 **같은 색 카드가 두 겹**으로 겹치고 제목도 두 개가 되어
+ * 렌더 오류처럼 보인다. 홈·성장도 안내를 화면 Column의 형제로 둔다 — 같은 배치를 쓴다.
+ *
+ * 데이터가 없을 때 섹션 카드를 그리지 않는 이유도 같다: 제목만 있고 내용이 빈 카드는 빈 상태가
+ * 아니라 고장으로 읽힌다.
+ */
 @Composable
-private fun StepsSection(ui: ActivityUiController, onReconnect: (() -> Unit)?) {
-    Text(stringResource(R.string.steps_title), style = MaterialTheme.typography.headlineSmall)
-    Spacer(Modifier.height(NexusSpacing.xs))
-    Text(stringResource(R.string.steps_subtitle), style = MaterialTheme.typography.bodySmall)
-    Spacer(Modifier.height(NexusSpacing.md))
-    when (val current = ui.load) {
-        null -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
-
-        ActivityLoad.PermissionDenied ->
-            ConnectNotice(onReconnect, body = stringResource(R.string.activity_demo_body))
-
-        ActivityLoad.Failure -> RetryNotice(stringResource(R.string.steps_error), ui::retry)
-
-        is ActivityLoad.Success -> {
-            StepBarChart(current.data.steps)
-            if (current.data.manualSteps > 0L) {
-                Spacer(Modifier.height(NexusSpacing.sm))
-                Text(
-                    text = stringResource(R.string.steps_manual_excluded, current.data.manualSteps),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+private fun ActivitySections(data: ActivityData, store: TokenStore) {
+    NexusCard(title = stringResource(R.string.steps_title)) {
+        Text(stringResource(R.string.steps_subtitle), style = MaterialTheme.typography.bodySmall)
+        StepBarChart(data.steps)
+        if (data.manualSteps > 0L) {
+            Text(
+                text = stringResource(R.string.steps_manual_excluded, data.manualSteps),
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
+    }
+    NexusCard(title = stringResource(R.string.sessions_title)) {
+        SessionsSection(data.sessions)
+    }
+    NexusCard(title = stringResource(R.string.sync_title)) {
+        Text(text = syncFooter(store), style = MaterialTheme.typography.bodySmall)
     }
 }
 
