@@ -21,6 +21,8 @@ import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.ui.FIRST_RUN_NOTICE_TAG
 import com.nexus.app.ui.NexusTheme
 import com.nexus.core.ActivityType
+import com.nexus.core.Badge
+import com.nexus.core.BadgeTable
 import com.nexus.core.ClassAffinity
 import com.nexus.core.DayXpExplanation
 import com.nexus.core.GrowthSummary
@@ -53,7 +55,11 @@ class GrowthScreenRenderTest {
         }
     }
 
-    private fun render(load: GrowthLoad, change: GrowthChange? = null) {
+    private fun render(
+        load: GrowthLoad,
+        change: GrowthChange? = null,
+        badges: BadgeSectionsState = BadgeSectionsState(),
+    ) {
         composeRule.setContent {
             NexusTheme {
                 GrowthScreen(
@@ -64,7 +70,7 @@ class GrowthScreenRenderTest {
                         exerciseRepo = null,
                         ledger = RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao()),
                         stateStore = GrowthStateStore(context),
-                        seed = GrowthSeed(load = load, change = change),
+                        seed = GrowthSeed(load = load, change = change, badgeSections = badges),
                     ),
                 )
             }
@@ -263,6 +269,50 @@ class GrowthScreenRenderTest {
 
         composeRule.onNodeWithText(string(R.string.celebrate_level_up, 3)).assertIsDisplayed()
         composeRule.onNodeWithContentDescription(string(R.string.a11y_level_gauge)).assertExists()
+    }
+
+    /** 축하 대기 배지가 실제로 있는 상태 — 없으면 아래 단언들이 아무것도 검증하지 않는다. */
+    private fun withPendingBadge() = BadgeSectionsState(
+        standard = BadgeState(
+            table = BadgeTable(
+                version = "test",
+                badges = listOf(
+                    Badge(
+                        id = "first_step",
+                        name = "첫걸음",
+                        description = "함께한 첫 활동을 기록했어요.",
+                        whenExpr = "level >= 1",
+                        icon = "first_step",
+                    ),
+                ),
+            ),
+            unlocked = setOf("first_step"),
+            newlyUnlocked = setOf("first_step"),
+        ),
+    )
+
+    /**
+     * 축하는 한 번에 하나만 (#218). 레벨업이 우선이고, 배지 축하는 대기 집합에 남아 **다음 진입에서**
+     * 뜬다 — 겹치면 각각의 무게가 반씩 깎이고 화면 상단이 카드 두 장으로 막힌다.
+     */
+    @Test
+    fun `레벨업 축하가 있으면 배지 축하는 뜨지 않는다`() {
+        render(
+            summaryWith(emptyMap()),
+            change = GrowthChange(levelUpTo = 3, affinityChangedTo = null),
+            badges = withPendingBadge(),
+        )
+
+        composeRule.onNodeWithText(string(R.string.celebrate_level_up, 3)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.badge_unlock_title)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `레벨업이 없으면 배지 축하가 뜬다`() {
+        // 위 단언이 '축하할 배지가 없어서' 통과하는 게 아님을 보인다
+        render(summaryWith(emptyMap()), badges = withPendingBadge())
+
+        composeRule.onNodeWithText(string(R.string.badge_unlock_title)).assertIsDisplayed()
     }
 
     @Test

@@ -58,4 +58,12 @@ enum class TelemetryEvent(val signal: String) {
 
     /** 데모 모드로 계속하기를 선택 — 연결 없이 앱을 쓰기로 한 사람. */
     DEMO_CHOSEN("funnel.demoChosen"),
+
+    /**
+     * 배지 획득 축하가 표시됨 (#218) — **발생 사실만**. 어떤 배지인지·몇 개인지는 싣지 않는다.
+     *
+     * `recordOnce`가 아니라 매번 기록한다: 첫 획득뿐 아니라 수집이 계속 일어나는지가 리텐션
+     * 신호이고, 배지 id·개수가 없어 페이로드는 이름 하나로 고정이다(불변식 ②).
+     */
+    BADGE_UNLOCKED("growth.badgeUnlocked"),
 }

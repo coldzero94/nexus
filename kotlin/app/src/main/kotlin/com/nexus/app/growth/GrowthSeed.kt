@@ -13,4 +13,20 @@ package com.nexus.app.growth
  * @property load 로드 분기(로딩·미연결·실패·성공).
  * @property change 축하 대상 변화(레벨업·성향 변화).
  */
-internal data class GrowthSeed(val load: GrowthLoad? = null, val change: GrowthChange? = null)
+internal data class GrowthSeed(
+    val load: GrowthLoad? = null,
+    val change: GrowthChange? = null,
+    /**
+     * 배지 영역 상태 (#218) — 축하 우선순위를 검증하려면 필요하다. 실제 로드는 HC 리포지토리를 타서
+     * Robolectric에선 항상 비어 있고, 그러면 "레벨업이 있으면 배지 축하가 안 뜬다"는 단언이
+     * **아무것도 검증하지 않는 채로 통과**한다.
+     */
+    val badgeSections: BadgeSectionsState = BadgeSectionsState(),
+    /**
+     * 축하 대기 저장소 (#218) — 테스트가 격리된 prefs를 넘긴다. null이면 프로덕션 기본값.
+     *
+     * 컨트롤러 파라미터가 아니라 여기 있는 이유: 이것도 **테스트가 세우는 상태**라는 같은 개념이고,
+     * 별 파라미터로 두면 컨스트럭터가 detekt 임계를 넘는다.
+     */
+    val badgeCelebration: BadgeCelebrationStore? = null,
+)

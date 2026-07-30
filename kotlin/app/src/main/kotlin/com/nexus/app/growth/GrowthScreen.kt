@@ -23,10 +23,13 @@ import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.settings.IdentityStore
+import com.nexus.app.telemetry.Telemetry
+import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.FirstRunNotice
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
+import com.nexus.core.Badge
 import com.nexus.core.ClassAffinity
 import com.nexus.core.ClassAffinityCalculator
 import com.nexus.core.DayXpExplanation
@@ -98,16 +101,47 @@ internal fun GrowthScreen(
     }
 }
 
-/** 로드 완료 본문 — 변화 축하 → 요약 → 장비 → 배지. */
+/**
+ * 로드 완료 본문 — 변화 축하 → 요약 → 장비 → 배지.
+ *
+ * ## 축하는 한 번에 하나만 (#218)
+ *
+ * 레벨업·성향 변화(#61)가 우선이다. 두 축하가 겹치면 각각의 무게가 반씩 깎이고 화면 상단이 카드
+ * 두 장으로 막힌다. 배지 축하는 대기 집합에 남아 있으므로 **다음 진입에서 뜬다** — 놓치지 않는다.
+ */
 @Composable
 private fun GrowthLoaded(state: GrowthUiState, ui: GrowthUiController) {
-    ui.change?.let { change ->
+    val change = ui.change
+    if (change != null) {
         CelebrationCard(change, visible = ui.celebrationVisible) { ui.dismissCelebration(state) }
+    } else {
+        // 계측은 획득 시점(commitBadgeProgress)에 이미 찍혔다 — 여기서 찍으면 탭을 오갈 때마다
+        // 재발화하고, 레벨업이 우선순위를 가져간 방문에서는 누락된다 (#218 리뷰)
+        val newBadges = remember(ui.badgeSections) { ui.badgeSections.newlyUnlockedBadges() }
+        BadgeUnlockCard(newBadges, visible = ui.badgeCelebrationVisible) { ui.dismissBadgeCelebration() }
     }
     GrowthContent(state)
     // 오늘 성장이 있으면 걷는 모습으로 미리보기 — 홈 캐릭터와 같은 감각 (#37)
     EquipmentCard(spriteState = if (state.today.cappedXp > 0) "walk" else "idle")
     BadgeSections(ui.badgeSections)
+}
+
+/**
+ * 축하 대상 배지 (#218) — 대기 집합 ∩ 표에 있는 배지.
+ *
+ * 표에서 찾는 이유는 이름·설명이 `badges.json`에서 와야 하기 때문이다(카피 하드코딩 금지).
+ * 표에 없는 id(표에서 제거된 옛 배지)는 조용히 빠진다 — 이름 없는 축하를 띄우느니 안 띄운다.
+ */
+private fun BadgeSectionsState.newlyUnlockedBadges(): List<Badge> {
+    val state = standard ?: return emptyList()
+    val pending = state.newlyUnlocked
+    // 상시 + 월 한정을 한 목록으로 (#218) — 대기 집합이 하나라 같은 달에 둘이 함께 열려도 카드 하나다.
+    // 월 한정은 표 모양이 달라 표시용 Badge로 옮겨 담는다(글리프 슬롯 규약은 #266으로 공통).
+    val standardBadges = state.table.badges.filter { it.id in pending }
+    val monthlyBadges = monthly?.badges.orEmpty()
+        .filter { it.id in pending }
+        .map { Badge(id = it.id, name = it.name, description = it.description, whenExpr = it.whenExpr, icon = it.icon) }
+    return standardBadges + monthlyBadges
 }
 
 /** 배지 영역 (#175·#206) — 상시 배지 + 이달의 배지. 각각 부가 정보라 없으면 그 카드만 생략한다. */

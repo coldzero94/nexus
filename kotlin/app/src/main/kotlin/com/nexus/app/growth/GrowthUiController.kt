@@ -35,11 +35,15 @@ internal class GrowthUiController(
         private set
 
     /** 상시 배지(#175) + 이달의 배지(#206) — 요약보다 늦게 도착한다. */
-    var badgeSections by mutableStateOf(BadgeSectionsState())
+    var badgeSections by mutableStateOf(seed?.badgeSections ?: BadgeSectionsState())
         private set
 
     /** 축하 카드 가시성 — dismiss는 토글(노드를 즉시 빼면 exit 연출이 생략된다, #61). */
     var celebrationVisible by mutableStateOf(true)
+        private set
+
+    /** 배지 축하 가시성 (#218) — 변화 카드와 같은 토글 패턴. */
+    var badgeCelebrationVisible by mutableStateOf(true)
         private set
 
     /** 로드 재시도 트리거 (#227) — 키가 바뀌면 화면의 LaunchedEffect가 다시 돈다. */
@@ -49,6 +53,9 @@ internal class GrowthUiController(
     /** 한 번의 로드 — 요약이 먼저 반영되고 배지는 뒤이어 채워진다 (#206). */
     suspend fun load() {
         if (seed != null) return // 테스트가 세운 상태 유지 (#320)
+        // 새 로드는 새 축하 기회다 — 리셋하지 않으면 한 번 닫은 뒤 이 컨트롤러가 사는 동안
+        // 새 배지가 열려도 카드가 안 뜬다(지금은 도달 불가지만 새 갱신 경로가 생기면 실버그가 된다)
+        badgeCelebrationVisible = true
         badgeSections = loadGrowthScreen(context, manager, exerciseRepo, ledger, stateStore) { loaded, detected ->
             load = loaded
             change = detected
@@ -75,5 +82,16 @@ internal class GrowthUiController(
     fun dismissCelebration(state: GrowthUiState) {
         celebrationVisible = false
         stateStore.recordSeen(state.summary.level, state.summary.affinity)
+    }
+
+    /**
+     * 배지 축하 확인 (#218) — 대기 집합을 비워 같은 배지를 다시 축하하지 않는다.
+     *
+     * 소비를 감지 시점이 아니라 여기서 하는 이유는 [dismissCelebration]과 같다: 감지 때 비우면
+     * 회전·프로세스 사망으로 축하가 영영 사라진다(#61 리뷰).
+     */
+    fun dismissBadgeCelebration() {
+        badgeCelebrationVisible = false
+        (seed?.badgeCelebration ?: BadgeCelebrationStore(context)).clear()
     }
 }
