@@ -6,10 +6,19 @@
 
 | 채널 | 역할 | 상태 |
 |---|---|---|
-| **Sentry** (무료 5k 에러/월) | 미처리 크래시 수집 — 스택·기기·OS. **tracing off · PII off** | 래퍼 `app/crash/CrashReporting.kt`. DSN 미설정 시 완전 no-op |
+| **Sentry** (무료 5k 에러/월) | 미처리 크래시 + **처리된-실패**(occurrence-only) | 래퍼 `app/crash/CrashReporting.kt`. DSN 미설정 시 완전 no-op |
 | **Play vitals** | ANR율·크래시율의 공식 기준(스토어 노출·검색 랭킹에 반영) | Play Console → 품질 → Android vitals. 계정 개설(E8-5) 후 자동 |
 
 - Sentry 프로젝트 생성(무료 가입) → DSN을 `kotlin/gradle.properties`(미커밋) 또는 CI 시크릿에 `nexus.sentry.dsn`으로 주입. 없으면 초기화 자체를 안 한다(동의 전 자동 수집 없음 — Crashlytics를 배제한 이유와 같은 원칙).
+### 처리된-실패 (#239)
+
+미처리 크래시만 보면 **저하된 성공**이 안 보인다. "동기화가 3일째 원장 DB 오류로 실패 중" 같은 상태는 예전엔 `Log.w`로 logcat에만 남아, 원격 테스터 폰에선 USB 없이 확인이 불가능했다 — 알파의 목적이 학습인데 그 학습이 유실됐다.
+
+- 보내는 것은 **`FailureCategory` 이름 하나뿐**이다. 예외 메시지·스택·수치는 싣지 않는다(메시지엔 값이 섞일 수 있다 — 불변식 ②). 신호 목록은 `FailureCategoryTest`가 고정해, 늘리려면 리뷰를 거쳐야 한다.
+- Sentry에서 `handled:` 접두어로 미처리 크래시와 분리해 본다. 레벨은 WARNING.
+- 대응이 갈리는 유일한 분류는 **`SYNC_PERMISSION`** — 사용자 조치가 필요하고, 나머지는 재시도로 회복된다. `LEDGER_DB`는 crown jewel이 걸려 가장 무겁게 본다.
+- 기기에도 **마지막 분류 + 연속 실패 횟수**를 남긴다(`TokenStore`). DSN이 없는 알파 초기에도, 테스터 폰을 손에 들었을 때 즉석에서 판단할 수 있어야 한다. 성공하면 카운터를 지운다 — 회복 여부도 신호다.
+
 - SDK 직접 호출은 detekt `ForbiddenImport`가 차단 — 모든 옵션(tracing off, PII off, 스크린샷·뷰 계층 첨부 금지)은 래퍼가 강제한다. **화면에는 건강 파생 표시값이 있으므로 스크린샷 첨부는 절대 켜지 않는다.**
 
 ## 2. 주간 루틴 (금요일, 담당 교대)

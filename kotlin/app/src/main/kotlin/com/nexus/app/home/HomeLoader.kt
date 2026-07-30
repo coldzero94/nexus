@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.nexus.app.character.MoodResolver
+import com.nexus.app.crash.CrashReporting
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.SleepRepository
 import com.nexus.app.health.StepRepository
@@ -13,6 +14,7 @@ import com.nexus.app.settings.RestModeStore
 import com.nexus.core.ConditionEngine
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionEngine
+import com.nexus.core.FailureCategory
 import com.nexus.core.FirstRun
 import com.nexus.core.GreetingSelector
 import com.nexus.core.GrowthCalculator
@@ -102,21 +104,27 @@ internal suspend fun loadHome(
     throw e
 } catch (e: IOException) {
     Log.w(TAG, "home load IO failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.HOME_LOAD)
     HomeLoad.Failure
 } catch (e: RemoteException) {
     Log.w(TAG, "home load remote failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.HOME_LOAD)
     HomeLoad.Failure
 } catch (e: SecurityException) {
     Log.w(TAG, "home load permission failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.HOME_LOAD)
     HomeLoad.PermissionDenied
 } catch (e: IllegalArgumentException) {
     Log.w(TAG, "home load invalid-argument failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.HOME_LOAD)
     HomeLoad.Failure
 } catch (e: IllegalStateException) {
     Log.w(TAG, "home load state failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.HOME_LOAD)
     HomeLoad.Failure
 } catch (e: android.database.SQLException) {
     Log.w(TAG, "home ledger db failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.HOME_LOAD)
     HomeLoad.Failure
 }
 
