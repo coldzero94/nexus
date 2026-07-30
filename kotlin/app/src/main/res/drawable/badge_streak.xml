@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  꾸준함의 증표 (#266) — 달력 + 체크.
+  7칸 스트립으로 '이어짐'을 그렸더니 22dp에서 바코드처럼 읽혀서(실측) 바꿨다.
+  불꽃 대신 달력인 이유: 무처벌 톤 — '며칠 해냈다'는 사실이고 '불타야 한다'는 압박이다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M7,2h2v4H7zM15,2h2v4h-2z" />
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M4,4h3v1.6h10V4h3a1,1 0,0 1,1 1v15a1,1 0,0 1,-1 1H4a1,1 0,0 1,-1 -1V5a1,1 0,0 1,1 -1zM5,9v10h14V9z" />
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M10.9,17.2l-3.3,-3.3 1.5,-1.5 1.8,1.8 4.5,-4.5 1.5,1.5z" />
+</vector>

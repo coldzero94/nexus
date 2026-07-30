@@ -302,6 +302,10 @@
     <string name="growth_monthly_badges_title">%1$d월의 배지 %2$d/%3$d</string>
     <string name="growth_monthly_badges_hint">이번 달에만 열리는 배지예요. 한 번 얻으면 계속 남아요.</string>
     <string name="growth_badge_locked">%1$s · 잠김</string>
+    <!-- 배지 행 낭독 (#266) — 글리프가 색·윤곽으로 말하는 상태를 문장으로도 준다(#224 정합).
+         locked에 '미획득'이 없으면 스크린리더 사용자는 획득/미획득을 구분할 수 없다. -->
+    <string name="a11y_badge_earned">%1$s · 획득함. %2$s</string>
+    <string name="a11y_badge_locked">%1$s · 미획득. %2$s</string>
     <string name="xp_explain_today_format">오늘 XP %1$,d pt</string>
     <string name="xp_explain_show">환산 설명</string>
     <string name="xp_explain_hide">접기</string>

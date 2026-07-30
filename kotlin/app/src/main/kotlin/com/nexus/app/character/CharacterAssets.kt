@@ -3,6 +3,7 @@ package com.nexus.app.character
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.annotation.DrawableRes
+import com.nexus.core.BadgeAssetConvention
 import com.nexus.core.BadgeTable
 import com.nexus.core.BadgeTableReader
 import com.nexus.core.CharacterAnimationSet
@@ -67,6 +68,23 @@ class CharacterAssets(private val context: Context) {
             .getIdentifier(name, "drawable", context.packageName)
             .takeIf { it != 0 }
     }
+
+    /**
+     * 배지 글리프 접미사 → 드로어블 id (#266). 없으면 기본 글리프, 그것도 없으면 null.
+     *
+     * [frameResIdOrNull]과 같은 이유로 `getIdentifier`다 — **배지 추가는 JSON만**이라는 #69 계약을
+     * 지키려면 정적 R 참조를 쓸 수 없다(배지마다 코드 수정이 필요해진다). 정식 아트(#76)는 같은
+     * 이름으로 드로어블을 넣으면 코드 무수정으로 갈아탄다.
+     */
+    @SuppressLint("DiscouragedApi")
+    @DrawableRes
+    fun badgeIconResIdOrNull(icon: String?): Int? = resolveDrawable(BadgeAssetConvention.iconName(icon))
+        ?: resolveDrawable(BadgeAssetConvention.iconName(null))
+
+    @SuppressLint("DiscouragedApi")
+    private fun resolveDrawable(name: String): Int? = context.resources
+        .getIdentifier(name, "drawable", context.packageName)
+        .takeIf { it != 0 }
 
     private companion object {
         const val META_PATH = "character/animations.json"

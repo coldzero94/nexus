@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 기본 배지 글리프 (#266) — icon 미지정·조회 실패 시 폴백. 리본 달린 원형 메달. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12,2a7,7 0,1 0,0 14a7,7 0,0 0,0 -14zM12,4a5,5 0,1 1,0 10a5,5 0,0 1,0 -10z" />
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M8.5,16.2l-1.5,5.3 5,-2.6 5,2.6 -1.5,-5.3 -1.9,1 -1.6,-0.8 -1.6,0.8z" />
+</vector>
