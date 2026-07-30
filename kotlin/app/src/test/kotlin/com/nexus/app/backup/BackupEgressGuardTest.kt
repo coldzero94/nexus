@@ -21,12 +21,12 @@ import kotlin.test.assertTrue
  */
 class BackupEgressGuardTest {
     /**
-     * `BackupCodec.VERSION` = 1의 스키마. **여기를 고칠 때는 VERSION도 올려야 한다** —
+     * `BackupCodec.VERSION` = 2의 스키마. **여기를 고칠 때는 VERSION도 올려야 한다** —
      * 구버전 파일을 읽는 계약이 달라지므로(`decode`가 버전 범위를 검사한다).
      */
-    private val v1Payload = setOf("backupVersion", "exportedAtEpochMillis", "events", "snapshot")
+    private val v2Payload = setOf("backupVersion", "exportedAtEpochMillis", "events", "snapshot")
 
-    private val v1Event = setOf(
+    private val v2Event = setOf(
         "idempotencyKey",
         "xp",
         "type",
@@ -37,10 +37,12 @@ class BackupEgressGuardTest {
         "epochDay",
     )
 
-    private val v1Snapshot = setOf(
+    private val v2Snapshot = setOf(
         "energyTotalSpent", "expeditionStartedAtMillis", "settlementLastSeenXp",
         "morningLastShownEpochDay", "journalLastShownEpochDay", "weeklyGoalDays",
         "restModeEnabled", "restModeSinceEpochDay", "characterName", "expeditionsCompleted",
+        // #240 승계 앵커 — 본인 통제 백업 표면에만 담긴다(서버·계측 아님)
+        "installId",
     )
 
     /**
@@ -54,15 +56,15 @@ class BackupEgressGuardTest {
 
     @Test
     fun `페이로드 필드가 고정 집합과 정확히 일치한다`() {
-        assertEquals(v1Payload, serializedFields(BackupPayload.serializer().descriptor), VERSION_HINT)
-        assertEquals(v1Event, serializedFields(BackupEvent.serializer().descriptor), VERSION_HINT)
-        assertEquals(v1Snapshot, serializedFields(BackupSnapshot.serializer().descriptor), VERSION_HINT)
+        assertEquals(v2Payload, serializedFields(BackupPayload.serializer().descriptor), VERSION_HINT)
+        assertEquals(v2Event, serializedFields(BackupEvent.serializer().descriptor), VERSION_HINT)
+        assertEquals(v2Snapshot, serializedFields(BackupSnapshot.serializer().descriptor), VERSION_HINT)
     }
 
     @Test
     fun `고정 집합은 현재 VERSION의 것이다`() {
         // 스키마를 바꾸고 VERSION을 안 올리면 여기서 잡힌다 — 위 집합은 v1을 기술한다
-        assertEquals(1, BackupCodec.VERSION, "VERSION이 올랐다 — 위 v1* 집합을 새 버전 기준으로 갱신하세요")
+        assertEquals(2, BackupCodec.VERSION, "VERSION이 올랐다 — 위 v2* 집합을 새 버전 기준으로 갱신하세요")
     }
 
     @Test
