@@ -25,6 +25,7 @@ import com.nexus.app.backup.BackupManager
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.core.HealthAvailability
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -45,7 +46,11 @@ private const val TAG = "SettingsCards"
 internal fun HealthStatusCard(manager: HealthConnectManager, onReconnect: (() -> Unit)?) {
     var connected by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {
-        connected = if (manager.isAvailable()) checkPermissionsOrFalse(manager) else false
+        connected = if (manager.availability() == HealthAvailability.Available) {
+            checkPermissionsOrFalse(manager)
+        } else {
+            false
+        }
     }
     NexusCard(title = stringResource(R.string.settings_health_title)) {
         when (connected) {
@@ -76,7 +81,7 @@ internal fun HealthStatusCard(manager: HealthConnectManager, onReconnect: (() ->
 
 /** 권한 확인 — 실패는 미연결로(안내가 뜨는 안전 방향, #130 catch 계약). */
 private suspend fun checkPermissionsOrFalse(manager: HealthConnectManager): Boolean = try {
-    manager.hasAllPermissions()
+    manager.hasRequiredPermissions()
 } catch (e: CancellationException) {
     throw e
 } catch (e: IOException) {
