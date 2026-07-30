@@ -3,10 +3,12 @@ package com.nexus.app.growth
 import android.content.Context
 import android.os.RemoteException
 import android.util.Log
+import com.nexus.app.crash.CrashReporting
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.core.ClassAffinityCalculator
+import com.nexus.core.FailureCategory
 import com.nexus.core.FirstRun
 import com.nexus.core.GrowthCalculator
 import com.nexus.core.GrowthSummary
@@ -128,21 +130,27 @@ private suspend fun loadGrowth(repo: ExerciseRepository, ledger: RewardLedgerRep
     throw e
 } catch (e: IOException) {
     Log.w(TAG, "growth load IO failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
     GrowthLoad.Failure
 } catch (e: RemoteException) {
     Log.w(TAG, "growth load remote failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
     GrowthLoad.Failure
 } catch (e: SecurityException) {
     Log.w(TAG, "growth load permission failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
     GrowthLoad.PermissionDenied
 } catch (e: IllegalArgumentException) {
     Log.w(TAG, "growth load invalid-argument failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
     GrowthLoad.Failure
 } catch (e: IllegalStateException) {
     Log.w(TAG, "growth load state failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
     GrowthLoad.Failure
 } catch (e: android.database.SQLException) {
     // 원장 DB 문제(디스크·손상)는 화면 크래시 대신 에러 표시 (#163)
     Log.w(TAG, "growth ledger db failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
     GrowthLoad.Failure
 }

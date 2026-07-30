@@ -3,6 +3,9 @@ package com.nexus.app.crash
 import android.content.Context
 import android.util.Log
 import com.nexus.app.BuildConfig
+import com.nexus.core.FailureCategory
+import io.sentry.Sentry
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroid
 
@@ -15,9 +18,25 @@ private const val TAG = "CrashReporting"
  * - DSN 미설정(빈 값)이면 초기화 자체를 안 한다 — 동의·설정 전 자동 수집 없음(Crashlytics 배제 사유).
  * - 건강 파생 수치는 크래시 페이로드에도 실리지 않는다: 앱 로그가 수치를 안 담는 것이 1차 방어
  *   (#46 정책), 스크린샷·뷰 계층 첨부는 여기서 명시적으로 꺼서 2차 방어.
- * - 수동 캡처 API는 의도적으로 노출하지 않는다 — MVP는 미처리 크래시 수집만.
+ * - 수동 **예외** 캡처 API는 노출하지 않는다. 대신 처리된-실패는 [recordHandledFailure]로 분류
+ *   이름만 보낸다 (#239) — 예외 객체를 그대로 올리면 메시지에 값이 섞일 수 있다.
  */
 object CrashReporting {
+
+    /**
+     * 처리된-실패 1건 기록 (#239) — **분류 이름만** 보낸다.
+     *
+     * 예외 메시지·스택·수치는 싣지 않는다: 메시지엔 `"steps=8432"` 같은 값이 섞일 수 있고(불변식 ②),
+     * 스택은 이미 처리된 실패엔 과하다. 보낼 수 있는 신호 전부는 [FailureCategory]이고 그 목록은
+     * `FailureCategoryTest`가 고정한다.
+     *
+     * DSN이 없으면(알파 초기·디버그) 조용히 아무것도 하지 않는다 — 호출부가 분기하지 않게.
+     */
+    fun recordHandledFailure(category: FailureCategory) {
+        if (BuildConfig.SENTRY_DSN.isBlank()) return
+        // 메시지가 아니라 breadcrumb·level로 — 검색 가능한 분류 하나면 운영 판단에 충분하다.
+        Sentry.captureMessage(HANDLED_PREFIX + category.name, SentryLevel.WARNING)
+    }
 
     /** [com.nexus.app.NexusApplication]에서 1회 호출. */
     fun init(context: Context) {
@@ -41,4 +60,7 @@ object CrashReporting {
             }
         }
     }
+
+    /** 처리된-실패 메시지 접두어 — Sentry에서 미처리 크래시와 구분해 필터링한다. */
+    private const val HANDLED_PREFIX = "handled:"
 }

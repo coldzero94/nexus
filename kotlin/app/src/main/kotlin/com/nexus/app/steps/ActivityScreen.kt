@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
+import com.nexus.app.crash.CrashReporting
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.DailySteps
@@ -33,6 +34,7 @@ import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.FirstRunNotice
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
+import com.nexus.core.FailureCategory
 import com.nexus.core.FirstRun
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
@@ -160,18 +162,23 @@ internal suspend fun loadActivity(
     throw e // 코루틴 취소는 전파
 } catch (e: IOException) {
     Log.w(TAG, "activity load IO failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.ACTIVITY_LOAD)
     ActivityLoad.Failure
 } catch (e: RemoteException) {
     Log.w(TAG, "activity load remote failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.ACTIVITY_LOAD)
     ActivityLoad.Failure
 } catch (e: SecurityException) {
     Log.w(TAG, "activity load permission failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.ACTIVITY_LOAD)
     ActivityLoad.PermissionDenied
 } catch (e: IllegalArgumentException) {
     // HC ERROR_INVALID_ARGUMENT 또는 서드파티 이상 레코드의 변환 require 실패 (#130 재감사)
     Log.w(TAG, "activity load invalid-argument failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.ACTIVITY_LOAD)
     ActivityLoad.Failure
 } catch (e: IllegalStateException) {
     Log.w(TAG, "activity load state failure", e)
+    CrashReporting.recordHandledFailure(FailureCategory.ACTIVITY_LOAD)
     ActivityLoad.Failure
 }

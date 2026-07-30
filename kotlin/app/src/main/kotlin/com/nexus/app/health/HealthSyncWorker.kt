@@ -13,9 +13,11 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.nexus.app.crash.CrashReporting
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.widget.WidgetUpdater
+import com.nexus.core.FailureCategory
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 import java.time.LocalDate
@@ -38,17 +40,21 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
             store.lastSyncEpochMillis = System.currentTimeMillis()
             store.lastChangeCount = outcome.upserts + outcome.deletions
             seam.appendToLedger(applicationContext, outcome.deletedRecordIds)
+            store.clearFailure() // 연속 실패 카운터 리셋 — 회복도 신호다 (#239)
             Result.success()
         } catch (e: CancellationException) {
             throw e // 코루틴 취소는 전파(삼키지 않음)
         } catch (e: IOException) {
             Log.w(TAG, "health sync IO failure", e)
+            reportFailure(store, FailureCategory.SYNC_IO)
             Result.retry()
         } catch (e: RemoteException) {
             Log.w(TAG, "health sync remote failure", e)
+            reportFailure(store, FailureCategory.SYNC_REMOTE)
             Result.retry()
         } catch (e: SecurityException) {
             Log.w(TAG, "health sync permission failure — not retrying", e)
+            reportFailure(store, FailureCategory.SYNC_PERMISSION)
             Result.failure() // 권한 문제는 재시도 무의미
         } catch (e: IllegalArgumentException) {
             Log.w(TAG, "health sync invalid-argument failure — not retrying", e)
@@ -59,6 +65,7 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         } catch (e: android.database.SQLException) {
             // 원장 DB 문제 — 크래시 루프 대신 백오프 재시도 (#163)
             Log.w(TAG, "ledger db failure", e)
+            reportFailure(store, FailureCategory.LEDGER_DB)
             Result.retry()
         }
     }
@@ -81,6 +88,17 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
             appendToLedgerDefault(context, deletedIds)
         },
     )
+
+    /**
+     * 실패 1건 기록 (#239) — 원격 관측 + 로컬 카운터.
+     *
+     * 로컬 카운터를 함께 남기는 이유: 원격은 DSN이 있어야 하고(알파 초기엔 없다) 표본도 지연된다.
+     * 기기에 마지막 분류와 연속 횟수가 있으면 디버그 도구(#245)가 즉석에서 읽을 수 있다.
+     */
+    private fun reportFailure(store: TokenStore, category: FailureCategory) {
+        store.recordFailure(category.name)
+        CrashReporting.recordHandledFailure(category)
+    }
 
     companion object {
         private const val TAG = "HealthSyncWorker"
