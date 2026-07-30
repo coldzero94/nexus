@@ -17,6 +17,7 @@ import com.nexus.app.ui.FIRST_RUN_NOTICE_TAG
 import com.nexus.app.ui.NexusTheme
 import com.nexus.core.ActivityType
 import com.nexus.core.RecordingMethod
+import com.nexus.core.TrustReason
 import com.nexus.core.TrustTier
 import org.junit.Before
 import org.junit.Rule
@@ -106,6 +107,7 @@ class ActivityScreenRenderTest {
         dataOrigin = "com.sec.android.app.shealth",
         recordingMethod = RecordingMethod.AUTO_RECORDED,
         trustTier = TrustTier.B,
+        trustReason = TrustReason.PHONE_RECORDED,
     )
 
     /**

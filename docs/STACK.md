@@ -25,7 +25,12 @@
 
 - **걸음**: `aggregate(StepsRecord.COUNT_TOTAL)` — readRecords로 직접 읽으면 이중 카운트. **운동 세션**: `ExerciseSessionRecord` (RUNNING/WALKING/STRENGTH_TRAINING/WEIGHTLIFTING/CALISTHENICS 등 타입 상수로 클래스 매핑 직접 가능), 세션 시간 범위로 HeartRateRecord 연계 조회.
 - **수기 입력 필터**: `metadata.recordingMethod == RECORDING_METHOD_MANUAL_ENTRY` → XP 제외. SDK 1.1.0부터 기록 시 recordingMethod 의무화라 신규 데이터 신뢰도 높음. 단 서버측 필터는 dataOrigin만 — recordingMethod는 읽은 뒤 앱에서 거른다. 과거 데이터는 UNKNOWN 많음.
-- **소스 신뢰 등급**: `dataOrigin`(패키지명, 위조 불가)으로 Tier 부여 — 삼성헬스/온디바이스/자사 = 신뢰, 미상 서드파티 = 감점. ⚠️ **2026-06부터 온디바이스 걸음의 dataOrigin이 "android"에서 기기별 SPN으로 변경** — `getCurrentDeviceDataSource()`로 SPN을 조회해 둘 다 필터에 포함. 화이트리스트는 하드코딩 금지(원격 구성 가능하게). 삼성헬스 패키지명은 실기기 실측으로 확정.
+- **소스 신뢰 등급**: `dataOrigin`(패키지명, 위조 불가)으로 Tier 부여. **운동 세션에만 적용된다** — 걸음은 `aggregate(COUNT_TOTAL)`로 읽어 레코드별 provenance가 없어 등급을 매기지 않는다(수기 걸음만 `recordingMethod`로 따로 제외). 아래 SPN 대응도 세션 경로 얘기다 — 삼성헬스/온디바이스/자사 = 신뢰, 미상 서드파티 = 감점. ⚠️ **2026-06부터 온디바이스 걸음의 dataOrigin이 "android"에서 기기별 SPN으로 변경.**
+  - **구현(#205, 2026-07-30)**: `getCurrentDeviceDataSource()` 같은 API는 **Health Connect 1.1.0에 없다**(실측 확인 — `Metadata`가 주는 건 `dataOrigin`과 `Device(type/manufacturer/model)`뿐). 그래서 **관측으로 판별한다**: 레코드의 `Device`가 `Build.MANUFACTURER`/`MODEL`과 일치하고 `type == TYPE_PHONE`이며 수기가 아니면, 그 레코드를 쓴 패키지를 현재 기기 온디바이스 소스로 보고 tierB에 런타임 병합한다(`DeviceIdentity` → `core/DeviceSourceResolver`).
+  - 이걸 안 하면 사용자가 **자기 폰으로 자동 기록한 진짜 운동이 Tier C로 떨어져 XP에서 제외**된다. 사용자가 아무것도 잘못하지 않았는데 성장이 멈추고, 원인은 화면에 안 드러난다. **복구 창이 닫힌다**는 게 더 나쁘다: `grantSessions`는 미인정 세션에 행을 쓰지 않으므로 나중에 제대로 분류되면 같은 멱등성 키로 정상 지급되지만, 읽기 창(워커 7일·화면 28일)을 지나면 어느 창에도 안 들어와 영구히 지급되지 않는다.
+  - **관측이 올릴 수 있는 상한은 B**다 — tierA(워치+심박)로는 올라가지 않고 수기 제외 필터도 뚫지 못한다. 다만 **그 상한이 지금 담아내는 건 리더보드 가중치(0.85)뿐**이다: 개인 XP는 A·B가 모두 100%이고 MVP가 지급하는 건 개인 XP뿐이라, C→B 승격은 사실상 0% → 100%다.
+  - ⚠️ **`Metadata.device`는 쓰는 앱이 채우는 값**이다(HC가 호스트 기기와 대조하지 않는다). `dataOrigin`은 위조 불가지만 이 판별은 device에 의존하므로, HC 쓰기 권한을 받은 앱이 `Device(Build.MANUFACTURER, Build.MODEL, …)`을 실으면 자기 패키지를 tierB로 올릴 수 있다. 남는 제동은 일일 인정 상한(300)뿐이고, 이 방향의 과지급은 레코드 삭제 없이는 원장에서 되돌아가지 않는다. **받아들인 위험**이다 — 대안(진짜 운동을 C로 두기)이 더 나쁘고, 환금 보상이 없어 동기가 약하다. 리더보드(S9+)를 붙일 때 관측 승격 소스를 측정된 tierB보다 낮게 가중할지 결정해야 한다.
+  - 화이트리스트는 하드코딩 금지(원격 구성 가능하게). 삼성헬스 패키지명은 실기기 실측으로 확정.
 - **동기화**: 15분 주기 WorkManager + **Changes API 증분**(UpsertionChange/DeletionChange — 삭제가 보상 이벤트 트리거) + 앱 실행 시 즉시. 토큰 30일 만료 → 전체 재읽기 폴백 필수. 레이트 리밋(수치 비공개, 백그라운드 더 엄격) 때문에 폴링 남용 금지.
 - **권한 3종**: 읽기 + `READ_HEALTH_DATA_IN_BACKGROUND`(위젯 자동 갱신) + `READ_HEALTH_DATA_HISTORY`(30일 초과 과거 → 온보딩 초기 레벨 부여). 셋 다 처음부터 선언 — 나중에 추가하면 재심사.
 - **강도 지표**: HealthKit workoutEffortScore의 대응물 없음 → 세션 심박 시계열로 심박존 체류를 자체 산출(추정치임을 UI 표기).

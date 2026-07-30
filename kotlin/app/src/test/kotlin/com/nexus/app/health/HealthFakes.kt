@@ -1,11 +1,13 @@
 package com.nexus.app.health
 
+import android.os.Build
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByPeriod
 import androidx.health.connect.client.records.Record
+import androidx.health.connect.client.records.metadata.DataOrigin
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.AggregateGroupByDurationRequest
@@ -127,3 +129,42 @@ class FakeHealthConnectClient(val events: MutableList<String> = mutableListOf())
  * dataOrigin은 플랫폼이 채우는 필드라 테스트에선 빈 값(신뢰 등급 단언에는 부적합).
  */
 fun autoMetadata(id: String): Metadata = Metadata.autoRecordedWithId(id, Device(type = Device.TYPE_UNKNOWN))
+
+/**
+ * `dataOrigin`까지 세운 메타데이터 (#205) — 신뢰 등급 배선을 실제로 검증하기 위해 필요하다.
+ *
+ * 공개 팩토리는 `dataOrigin`을 받지 않는다(플랫폼이 채우는 필드라서). Kotlin `internal` 생성자는
+ * **JVM 바이트코드에서는 public**이라 리플렉션으로 부를 수 있다 — 라이브러리 내부 API에 의존하는
+ * 셈이라 좋은 수단은 아니지만, 대안은 "소스 패키지에 따라 등급이 갈리는 경로를 아예 테스트하지
+ * 않는 것"이다. 그쪽이 훨씬 위험하다: #205가 고치는 결함이 정확히 그 경로의 오분류였고, 배선을
+ * DEFAULT로 되돌려도 아무 테스트가 깨지지 않는 상태였다.
+ *
+ * 생성자 시그니처가 바뀌면 이 헬퍼가 즉시 실패하므로(조용히 통과하지 않는다) 위험이 국소적이다.
+ */
+fun metadataWithOrigin(
+    id: String,
+    packageName: String,
+    device: Device,
+    recordingMethod: Int = Metadata.RECORDING_METHOD_AUTOMATICALLY_RECORDED,
+): Metadata {
+    val ctor = Metadata::class.java.declaredConstructors.first { it.parameterCount == PARAM_COUNT_WITH_ORIGIN }
+    ctor.isAccessible = true
+    return ctor.newInstance(
+        recordingMethod,
+        id,
+        DataOrigin(packageName),
+        Instant.EPOCH,
+        null,
+        0L,
+        device,
+    ) as Metadata
+}
+
+/** 이 기기(폰)로 기록된 것처럼 보이는 기기 메타 — [DeviceIdentity]가 '이 기기'로 판정한다. */
+fun thisPhoneDevice(): Device = Device(manufacturer = Build.MANUFACTURER, model = Build.MODEL, type = Device.TYPE_PHONE)
+
+/** 워치에서 온 것처럼 보이는 기기 메타 — 현재 기기 소스 근거가 되지 않아야 한다. */
+fun watchDevice(): Device = Device(manufacturer = "samsung", model = "SM-R900", type = Device.TYPE_WATCH)
+
+/** `Metadata`의 dataOrigin 포함 생성자 인자 수 — 시그니처가 바뀌면 헬퍼가 즉시 실패한다. */
+private const val PARAM_COUNT_WITH_ORIGIN = 7

@@ -59,7 +59,7 @@
 - Tier B: 자동/능동 기록(온디바이스 걸음, 삼성헬스 폰 세션) — XP 70~100% (실측 후 확정)
 - Tier C: 수기 입력(`RECORDING_METHOD_MANUAL_ENTRY`)·미상 서드파티 — 표시만, XP 0% (예외: 검증된 근력 로거 화이트리스트)
 
-**무결성 최소 3종(서버 불필요)**: recordingMethod 수기 제외 / dataOrigin 신뢰 등급(⚠ 2026-06 SPN 변경 — `getCurrentDeviceDataSource()` 병용, 화이트리스트 원격 구성) / 일일 XP 인정 상한.
+**무결성 최소 3종(서버 불필요)**: recordingMethod 수기 제외 / dataOrigin 신뢰 등급(⚠ 2026-06 SPN 변경 — 그런 조회 API가 HC에 없어 **관측으로 현재 기기 소스를 판별해 tierB 병합**, #205 · 화이트리스트 원격 구성) / 일일 XP 인정 상한.
 
 ## 5. XP 산식 v0.3
 

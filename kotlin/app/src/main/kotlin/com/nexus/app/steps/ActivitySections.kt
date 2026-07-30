@@ -17,7 +17,6 @@ import com.nexus.app.ui.NexusListRow
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.TrustTierChip
 import com.nexus.core.ActivityType
-import com.nexus.core.TrustExplainer
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -67,14 +66,9 @@ private fun SessionRow(session: ExerciseSummary, dtFormatter: DateTimeFormatter)
             horizontalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TrustTierChip(
-                tier = session.trustTier,
-                reason = TrustExplainer.reasonFor(
-                    recordingMethod = session.recordingMethod,
-                    dataOrigin = session.dataOrigin,
-                    hasHeartRate = session.avgHeartRate != null,
-                ),
-            )
+            // 근거를 여기서 다시 계산하지 않는다 — 병합된 allowlist(#205)가 여기엔 없어서
+            // 기본값으로 떨어지고, "Tier B인데 근거는 미등록 소스"라는 모순이 화면에 나온다
+            TrustTierChip(tier = session.trustTier, reason = session.trustReason)
             Text(
                 text = stringResource(R.string.session_source_suffix, sourceLabel(session.dataOrigin)),
                 style = MaterialTheme.typography.bodySmall,

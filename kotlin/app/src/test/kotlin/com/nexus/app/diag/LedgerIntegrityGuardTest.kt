@@ -31,10 +31,18 @@ import kotlin.test.assertTrue
 class LedgerIntegrityGuardTest {
     private val context: Context get() = ApplicationProvider.getApplicationContext()
 
+    /**
+     * 테스트 전용 prefs 이름. 프로덕션 이름을 쓰면 `NexusApplication`의 시작 검사가 **모든 앱 부팅마다**
+     * 같은 저장소에 비동기로 쓰기 때문에, 그 쓰기가 `@Before` 정리 뒤에 도착해 간헐 실패한다.
+     */
+    private val testPrefs = "nexus_ledger_integrity_test"
+
+    private fun marker() = IntegrityMarkerStore(context, testPrefs)
+
     @Before
     fun clearState() {
         context.getSharedPreferences(TokenStore.PREFS, Context.MODE_PRIVATE).edit().clear().commit()
-        context.getSharedPreferences(IntegrityMarkerStore.PREFS, Context.MODE_PRIVATE).edit().clear().commit()
+        context.getSharedPreferences(testPrefs, Context.MODE_PRIVATE).edit().clear().commit()
     }
 
     private fun grant(sequence: Long, key: String) = LedgerRow(sequence, key, 100, RewardEventType.GRANT, 1, 20_000L)
@@ -45,18 +53,18 @@ class LedgerIntegrityGuardTest {
 
     @Test
     fun `정상 원장이면 아무 흔적도 남기지 않는다`() {
-        val violations = LedgerIntegrityGuard.report(context, listOf(grant(1, "a")))
+        val violations = LedgerIntegrityGuard.report(context, marker = marker(), rows = listOf(grant(1, "a")))
 
         assertTrue(violations.isEmpty())
-        assertTrue(IntegrityMarkerStore(context).lastViolations.isEmpty())
+        assertTrue(marker().lastViolations.isEmpty())
     }
 
     @Test
     fun `위반이면 던지지 않고 전용 마커에 남긴다`() {
-        val violations = LedgerIntegrityGuard.report(context, listOf(orphanCancel()))
+        val violations = LedgerIntegrityGuard.report(context, marker = marker(), rows = listOf(orphanCancel()))
 
         assertEquals(setOf(LedgerViolation.ORPHAN_CANCELLATION), violations)
-        assertEquals(setOf("ORPHAN_CANCELLATION"), IntegrityMarkerStore(context).lastViolations)
+        assertEquals(setOf("ORPHAN_CANCELLATION"), marker().lastViolations)
     }
 
     /**
@@ -69,7 +77,7 @@ class LedgerIntegrityGuardTest {
         store.recordFailure(FailureCategory.SYNC_PERMISSION.name)
         store.recordFailure(FailureCategory.SYNC_PERMISSION.name)
 
-        LedgerIntegrityGuard.report(context, listOf(orphanCancel()))
+        LedgerIntegrityGuard.report(context, marker = marker(), rows = listOf(orphanCancel()))
 
         assertEquals(FailureCategory.SYNC_PERMISSION.name, store.lastFailureCategory)
         assertEquals(2, store.consecutiveFailures, "연속 횟수도 초기화되면 안 된다")
@@ -81,17 +89,17 @@ class LedgerIntegrityGuardTest {
      */
     @Test
     fun `동기화 성공이 무결성 마커를 지우지 않는다`() {
-        LedgerIntegrityGuard.report(context, listOf(orphanCancel()))
+        LedgerIntegrityGuard.report(context, marker = marker(), rows = listOf(orphanCancel()))
 
         TokenStore(context).clearFailure()
 
-        assertEquals(setOf("ORPHAN_CANCELLATION"), IntegrityMarkerStore(context).lastViolations)
+        assertEquals(setOf("ORPHAN_CANCELLATION"), marker().lastViolations)
     }
 
     /** 계약 3 — 같은 위반이 그대로면 원격 보고는 한 번만. */
     @Test
     fun `같은 위반 집합은 한 번만 원격 보고 대상이 된다`() {
-        val marker = IntegrityMarkerStore(context)
+        val marker = marker()
         val violations = setOf(LedgerViolation.ORPHAN_CANCELLATION)
 
         assertTrue(marker.record(violations), "처음이면 보고 대상")
@@ -101,7 +109,7 @@ class LedgerIntegrityGuardTest {
 
     @Test
     fun `위반 집합이 늘면 다시 보고 대상이 된다`() {
-        val marker = IntegrityMarkerStore(context)
+        val marker = marker()
         marker.record(setOf(LedgerViolation.ORPHAN_CANCELLATION))
 
         val grown = setOf(LedgerViolation.ORPHAN_CANCELLATION, LedgerViolation.DUPLICATE_GRANT)
@@ -111,7 +119,7 @@ class LedgerIntegrityGuardTest {
 
     @Test
     fun `정상으로 돌아오면 보고 대상이 아니고 마커도 비워진다`() {
-        val marker = IntegrityMarkerStore(context)
+        val marker = marker()
         marker.record(setOf(LedgerViolation.ORPHAN_CANCELLATION))
 
         // '회복'을 원격으로 알릴 필요는 없다 — 우리가 뭔가 한 결과이고, 안 왔다고 나쁜 일도 없다
@@ -122,28 +130,30 @@ class LedgerIntegrityGuardTest {
     @Test
     fun `빈 원장은 위반이 아니다`() {
         // 신규 설치가 매 실행 신호를 남기면 그 신호는 무의미해진다
-        assertTrue(LedgerIntegrityGuard.report(context, emptyList()).isEmpty())
-        assertTrue(IntegrityMarkerStore(context).lastViolations.isEmpty())
+        assertTrue(LedgerIntegrityGuard.report(context, marker = marker(), rows = emptyList()).isEmpty())
+        assertTrue(marker().lastViolations.isEmpty())
     }
 
     @Test
     fun `명시적 검사는 디버그에서 던진다`() {
         // 이 테스트는 debug 변형으로 돌므로 BuildConfig.DEBUG = true
         assertFailsWith<IllegalStateException> {
-            LedgerIntegrityGuard.verifyOrCrash(context, duplicateGrant())
+            LedgerIntegrityGuard.verifyOrCrash(context, marker = marker(), rows = duplicateGrant())
         }
     }
 
     @Test
     fun `명시적 검사도 정상 원장이면 던지지 않는다`() {
-        assertTrue(LedgerIntegrityGuard.verifyOrCrash(context, listOf(grant(1, "a"))).isEmpty())
+        assertTrue(
+            LedgerIntegrityGuard.verifyOrCrash(context, marker = marker(), rows = listOf(grant(1, "a"))).isEmpty(),
+        )
     }
 
     @Test
     fun `명시적 검사도 마커를 남긴다`() {
         // 크래시 뒤 재시작했을 때 무엇이었는지 알 수 있어야 한다
-        runCatching { LedgerIntegrityGuard.verifyOrCrash(context, listOf(orphanCancel())) }
+        runCatching { LedgerIntegrityGuard.verifyOrCrash(context, marker = marker(), rows = listOf(orphanCancel())) }
 
-        assertEquals(setOf("ORPHAN_CANCELLATION"), IntegrityMarkerStore(context).lastViolations)
+        assertEquals(setOf("ORPHAN_CANCELLATION"), marker().lastViolations)
     }
 }
