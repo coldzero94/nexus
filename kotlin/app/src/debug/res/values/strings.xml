@@ -35,6 +35,11 @@
     <string name="dev_tools_clear_firsts">계측 첫-발화 기록 초기화</string>
     <string name="dev_tools_cleared">초기화했습니다</string>
 
+    <!-- 관측된 현재 기기 온디바이스 소스 (#205) — 이게 비어 있으면 SPN 대응이 실제로는 아무것도
+         안 하고 있다는 뜻이다. 실기기에서 그걸 구분할 유일한 수단이라 여기 띄운다. -->
+    <string name="dev_tools_device_sources">관측된 기기 소스: %1$s</string>
+    <string name="dev_tools_device_sources_none">관측된 기기 소스: 없음 (SPN 대응 미작동 가능)</string>
+
     <string name="dev_tools_refresh">다시 읽기</string>
     <string name="dev_tools_verify_crash">무결성 검사 (위반 시 크래시)</string>
 </resources>

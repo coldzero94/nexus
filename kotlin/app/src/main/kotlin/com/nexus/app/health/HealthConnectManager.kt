@@ -87,12 +87,13 @@ class HealthConnectManager(private val context: Context) {
     fun stepRepositoryOrNull(): StepRepository? = clientOrNull()?.let { StepRepository(it) }
 
     /** 운동 세션 읽기용 리포지토리 (#8). HC 미가용 시 null. */
-    fun exerciseRepositoryOrNull(): ExerciseRepository? = clientOrNull()?.let { ExerciseRepository(it) }
+    fun exerciseRepositoryOrNull(): ExerciseRepository? =
+        clientOrNull()?.let { ExerciseRepository(it, DeviceSourceStore(context)) }
 
     /** 수면 읽기용 리포지토리 (#180) — 컨디션 회복 보정. HC 미가용 시 null. */
     fun sleepRepositoryOrNull(): SleepRepository? = clientOrNull()?.let { SleepRepository(it) }
 
     /** 성장 데이터(롤업·성향) 리포지토리 (#170). HC 미가용 시 null. */
     fun growthRepositoryOrNull(): GrowthRepository? =
-        clientOrNull()?.let { GrowthRepository(StepRepository(it), ExerciseRepository(it)) }
+        clientOrNull()?.let { GrowthRepository(StepRepository(it), ExerciseRepository(it, DeviceSourceStore(context))) }
 }

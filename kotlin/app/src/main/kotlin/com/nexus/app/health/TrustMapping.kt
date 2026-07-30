@@ -11,5 +11,5 @@ fun Int.toRecordingMethod(): RecordingMethod = when (this) {
     else -> RecordingMethod.UNKNOWN
 }
 
-// TODO(#9/SPN): 2026-06 SPN 변경 대응 — 현재 기기 온디바이스 소스 패키지를
-//   DataOriginAllowlist.withCurrentDeviceSource(...)로 병합. getCurrentDeviceDataSource() 확정 후 연결.
+// SPN 대응은 #205에서 완료 — HC에 'getCurrentDeviceDataSource()' 같은 API가 없어(1.1.0 확인)
+// 레코드 기기 메타를 Build와 맞춰 관측으로 판별한다. [DeviceIdentity] · [com.nexus.core.DeviceSourceResolver].

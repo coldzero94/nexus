@@ -22,11 +22,26 @@ enum class TrustTier(val xpMultiplier: Double, val personalXpMultiplier: Double)
 
 /**
  * dataOrigin(패키지명) 신뢰 화이트리스트. **원격 구성 가능 구조** — 하드코딩 금지(기본값만 제공).
- * ⚠ 2026-06 SPN 변경: 온디바이스 소스가 "android" 대신 getCurrentDeviceDataSource()로 옴 →
- *   현재 기기 소스를 런타임에 tierB로 병합([withCurrentDeviceSource]).
+ *
+ * ⚠ 2026-06 SPN 변경으로 온디바이스 기록의 소스 패키지가 달라질 수 있다. 그러면 사용자가 자기
+ * 폰으로 자동 기록한 진짜 운동이 **Tier C(미신뢰)로 떨어져 XP에서 제외**된다 — 사용자가 아무것도
+ * 잘못하지 않았는데 성장이 멈추고 원인은 화면에 드러나지 않으며, 원장은 append-only라 복구도 읽기 창 안에서만 된다
+ * (미인정 세션엔 원장 행이 안 써지므로 나중에 정상 분류되면 지급되지만, 창을 지나면 영구 미지급).
+ *
+ * 그래서 현재 기기 소스를 런타임에 tierB로 병합한다([withCurrentDeviceSources]). "현재 기기 소스"를
+ * 무엇으로 보는지는 [DeviceSourceResolver] — HC에 물어볼 API가 없어 **관측으로 판별**한다.
  */
 data class DataOriginAllowlist(val tierA: Set<String>, val tierB: Set<String>) {
     fun withCurrentDeviceSource(packageName: String): DataOriginAllowlist = copy(tierB = tierB + packageName)
+
+    /**
+     * 관측된 현재 기기 소스들을 tierB에 병합. 빈 집합이면 그대로 — 근거 없이 등급을 올리지 않는다.
+     *
+     * tierA에는 절대 넣지 않는다. 관측이 올릴 수 있는 상한이 B라는 게 이 판별의 안전장치다
+     * ([DeviceSourceResolver] KDoc).
+     */
+    fun withCurrentDeviceSources(packageNames: Set<String>): DataOriginAllowlist =
+        if (packageNames.isEmpty()) this else copy(tierB = tierB + packageNames)
 
     companion object {
         /** 원격 구성 전 기본값. 실제 패키지·워치 소스는 #12 실측·원격 구성으로 확정. */

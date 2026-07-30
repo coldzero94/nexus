@@ -120,7 +120,10 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
             val ledger = RewardLedgerRepository(NexusDatabase.get(context).rewardEventDao())
             val now = System.currentTimeMillis()
             val zone = ZoneId.systemDefault()
-            val sessions = ExerciseRepository(client).readRecentSessions(days = GRANT_WINDOW_DAYS)
+            val sessions = ExerciseRepository(
+                client,
+                DeviceSourceStore(context),
+            ).readRecentSessions(days = GRANT_WINDOW_DAYS)
             ledger.grantSessions(sessions, zone, epochMillis = now)
             deletedIds.forEach { id ->
                 if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")

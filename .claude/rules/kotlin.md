@@ -13,7 +13,7 @@ paths:
 - Changing the XP formula = one atomic set: bump formula version tag + update `docs/MVP.md §5` + update the case-table tests (spreadsheet parity, shared `balance/*.csv` fixtures) + **add a new `balance/frozen/v{N}/` directory** (#243).
 - **Shipped formula versions are frozen**: `balance/frozen/v{N}/*.csv` records the output of a shipped `FORMULA_VERSION` and must never be edited or deleted — already-recorded ledger events are re-verified against it (BACKEND §1). If `FrozenFormulaVectorTest` fails, bump the version and add `v{N+1}/`; do not touch the existing files.
 - Read steps via `aggregate(COUNT_TOTAL)` — never `readRecords` for steps (double counting).
-- Never hardcode the dataOrigin allowlist — remotely configurable, include `getCurrentDeviceDataSource()` alongside `"android"` (June 2026 SPN change).
+- Never hardcode the dataOrigin allowlist — merge the current device's on-device source at runtime (#205). **There is no `getCurrentDeviceDataSource()` API** in HC 1.1.0; derive it by matching a record's `Metadata.device` against `Build.MANUFACTURER`/`MODEL` with `type == TYPE_PHONE` (`DeviceIdentity` → `core/DeviceSourceResolver`). Observation can promote to tierB only — never tierA, and never past the manual-entry exclusion.
 - Never put health-derived values into analytics event payloads — events record occurrence only (allowlist enforced by tests).
 - No hardcoded strings (resources, Korean default). No colors/dimensions outside design tokens.
 - **Colors come from tokens only** (#267): define in `ui/NexusColors.kt` (M3 scheme) or `ui/VizColors.kt`

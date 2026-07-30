@@ -6,9 +6,13 @@ import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.nexus.core.ActivityType
+import com.nexus.core.DataOriginAllowlist
+import com.nexus.core.DeviceSourceResolver
 import com.nexus.core.RecordingMethod
-import com.nexus.core.TrustPolicy
+import com.nexus.core.TrustExplainer
+import com.nexus.core.TrustReason
 import com.nexus.core.TrustTier
+import com.nexus.core.tier
 import java.time.Duration
 import java.time.Instant
 import kotlin.math.roundToLong
@@ -28,10 +32,28 @@ data class ExerciseSummary(
     val dataOrigin: String,
     val recordingMethod: RecordingMethod,
     val trustTier: TrustTier,
+    /**
+     * 등급 근거 (#222·#205) — **등급과 같은 allowlist로 한 번만** 계산한다.
+     *
+     * 화면이 다시 계산하게 두면 안 된다. 병합된 allowlist는 리포지토리에만 있어서, 컴포저블이
+     * `reasonFor`를 부르면 기본 allowlist로 떨어져 **"Tier B"인데 근거는 "미등록 소스"**가 된다 —
+     * 행은 XP에 반영된다고 하고 근거는 제외 대상이라고 말하는 모순이다. `core/Trust.kt`가 등급과
+     * 근거를 한 분기에 모아 둔 것과 같은 이유다.
+     */
+    val trustReason: TrustReason,
 )
 
-/** 운동 세션 읽기 (#8) — ExerciseSession 3축 매핑 + 세션 범위 심박 연계. */
-class ExerciseRepository(private val client: HealthConnectClient) {
+/**
+ * 운동 세션 읽기 (#8) — ExerciseSession 3축 매핑 + 세션 범위 심박 연계.
+ *
+ * @param deviceSources 관측된 현재 기기 온디바이스 소스의 누적 저장소 (#205). null이면 배치 관측만
+ *   쓴다 — 그러면 등급이 읽기 창에 따라 달라지므로 **프로덕션은 반드시 넘긴다**
+ *   ([DeviceSourceStore] KDoc). 순수 단위 테스트만 생략한다.
+ */
+class ExerciseRepository(
+    private val client: HealthConnectClient,
+    private val deviceSources: DeviceSourceStore? = null,
+) {
     suspend fun readRecentSessions(days: Int = 7): List<ExerciseSummary> {
         require(days >= 1) { "days must be >= 1" }
         val end = Instant.now()
@@ -53,10 +75,24 @@ class ExerciseRepository(private val client: HealthConnectClient) {
         } while (pageToken != null)
         val sessions = records.sortedByDescending { it.startTime }
         val heartRates = avgHeartRateBySession(sessions)
+        // 신뢰 등급 판정 전에 **현재 기기 온디바이스 소스를 관측해 allowlist에 병합**한다 (#205).
+        // 하드코딩 기본값만 쓰면 2026-06 SPN 변경으로 소스 패키지가 달라진 순간, 사용자가 자기 폰으로
+        // 자동 기록한 진짜 운동이 Tier C로 떨어져 XP에서 제외되고, 읽기 창을 지나면 복구도 불가능하다.
+        val observed = sessions.map {
+            DeviceIdentity.observe(it.metadata, it.metadata.recordingMethod.toRecordingMethod())
+        }
+        val batch = DeviceSourceResolver.onDeviceSources(observed)
+        // 관측을 누적 저장한다 — 배치 안에서만 모으면 같은 세션이 7일 창에서 C, 28일 창에서 B가 되고
+        // 그중 셋이 원장에 지급한다(창이 지나면 복구 기회도 닫힌다). [DeviceSourceStore] KDoc.
+        deviceSources?.record(batch)
+        val allowlist = DataOriginAllowlist.DEFAULT
+            .withCurrentDeviceSources(batch + deviceSources?.sources.orEmpty())
         return sessions.map { session ->
             val hr = heartRates[session.metadata.id]
             val method = session.metadata.recordingMethod.toRecordingMethod()
             val origin = session.metadata.dataOrigin.packageName
+            // 등급과 근거를 같은 allowlist로 한 번에 — 둘이 다른 allowlist를 보면 화면이 모순된 설명을 낸다
+            val reason = TrustExplainer.reasonFor(method, origin, hasHeartRate = hr != null, allowlist = allowlist)
             ExerciseSummary(
                 id = session.metadata.id,
                 type = mapType(session.exerciseType),
@@ -67,7 +103,8 @@ class ExerciseRepository(private val client: HealthConnectClient) {
                 avgHeartRate = hr,
                 dataOrigin = origin,
                 recordingMethod = method,
-                trustTier = TrustPolicy.classify(method, origin, hasHeartRate = hr != null),
+                trustTier = reason.tier,
+                trustReason = reason,
             )
         }
     }

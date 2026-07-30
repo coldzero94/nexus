@@ -43,17 +43,24 @@ import com.nexus.core.LedgerViolation
  * 위반을 발견해도 행을 지우거나 보정 이벤트를 넣지 않는다. append-only가 이 원장의 유일한 안전
  * 장치이고, "자동으로 고치는 코드"가 곧 다음 오염의 경로다. 발견과 보고까지만 한다.
  */
-object LedgerIntegrityGuard {
+internal object LedgerIntegrityGuard {
     private const val TAG = "LedgerIntegrity"
 
     /**
      * 검사하고 위반을 기록한다 — **던지지 않는다**. 동기화·앱 시작처럼 자동으로 도는 경로용.
      *
+     * @param marker 마커 저장소 — 테스트가 격리된 prefs를 넘긴다. 프로덕션은 기본값.
+     *   앱 시작 검사가 모든 Robolectric 부팅마다 프로덕션 저장소에 쓰므로, 이 이음새가 없으면
+     *   테스트가 자기 `@Before` 정리 뒤에 도착한 앱의 쓰기와 경합한다([IntegrityMarkerStore] KDoc).
      * @return 위반 종류(빈 집합 = 정상). 디버그 화면이 그대로 표시한다.
      */
-    fun report(context: Context, rows: List<LedgerRow>): Set<LedgerViolation> {
+    fun report(
+        context: Context,
+        rows: List<LedgerRow>,
+        marker: IntegrityMarkerStore = IntegrityMarkerStore(context),
+    ): Set<LedgerViolation> {
         val violations = LedgerIntegrity.check(rows)
-        val shouldNotifyRemote = IntegrityMarkerStore(context).record(violations)
+        val shouldNotifyRemote = marker.record(violations)
         if (violations.isEmpty()) return violations
 
         // 위반 이름은 enum 상수 — 수치가 없어 로그에 남겨도 안전하다(불변식 ②).
@@ -71,8 +78,12 @@ object LedgerIntegrityGuard {
      *
      * @throws IllegalStateException 디버그 빌드에서 위반이 있을 때.
      */
-    fun verifyOrCrash(context: Context, rows: List<LedgerRow>): Set<LedgerViolation> {
-        val violations = report(context, rows)
+    fun verifyOrCrash(
+        context: Context,
+        rows: List<LedgerRow>,
+        marker: IntegrityMarkerStore = IntegrityMarkerStore(context),
+    ): Set<LedgerViolation> {
+        val violations = report(context, rows, marker)
         check(violations.isEmpty() || !BuildConfig.DEBUG) {
             "원장 불변식 위반(${violations.joinToString { it.name }}) — 원장은 되돌릴 수 없다"
         }

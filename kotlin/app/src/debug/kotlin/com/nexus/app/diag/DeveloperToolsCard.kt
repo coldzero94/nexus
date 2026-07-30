@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nexus.app.R
+import com.nexus.app.health.DeviceSourceStore
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
 import com.nexus.app.ui.NexusCard
@@ -60,6 +61,7 @@ internal fun DeveloperToolsCard(manager: HealthConnectManager, modifier: Modifie
             snapshot = runCatching {
                 DiagnosticsCollector.renderText(context, manager, System.currentTimeMillis())
             }.getOrElse { it.message.orEmpty() },
+            deviceSources = runCatching { DeviceSourceStore(context).sources }.getOrDefault(emptySet()),
         )
     }
 
@@ -67,6 +69,7 @@ internal fun DeveloperToolsCard(manager: HealthConnectManager, modifier: Modifie
         Column(verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm), modifier = modifier.fillMaxWidth()) {
             Text(stringResource(R.string.dev_tools_desc), style = MaterialTheme.typography.bodySmall)
             IntegrityReadout(readout?.rows)
+            DeviceSourcesReadout(readout?.deviceSources.orEmpty())
             SnapshotReadout(readout?.snapshot)
             note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 
@@ -105,6 +108,24 @@ private fun IntegrityReadout(rows: List<LedgerRow>?) {
     Text(text, style = MaterialTheme.typography.bodyMedium)
     Text(
         stringResource(R.string.dev_tools_recomputed_total, LedgerIntegrity.recomputeTotalXp(rows)),
+        style = MaterialTheme.typography.bodySmall,
+    )
+}
+
+/**
+ * 관측된 기기 소스 (#205) — 비어 있으면 SPN 대응이 무동작이라는 뜻이다.
+ *
+ * 이 줄이 없으면 실기기에서 "관측이 되고 있다"와 "기기 메타가 달라 매번 0건이다"를 구분할 방법이
+ * 없다. 후자면 온디바이스 기록이 계속 Tier C로 XP에서 빠지는데 테스트는 전부 통과한다.
+ */
+@Composable
+private fun DeviceSourcesReadout(sources: Set<String>) {
+    Text(
+        text = if (sources.isEmpty()) {
+            stringResource(R.string.dev_tools_device_sources_none)
+        } else {
+            stringResource(R.string.dev_tools_device_sources, sources.joinToString())
+        },
         style = MaterialTheme.typography.bodySmall,
     )
 }
