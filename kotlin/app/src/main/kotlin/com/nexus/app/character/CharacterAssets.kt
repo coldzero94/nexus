@@ -12,6 +12,8 @@ import com.nexus.core.DialoguePool
 import com.nexus.core.DialogueTable
 import com.nexus.core.EquipCatalog
 import com.nexus.core.EquipCatalogReader
+import com.nexus.core.ExpeditionRewardPicker
+import com.nexus.core.ExpeditionRewardTable
 import com.nexus.core.MonthlyBadgeTable
 import com.nexus.core.MonthlyBadgeTableReader
 import com.nexus.core.MoodTable
@@ -86,6 +88,10 @@ class CharacterAssets(private val context: Context) {
         .getIdentifier(name, "drawable", context.packageName)
         .takeIf { it != 0 }
 
+    /** 원정 보상 표 (#68). 보상 추가·수정 = JSON만(코드 무수정) — 배지 표와 같은 규약. */
+    fun loadExpeditionRewards(): ExpeditionRewardTable =
+        context.assets.open(EXPEDITION_PATH).bufferedReader().use { ExpeditionRewardPicker.parse(it.readText()) }
+
     private companion object {
         const val META_PATH = "character/animations.json"
         const val DIALOGUE_PATH = "character/dialogue.json"
@@ -93,5 +99,6 @@ class CharacterAssets(private val context: Context) {
         const val BADGE_PATH = "character/badges.json"
         const val MONTHLY_BADGE_PATH = "character/monthly_badges.json"
         const val EQUIPMENT_PATH = "character/equipment.json"
+        const val EXPEDITION_PATH = "character/expeditions.json"
     }
 }

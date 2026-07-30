@@ -141,7 +141,7 @@ private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
         LevelUpCard(up.level, up.risenStats, visible = true) { ui.dismissLevelUp(state) }
         return
     }
-    if (ui.morningVisible) MorningCard(state, onDismiss = ui::dismissMorning)
+    if (ui.morningVisible) MorningCard(state, onDismiss = { ui.dismissCard(HomeCard.MORNING) })
     // 첫 세션 루프 (#211) — 코치와 축하는 상호 배타(core 판정), 각각 1회
     when (state.firstSessionCue) {
         FirstSessionCue.Coach ->
@@ -162,11 +162,15 @@ private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
         state = state,
         spriteState = ui.spriteState,
         moodLines = ui.moodLines,
-        onDepart = { ui.depart(state.cappedTotalXp) },
-        onOpen = ui::openExpedition,
+        expedition = ExpeditionUi(
+            onDepart = { ui.depart(state.cappedTotalXp) },
+            onOpen = ui::openExpedition,
+            reward = ui.reward,
+            onDismissReward = { ui.dismissCard(HomeCard.EXPEDITION_REWARD) },
+        ),
         onSyncFinished = ui::refreshAfterSync,
     )
-    if (ui.journalVisible) EveningJournalCard(state, onDismiss = ui::dismissJournal)
+    if (ui.journalVisible) EveningJournalCard(state, onDismiss = { ui.dismissCard(HomeCard.JOURNAL) })
 }
 
 @Composable
@@ -174,8 +178,7 @@ private fun HomeContent(
     state: HomeUiState,
     spriteState: String,
     moodLines: List<String>,
-    onDepart: () -> Unit,
-    onOpen: () -> Unit,
+    expedition: ExpeditionUi,
     onSyncFinished: () -> Unit,
 ) {
     // 상단 히어로 — 캐릭터·대사·컨디션을 묶어 최상위 앵커로 (#256). 아래는 종속 상세 카드.
@@ -184,7 +187,9 @@ private fun HomeContent(
     // 이번 주 목표 진척 (#215) — 기세(일 단위 연속) 다음에 주 단위 리듬
     WeeklyGoalRow(state.weeklyProgress)
     TodaySummaryCard(state)
-    ExpeditionCard(state.expedition, state.energy, onDepart, onOpen)
+    // 개봉 결과를 원정 카드 **위**에 둔다 — 방금 누른 버튼 바로 위에 답이 나타나야 인과가 읽힌다
+    ExpeditionResultCard(expedition.reward, expedition.onDismissReward)
+    ExpeditionCard(state.expedition, state.energy, expedition.onDepart, expedition.onOpen)
     // 다음 목표를 카드로 편입 — 맨 Text로 두면 카드 스택 리듬이 끊긴다 (#254)
     NexusCard {
         Text(text = nextGoalText(state), style = MaterialTheme.typography.bodyMedium)
