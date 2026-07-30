@@ -142,6 +142,11 @@
     <string name="notify_reminder_body">잠깐 걸으면 오늘도 함께 자랄 수 있어요.</string>
     <string name="notify_expedition_title">캐릭터가 돌아왔어요!</string>
     <string name="notify_expedition_body">모험 이야기가 도착했어요 — 열어볼까요?</string>
+    <!-- 온보딩 진행·뒤로 (#225) — 얼마나 남았는지 모르는 불투명 흐름이 첫 실행 이탈 원인 -->
+    <string name="onboarding_progress">%1$d / %2$d 단계</string>
+    <string name="a11y_onboarding_progress">온보딩 %2$d단계 중 %1$d단계</string>
+    <string name="onboarding_back">이전</string>
+
     <string name="onboarding_next">다음</string>
 
     <!-- 온보딩: 권한 설명 -->
