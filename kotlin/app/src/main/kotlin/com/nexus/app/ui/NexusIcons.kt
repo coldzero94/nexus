@@ -43,4 +43,7 @@ object NexusIcons {
      * 뒤에는 그 혼용이 규약 위반으로 읽힌다.
      */
     @DrawableRes val badge = R.drawable.badge_default
+
+    /** 뒤로 (#225) — 온보딩 스텝 되돌리기. 시스템 back과 같은 동작의 시각 어포던스. */
+    @DrawableRes val back = R.drawable.ic_nav_back
 }

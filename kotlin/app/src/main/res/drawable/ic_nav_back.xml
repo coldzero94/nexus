@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  뒤로 (#225) — 온보딩 스텝 되돌리기. 시스템 back과 같은 동작의 시각 어포던스.
+  ic_tab_*·ic_concept_* 패밀리와 같은 24dp 그리드·1.9 스트로크·라운드 캡이다.
+  처음엔 채운 웨지로 그렸는데 앱의 다른 모든 아이콘보다 무겁게 읽혔다(첫 화면인데).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M15,5 L8,12 L15,19"
+        android:fillColor="#00000000"
+        android:strokeColor="@android:color/white"
+        android:strokeWidth="1.9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
