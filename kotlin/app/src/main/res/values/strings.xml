@@ -302,6 +302,11 @@
     <string name="equip_title">꾸미기</string>
     <string name="equip_slot_head">머리</string>
     <string name="equip_slot_accessory">장식</string>
+    <!-- 배지 획득 축하 (#218) — 이름·설명은 badges.json에서 온다(하드코딩 금지) -->
+    <string name="badge_unlock_title">새 배지를 얻었어요</string>
+    <string name="badge_unlock_title_multi">새 배지 %1$d개를 얻었어요</string>
+    <string name="badge_unlock_dismiss">좋아요</string>
+
     <string name="growth_badges_title">배지 %1$d / %2$d</string>
     <!-- 월 한정 배지 (#206) -->
     <string name="growth_monthly_badges_title">%1$d월의 배지 %2$d/%3$d</string>

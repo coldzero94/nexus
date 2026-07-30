@@ -83,7 +83,11 @@ internal suspend fun loadMonthlyBadges(
         )
         val store = BadgeProgressStore(context, BadgeProgressStore.MONTHLY_PREFS)
         val currently = MonthlyBadgeCalendar.unlocked(table, period, signals)
-        withContext(Dispatchers.IO) { store.addEarned(currently) }
+        // 월 한정 배지도 축하한다 (#218) — **시간 제한 수집물**이라 오히려 축하가 더 급하다.
+        // 상시 배지와 같은 대기 집합을 쓴다: id 공간이 겹치지 않고, 한 집합이면 같은 달에 상시·월간이
+        // 함께 열려도 카드 하나로 묶인다(폭주 금지).
+        val newly = MonthlyBadgeCalendar.newlyUnlocked(table, period, signals, store.earned)
+        withContext(Dispatchers.IO) { commitBadgeProgress(context, store, newly, currently) }
         // 표시는 영속 합집합을 이번 달 배지로 좁힌 것 — 지난 달 획득분은 저장소에 남되 개수엔 안 센다
         val activeIds = active.mapTo(mutableSetOf()) { it.id }
         MonthlyBadgeState(

@@ -64,6 +64,8 @@ class TelemetryPolicyTest {
             "funnel.onboardingStageWeeklyGoal",
             "funnel.permissionDenied",
             "funnel.demoChosen",
+            // 배지 획득 축하 (#218) — 발생 사실만, 배지 id·개수 미포함
+            "growth.badgeUnlocked",
         )
         assertEquals(pinned, TelemetryEvent.entries.map { it.signal }.toSet())
     }
