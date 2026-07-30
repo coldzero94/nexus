@@ -37,6 +37,7 @@ import com.nexus.app.settings.GoalStore
 import com.nexus.app.ui.GoalDayChooser
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.NexusWordmark
+import com.nexus.core.HealthAvailability
 
 private enum class OnboardingStep { Welcome, Rationale, SamsungHealth, WeeklyGoal }
 
@@ -59,7 +60,13 @@ fun OnboardingScreen(manager: HealthConnectManager, onFinished: (connected: Bool
     when (step) {
         OnboardingStep.Welcome -> WelcomeStep(
             onNext = {
-                step = if (manager.isAvailable()) OnboardingStep.Rationale else OnboardingStep.SamsungHealth
+                // 3상태 소비 (#236) — UpdateRequired에서 권한 요청으로 보내면 실패한다.
+                // 안내 스텝으로 보내면 데모 랜딩의 '업데이트' CTA까지 이어진다.
+                step = if (manager.availability() == HealthAvailability.Available) {
+                    OnboardingStep.Rationale
+                } else {
+                    OnboardingStep.SamsungHealth
+                }
             },
         )
 

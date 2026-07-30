@@ -35,6 +35,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.nexus.app.growth.GrowthScreen
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthSyncWorker
@@ -56,6 +59,7 @@ import com.nexus.app.ui.NexusTheme
 import com.nexus.app.ui.TabIcon
 import com.nexus.app.ui.motionDuration
 import com.nexus.core.ActivityType
+import com.nexus.core.HealthAvailability
 import com.nexus.core.ReturnWelcomePolicy
 import com.nexus.core.XpEngine
 import java.time.LocalDate
@@ -105,7 +109,10 @@ private fun NexusApp(manager: HealthConnectManager) {
     // 온보딩 완료는 영속(#44) — rememberSaveable 단독은 콜드스타트마다 온보딩을 반복하는 버그였다
     val onboarding = remember { OnboardingStore(context) }
     var finished by rememberSaveable { mutableStateOf(onboarding.completed) }
+    // 온보딩 시점 불리언을 그대로 믿으면, 사용자가 설정에서 권한을 회수해도 앱은 계속 연결됐다고 본다.
+    // 매 포그라운드 복귀에 실제 승인 권한으로 재파생한다 (#236) — 비차단(저장값으로 먼저 그린다).
     var connected by rememberSaveable { mutableStateOf(onboarding.connected) }
+    LivePermissionSync(manager, onboarding, connected) { connected = it }
     var showInitialLevel by rememberSaveable {
         mutableStateOf(onboarding.completed && onboarding.connected && !onboarding.initialLevelShown)
     }
@@ -160,7 +167,7 @@ private fun NexusApp(manager: HealthConnectManager) {
         ConnectedTabs(manager, onReconnect = { finished = false })
     } else {
         DemoLanding(
-            available = manager.isAvailable(),
+            availability = manager.availability(),
             onReconnect = { finished = false },
         )
     }
@@ -223,7 +230,8 @@ private fun ConnectedTabs(manager: HealthConnectManager, onReconnect: () -> Unit
 
 /** 권한 거부·HC 미가용 시 데모 랜딩. 실제 홈 화면은 E4에서 대체. */
 @Composable
-private fun DemoLanding(available: Boolean, onReconnect: () -> Unit) {
+internal fun DemoLanding(availability: HealthAvailability, onReconnect: () -> Unit) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -231,8 +239,17 @@ private fun DemoLanding(available: Boolean, onReconnect: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val titleRes = if (available) R.string.status_demo_title else R.string.status_unavailable_title
-        val bodyRes = if (available) R.string.status_demo_body else R.string.status_unavailable_body
+        // 3상태 분기 (#236) — UpdateRequired는 '불가'가 아니라 '업데이트하면 됨'이다
+        val titleRes = when (availability) {
+            HealthAvailability.Available -> R.string.status_demo_title
+            HealthAvailability.UpdateRequired -> R.string.status_update_required_title
+            HealthAvailability.Unavailable -> R.string.status_unavailable_title
+        }
+        val bodyRes = when (availability) {
+            HealthAvailability.Available -> R.string.status_demo_body
+            HealthAvailability.UpdateRequired -> R.string.status_update_required_body
+            HealthAvailability.Unavailable -> R.string.status_unavailable_body
+        }
         Text(
             text = stringResource(titleRes),
             style = MaterialTheme.typography.titleMedium,
@@ -244,7 +261,14 @@ private fun DemoLanding(available: Boolean, onReconnect: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center,
         )
-        if (available) {
+        if (availability == HealthAvailability.UpdateRequired) {
+            Spacer(Modifier.height(NexusSpacing.lg))
+            // 업데이트 딥링크 — 스토어의 HC 페이지로. 실패해도 아래 재연결 버튼이 남는다.
+            Button(onClick = { openHealthConnectListing(context) }) {
+                Text(stringResource(R.string.action_update_health_connect))
+            }
+        }
+        if (availability == HealthAvailability.Available) {
             Spacer(Modifier.height(NexusSpacing.lg))
             Button(onClick = onReconnect) {
                 Text(stringResource(R.string.action_retry_permission))
@@ -257,5 +281,48 @@ private fun DemoLanding(available: Boolean, onReconnect: () -> Unit) {
             text = stringResource(R.string.growth_preview, sampleXp, XpEngine.FORMULA_VERSION),
             style = MaterialTheme.typography.bodySmall,
         )
+    }
+}
+
+/**
+ * Health Connect 스토어 페이지 열기 (#236) — 구버전 HC의 유일한 출구.
+ *
+ * 딥링크가 막힌 기기(스토어 없음·정책)에서도 앱이 죽지 않게 실패를 흡수한다 — 그 경우에도 화면의
+ * 안내 문구는 남으므로 사용자는 무엇을 해야 하는지 안다.
+ */
+private fun openHealthConnectListing(context: android.content.Context) {
+    val uri = android.net.Uri.parse("market://details?id=$HEALTH_CONNECT_PACKAGE")
+    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+    runCatching { context.startActivity(intent) }.onFailure {
+        val web = android.net.Uri.parse("https://play.google.com/store/apps/details?id=$HEALTH_CONNECT_PACKAGE")
+        runCatching { context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, web)) }
+    }
+}
+
+/** HC 공급자 패키지 — 스토어 딥링크 대상. */
+private const val HEALTH_CONNECT_PACKAGE = "com.google.android.apps.healthdata"
+
+/**
+ * 연결 상태 라이브 재파생 (#236) — 매 포그라운드 복귀에 **실제 승인 권한**으로 다시 판정한다.
+ *
+ * 온보딩 시점 불리언을 그대로 믿으면 사용자가 설정에서 권한을 회수해도 앱은 계속 연결됐다고 본다.
+ * 비차단이다: 저장값으로 먼저 그리고, 실제 값이 다를 때만 갱신한다.
+ */
+@Composable
+private fun LivePermissionSync(
+    manager: HealthConnectManager,
+    onboarding: OnboardingStore,
+    current: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle, current) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            val live = manager.hasRequiredPermissions()
+            if (live != current) {
+                onboarding.connected = live
+                onChange(live)
+            }
+        }
     }
 }

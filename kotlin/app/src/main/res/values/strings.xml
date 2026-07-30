@@ -189,6 +189,10 @@
     <string name="session_no_hr">심박 없음</string>
     <string name="session_datetime_format">M월 d일 HH:mm</string>
     <string name="sync_footer_format">마지막 동기화: %1$s (변경 %2$d건)</string>
+    <!-- HC 업데이트 필요 (#236) — 고칠 수 있는 상태를 막다른 길로 보이게 하지 않는다 -->
+    <string name="status_update_required_title">Health Connect를 업데이트하면 돼요</string>
+    <string name="status_update_required_body">기기에 설치된 Health Connect가 오래된 버전이에요. 업데이트하면 바로 연결할 수 있어요.</string>
+    <string name="action_update_health_connect">Health Connect 업데이트</string>
     <!-- 접근성 낭독 문구 (#224) — 화면 표시가 아니라 TalkBack 전용 -->
     <string name="a11y_condition_state">%1$d, %2$d점 만점 · %3$s</string>
     <string name="a11y_level_gauge">레벨 진행</string>
