@@ -15,6 +15,7 @@ class FailureCategoryTest {
         "SYNC_REMOTE",
         "SYNC_PERMISSION",
         "LEDGER_DB",
+        "LEDGER_INTEGRITY",
         "BACKUP_IMPORT",
         "HOME_LOAD",
         "ACTIVITY_LOAD",
