@@ -53,10 +53,22 @@ data class BackupSnapshot(
      * 복원 후 그 배지만 소리 없이 사라진다(다른 배지는 원장·HC에서 재계산된다).
      */
     val expeditionsCompleted: Int = 0,
+    /**
+     * 설치 식별자 (#240) — **승계 앵커**. 복원 시 갓 생성된 로컬 UUID를 대체한다.
+     *
+     * 백업에 담는 이유: 백업의 목적이 승계이므로 앵커가 함께 넘어가야 의미가 있다. 본인 통제 표면이라
+     * §2의 서버·제3자 경계에 걸리지 않는다(#51 결정과 같은 근거). 구버전 백업엔 없으므로 null 허용.
+     */
+    val installId: String? = null,
 )
 
 object BackupCodec {
-    const val VERSION = 1
+    /**
+     * 백업 스키마 버전.
+     *
+     * v2 (#240): `BackupSnapshot.installId` 추가. v1 파일은 그대로 읽힌다(필드 null → 로컬 UUID 유지).
+     */
+    const val VERSION = 2
 
     private val json = Json {
         ignoreUnknownKeys = true // 미래 마이너 확장 필드는 무시하고 읽는다

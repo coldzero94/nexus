@@ -89,6 +89,8 @@ class BackupCodecTest {
                 "characterName",
                 // 완료 원정 수 (#204) — 탐험가 배지의 유일한 근거, 복원 시 소실 방지
                 "expeditionsCompleted",
+                // 설치 식별자 (#240, v2) — 계정 연결 승계 앵커. 복원 시 로컬 값을 대체한다
+                "installId",
             ),
             root.getValue("snapshot").jsonObject.keys,
         )

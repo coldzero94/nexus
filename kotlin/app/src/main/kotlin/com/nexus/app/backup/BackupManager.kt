@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import com.nexus.app.data.EnergyStore
 import com.nexus.app.data.ExpeditionStore
+import com.nexus.app.data.InstallIdStore
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardEventEntity
 import com.nexus.app.home.EveningJournalStore
@@ -83,6 +84,8 @@ object BackupManager {
                 restModeSinceEpochDay = RestModeStore(context).sinceEpochDay.takeIf { it != 0L },
                 characterName = IdentityStore(context).name,
                 expeditionsCompleted = ExpeditionStore(context).completedCount,
+                // 승계 앵커 (#240) — 이게 없으면 복원된 원장을 누구에게 귀속할지 알 수 없다
+                installId = InstallIdStore(context).installId,
             ),
         )
     }
@@ -104,6 +107,8 @@ object BackupManager {
             )
         }
         with(payload.snapshot) {
+            // 앵커는 로컬 값을 대체한다 — 복원의 목적이 "이전 설치의 연속"이므로 (#240)
+            InstallIdStore(context).adoptFromBackup(installId)
             EnergyStore(context).restoreTotalSpent(energyTotalSpent)
             expeditionStartedAtMillis?.let { ExpeditionStore(context).start(it) }
             settlementLastSeenXp?.let { SettlementStore(context).markSeen(it) }
