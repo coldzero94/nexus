@@ -1,9 +1,10 @@
 {
   "version": "v1",
-  "note": "월 한정 배지 캘린더(#38, E5-5). period(YYYY-MM) 달에만 획득 가능, 캐릭터에 영구 수집. 새 달 배지 추가 = 항목만 추가(코드 무수정). 임계값은 밸런스 튜닝 대상.",
+  "note": "월 한정 배지 캘린더(#38, E5-5). period(YYYY-MM) 달에만 획득 가능, 캐릭터에 영구 수집. 새 달 배지 추가 = 항목만 추가(코드 무수정). icon은 drawable badge_<icon> 접미사(BadgeAssetConvention, #266) — 생략하면 기본 글리프. 임계값은 밸런스 튜닝 대상.",
   "badges": [
     {
       "id": "jul_2026_passion",
+      "icon": "streak",
       "name": "7월의 열정",
       "description": "7월에 15일 함께 움직였어요.",
       "period": "2026-07",
@@ -11,6 +12,7 @@
     },
     {
       "id": "aug_2026_steps",
+      "icon": "steps",
       "name": "8월의 발걸음",
       "description": "8월에 20만 보를 넘겼어요.",
       "period": "2026-08",

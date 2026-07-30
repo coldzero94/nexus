@@ -35,4 +35,12 @@ object NexusIcons {
     @DrawableRes val expedition = R.drawable.ic_concept_expedition
 
     @DrawableRes val energy = R.drawable.ic_concept_energy
+
+    /**
+     * 성취 (#266) — 배지 카드 제목용. 기본 배지 글리프(리본 달린 메달)를 그대로 쓴다.
+     *
+     * `level`(오르는 셰브론)을 쓰다가 바꿨다 — 레벨과 성취는 다른 개념이고, 아이콘 언어를 문서화한
+     * 뒤에는 그 혼용이 규약 위반으로 읽힌다.
+     */
+    @DrawableRes val badge = R.drawable.badge_default
 }

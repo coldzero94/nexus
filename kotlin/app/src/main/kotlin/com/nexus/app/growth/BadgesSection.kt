@@ -3,13 +3,6 @@ package com.nexus.app.growth
 import android.content.Context
 import android.os.RemoteException
 import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -17,8 +10,8 @@ import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.data.ExpeditionStore
 import com.nexus.app.health.HealthConnectManager
-import com.nexus.app.ui.NexusSpacing
-import com.nexus.core.Badge
+import com.nexus.app.ui.NexusCard
+import com.nexus.app.ui.NexusIcons
 import com.nexus.core.BadgeEvaluator
 import com.nexus.core.BadgeSignals
 import com.nexus.core.BadgeTable
@@ -82,29 +75,20 @@ internal suspend fun loadBadges(context: Context, manager: HealthConnectManager,
 
 @Composable
 internal fun BadgesCard(state: BadgeState, modifier: Modifier = Modifier) {
-    Card(modifier) {
-        Column(
-            Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(NexusSpacing.sm),
-        ) {
-            Text(
-                stringResource(R.string.growth_badges_title, state.unlocked.size, state.table.badges.size),
-                style = MaterialTheme.typography.titleMedium,
+    NexusCard(
+        modifier = modifier,
+        titleIcon = NexusIcons.badge,
+        title = stringResource(R.string.growth_badges_title, state.unlocked.size, state.table.badges.size),
+    ) {
+        state.table.badges.forEach { badge ->
+            // 획득 판정은 영속 합집합(unlocked) — 조건이 다시 거짓이 돼도 잠금으로 회귀하지 않는다
+            // (#177 리뷰 Critical: 성취 불퇴행). 아이콘 상태도 같은 값을 따르므로 함께 지켜진다.
+            BadgeGlyphRow(
+                name = badge.name,
+                description = badge.description,
+                icon = badge.icon,
+                earned = badge.id in state.unlocked,
             )
-            state.table.badges.forEach { badge ->
-                BadgeRow(badge, earned = badge.id in state.unlocked)
-            }
         }
-    }
-}
-
-@Composable
-private fun BadgeRow(badge: Badge, earned: Boolean) {
-    Column(Modifier.fillMaxWidth()) {
-        Text(
-            if (earned) badge.name else stringResource(R.string.growth_badge_locked, badge.name),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Text(badge.description, style = MaterialTheme.typography.bodySmall)
     }
 }

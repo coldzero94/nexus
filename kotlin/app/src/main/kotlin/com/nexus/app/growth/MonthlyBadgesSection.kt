@@ -3,8 +3,6 @@ package com.nexus.app.growth
 import android.content.Context
 import android.os.RemoteException
 import android.util.Log
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -137,23 +135,13 @@ internal fun MonthlyBadgesCard(state: MonthlyBadgeState, modifier: Modifier = Mo
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         state.badges.forEach { badge ->
-            MonthlyBadgeRow(badge, earned = badge.id in state.unlocked)
+            // 상시 배지와 **같은 행 컴포넌트** — 획득/미획득 표현이 화면 안에서 갈리면 위계가 무의미해진다 (#266)
+            BadgeGlyphRow(
+                name = badge.name,
+                description = badge.description,
+                icon = badge.icon,
+                earned = badge.id in state.unlocked,
+            )
         }
-    }
-}
-
-@Composable
-private fun MonthlyBadgeRow(badge: MonthlyBadge, earned: Boolean) {
-    Column(Modifier.fillMaxWidth()) {
-        // 기존 배지 목록(BadgesSection)과 같은 표기 — 획득/미획득 표현을 화면 안에서 통일한다
-        Text(
-            if (earned) badge.name else stringResource(R.string.growth_badge_locked, badge.name),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Text(
-            badge.description,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

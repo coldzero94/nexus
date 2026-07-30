@@ -10,7 +10,23 @@ import kotlinx.serialization.json.Json
  * 영구히 남는 수집 자산이라(BENCHMARK.md) 한 번 해금되면 회수 기제가 없다.
  */
 @Serializable
-data class Badge(val id: String, val name: String, val description: String, @SerialName("when") val whenExpr: String)
+data class Badge(
+    val id: String,
+    val name: String,
+    val description: String,
+    @SerialName("when") val whenExpr: String,
+    /**
+     * 글리프 슬롯 (#266, E16-16) — 드로어블 규약 이름의 **접미사**만 담는다(`BadgeAssetConvention`).
+     *
+     * 리소스 이름 전체가 아니라 접미사인 이유: JSON이 `R.drawable` 이름을 알면 리소스 규칙이 바뀔 때
+     * 표를 손대야 하고, 임의 이름을 넣을 수 있으면 오타가 조용한 무아이콘으로 끝난다. 접미사 규칙을
+     * 코드가 갖고 있으면 표는 "어떤 글리프인가"만 말한다.
+     *
+     * null이면 기본 글리프로 폴백한다 — 새 배지를 조건만 적어 추가하는 경로를 막지 않기 위해서다
+     * (배지 추가 = JSON만이라는 #69 계약).
+     */
+    val icon: String? = null,
+)
 
 /** 배지 표 — 앱 assets JSON에서 로드. 배지 추가·조건 수정 = JSON만(코드 무수정). */
 @Serializable

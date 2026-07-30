@@ -16,6 +16,8 @@ data class MonthlyBadge(
     val description: String,
     val period: String,
     @SerialName("when") val whenExpr: String,
+    /** 글리프 슬롯 (#266) — 규약은 [BadgeAssetConvention]. 상시 배지와 같은 슬롯을 쓴다. */
+    val icon: String? = null,
 )
 
 /** 월 한정 배지 표 — 앱 assets JSON에서 로드. 배지 추가 = 항목만 추가(코드 무수정). */
