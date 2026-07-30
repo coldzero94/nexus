@@ -57,6 +57,13 @@ class TelemetryPolicyTest {
             "funnel.firstXp",
             "funnel.widgetInstalled",
             "funnel.expeditionOpened",
+            // 온보딩 스텝별 (#226) — 4단계 이탈 지점과 거부·데모 선택
+            "funnel.onboardingStageWelcome",
+            "funnel.onboardingStageRationale",
+            "funnel.onboardingStageSamsungHealth",
+            "funnel.onboardingStageWeeklyGoal",
+            "funnel.permissionDenied",
+            "funnel.demoChosen",
         )
         assertEquals(pinned, TelemetryEvent.entries.map { it.signal }.toSet())
     }

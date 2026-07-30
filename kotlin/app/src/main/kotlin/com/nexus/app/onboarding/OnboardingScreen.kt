@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,9 +35,12 @@ import com.nexus.app.character.CharacterComposer
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.HealthPermissions
 import com.nexus.app.settings.GoalStore
+import com.nexus.app.telemetry.Telemetry
+import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.GoalDayChooser
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.NexusWordmark
+import com.nexus.core.ConnectGate
 import com.nexus.core.HealthAvailability
 
 private enum class OnboardingStep { Welcome, Rationale, SamsungHealth, WeeklyGoal }
@@ -47,13 +51,23 @@ private enum class OnboardingStep { Welcome, Rationale, SamsungHealth, WeeklyGoa
  */
 @Composable
 fun OnboardingScreen(manager: HealthConnectManager, onFinished: (connected: Boolean) -> Unit) {
+    val context = LocalContext.current
     var step by rememberSaveable { mutableStateOf(OnboardingStep.Welcome) }
     var granted by rememberSaveable { mutableStateOf(false) }
+
+    // 스텝 진입 계측 (#226) — 사용자당 1회. 스텝을 되돌아가도 이탈 지점이 흐려지지 않게.
+    LaunchedEffect(step) { Telemetry.recordOnce(context, step.enterEvent()) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = manager.requestPermissionsContract(),
     ) { result ->
-        granted = result.containsAll(HealthPermissions.ALL)
+        // 필수 권한만 본다 (#236) — 여기서 ALL을 요구하면 백그라운드 하나 거부로 데모에 갇힌다.
+        // 매니저·MainActivity는 #236에서 고쳤는데 이 런처가 남아 있었다.
+        granted = ConnectGate.isConnected(result, HealthPermissions.REQUIRED)
+        Telemetry.recordOnce(
+            context,
+            if (granted) TelemetryEvent.PERMISSION_GRANTED else TelemetryEvent.PERMISSION_DENIED,
+        )
         step = OnboardingStep.SamsungHealth
     }
 
@@ -71,8 +85,12 @@ fun OnboardingScreen(manager: HealthConnectManager, onFinished: (connected: Bool
         )
 
         OnboardingStep.Rationale -> RationaleStep(
+            // 요청은 전부, 판정은 필수만 (#236) — 선택 권한도 물어봐야 기능이 켜진다
             onGrant = { permissionLauncher.launch(HealthPermissions.ALL) },
-            onSkip = { onFinished(false) },
+            onSkip = {
+                Telemetry.recordOnce(context, TelemetryEvent.DEMO_CHOSEN)
+                onFinished(false)
+            },
         )
 
         OnboardingStep.SamsungHealth -> SamsungHealthStep(
@@ -213,4 +231,12 @@ private fun SamsungHealthStep(onDone: () -> Unit) = StepScaffold {
     Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.samsung_health_done))
     }
+}
+
+/** 스텝 → 진입 이벤트 (#226). 매핑을 한곳에 둬 스텝 추가 시 계측 누락을 눈에 보이게 한다. */
+private fun OnboardingStep.enterEvent(): TelemetryEvent = when (this) {
+    OnboardingStep.Welcome -> TelemetryEvent.ONBOARDING_STAGE_WELCOME
+    OnboardingStep.Rationale -> TelemetryEvent.ONBOARDING_STAGE_RATIONALE
+    OnboardingStep.SamsungHealth -> TelemetryEvent.ONBOARDING_STAGE_SAMSUNG_HEALTH
+    OnboardingStep.WeeklyGoal -> TelemetryEvent.ONBOARDING_STAGE_WEEKLY_GOAL
 }
