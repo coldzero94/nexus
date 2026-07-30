@@ -23,8 +23,13 @@
 - `NexusCard`(헤더 제목+우측 값 슬롯+본문 슬롯, 내부 패딩·간격 토큰) + `CardEmphasis`(Neutral=surface / Highlight=primaryContainer / Celebration=secondaryContainer). HomeCards 6·Growth 히어로(Highlight, #263에서 Level+Affinity 통합)/Stats·Settings 카드·ConnectNotice·StreakRow·홈 다음목표 이관 → 정보 경중이 색으로 읽힘(2단계 위계).
 - **`NexusListRow` + `NexusDividedList` (#260, E16-10)**: 목록 행의 단일 규격 — 라벨(SemiBold 앵커) + 보조 + **우측 정렬 값**(bodySmall, 라벨보다 낮은 위계), 라벨 묶음 아래 본문 슬롯. 값 열을 만든 이유는 목록을 훑을 때 "얼마나 했나"를 **세로로 비교**할 수 있어야 하기 때문 — 종류·시간·심박이 한 문장으로 붙어 있으면 그게 안 된다. 라벨·보조·값은 `mergeDescendants`로 **한 노드로 묶는다**(A11Y-TALKBACK §판정: 라벨과 값이 끊겨 들리면 안 된다); 탭 가능한 요소(신뢰 등급 칩 #222)가 오는 본문 슬롯은 묶음 밖에 둬서 동작이 흡수되지 않게 한다. 구분선은 `NexusDividedList`가 **행 사이에만** 넣는다(마지막 뒤는 컨테이너 여백과 겹쳐 두 겹 경계로 보인다).
 - **`NexusSwitchCard` (#260)**: 제목+설명+우측 스위치 카드. 설정 탭의 휴식 모드·리마인더가 같은 모양을 각자 조립하고 있었다 — **모양만 통일하고 동작은 호출부에 남긴다**(리마인더는 켤 때 알림 권한 런처를 타므로, 그 분기를 컴포넌트로 들이면 다음 스위치가 또 예외가 된다).
-- **탭 세로 리듬 (#260)**: 4탭 모두 `padding(NexusSpacing.screen)` + `Arrangement.spacedBy(NexusSpacing.lg)`. 활동 탭만 수동 `Spacer(28/12/4dp)`를 쓰다가 밀도가 이질적이었다 → 걸음·운동·동기화 3섹션을 `NexusCard`로 구획. **미연결·실패·첫실행 안내는 섹션 카드 안이 아니라 화면 Column의 형제**로 둔다(`ConnectNotice`·`RetryNotice`가 이미 카드라 중첩하면 같은 색 카드 두 겹 + 제목 두 개가 된다 — 홈·성장과 같은 배치). `TabRhythmGuardTest`가 탭 패키지 전체를 훑어 수동 세로 Spacer 0개를 고정한다.
+- **탭 세로 리듬 (#260)**: 4탭 모두 `padding(NexusSpacing.screen)` + **최상위** `Arrangement.spacedBy(NexusSpacing.lg)`. 섹션이 있는 화면은 섹션 내부를 더 좁게 가져간다(설정 = #264의 두 단계 리듬). 활동 탭만 수동 `Spacer(28/12/4dp)`를 쓰다가 밀도가 이질적이었다 → 걸음·운동·동기화 3섹션을 `NexusCard`로 구획. **미연결·실패·첫실행 안내는 섹션 카드 안이 아니라 화면 Column의 형제**로 둔다(`ConnectNotice`·`RetryNotice`가 이미 카드라 중첩하면 같은 색 카드 두 겹 + 제목 두 개가 된다 — 홈·성장과 같은 배치). `TabRhythmGuardTest`가 탭 패키지 전체를 훑어 수동 세로 Spacer 0개를 고정한다.
 - **`CardEmphasis` 3단계는 서로 다른 색이어야 한다** (#263에서 실제로 깨졌다): 성장 히어로를 `Highlight`(primaryContainer)로 올렸더니, `primaryContainer`를 하드코딩해 쓰던 축하 카드(#61)와 같은 색이 되어 **레벨업 직후 같은 색 카드 두 장이 붙었다** — 축하가 이벤트가 아니라 중복된 헤더로 읽혔다. 축하는 `CardEmphasis.Celebration`(secondaryContainer)으로 옮겼고, `CardEmphasisTest`가 세 단계의 색이 서로 다른지 라이트/다크 모두 고정한다.
+- **`SettingsSection` + 파괴적 액션 분리 (#264, E16-14)**: 설정 7장이 동일 강조로 평평히 쌓여 무관한 항목이 섞여 있었다 — 항목이 하나 늘 때마다 "지금 바꾸려는 게 어디 있나"를 위에서부터 훑는 비용이 커진다.
+  - **두 단계 리듬**: 라벨→카드 `sm`(8dp), 섹션→섹션 `lg`(16dp). 안팎을 같은 값으로 두면 라벨이 아래 카드에 묶이지 않고 화면이 다시 평평해진다 — 그룹을 만드는 건 라벨이 아니라 이 간격 차다.
+  - 섹션 라벨은 `titleSmall`·`onSurfaceVariant`에 **`heading()` 시맨틱**. 표제가 아니면 TalkBack 표제 이동에서 카드 제목만 나와, 화면에 보이는 그룹 구조가 스크린리더 사용자에게는 존재하지 않는다(`A11Y-TALKBACK` 설정 항목).
+  - **파괴적 액션은 구분선 + `xl` 여백 + 별 라벨로 아래에 떼어 놓는다.** '데이터 삭제'가 '위젯 추가'와 같은 시각 무게로 나란히 있었다. 여백만으로는 스크롤 중 경계가 흐려지므로 구분선이 "여기부터 성질이 다르다"를 한 픽셀로 말하고 라벨이 문장으로 확인해준다. 디버그 도구 카드는 이 영역 **위**에 둬서 두 빌드 변형의 화면 끝이 같아진다.
+  - 그룹 경계는 "사용자가 어디를 찾을까"로 정한다: 이름(IdentityStore)을 연동(Health Connect) 섹션에 넣었다가 옮겼다 — 공유하는 개념이 없어 합친 라벨이 "묶었다"가 아니라 "세워뒀다"로 읽혔다. 알파 게이트 리드아웃(#286)도 백업 섹션에서는 '내보내기/가져오기'로 읽혀 찾지 못한다(`ALPHA.md` 게이트 ①이 금요일마다 이 숫자를 읽게 한다).
 - `NexusIcons`는 §6, `VizColors`는 §5.
 
 ## 5. 데이터 시각화 (#257~)
