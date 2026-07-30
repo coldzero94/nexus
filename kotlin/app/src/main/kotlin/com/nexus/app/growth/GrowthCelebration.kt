@@ -3,12 +3,8 @@ package com.nexus.app.growth
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -16,7 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
-import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.CardEmphasis
+import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.celebrationEnter
 import com.nexus.core.ClassAffinity
 
@@ -32,26 +29,23 @@ internal fun CelebrationCard(change: GrowthChange, visible: Boolean, onDismiss: 
         enter = celebrationEnter(),
         exit = fadeOut(),
     ) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-            Column(
-                Modifier.fillMaxWidth().padding(NexusSpacing.lg),
-                verticalArrangement = Arrangement.spacedBy(NexusSpacing.xs),
-            ) {
-                change.levelUpTo?.let { level ->
-                    Text(
-                        stringResource(R.string.celebrate_level_up, level),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
-                change.affinityChangedTo?.let { affinity ->
-                    Text(
-                        stringResource(R.string.celebrate_affinity_change, stringResource(affinity.labelRes())),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.celebrate_dismiss)) }
-                }
+        // Celebration = secondaryContainer (#254). primaryContainer로 두면 #263에서 히어로가
+        // 같은 색이 되어, 레벨업 직후 성장 탭에 같은 색 카드 두 장이 붙어 축하가 '중복된 헤더'로 읽힌다.
+        NexusCard(emphasis = CardEmphasis.Celebration) {
+            change.levelUpTo?.let { level ->
+                Text(
+                    stringResource(R.string.celebrate_level_up, level),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            change.affinityChangedTo?.let { affinity ->
+                Text(
+                    stringResource(R.string.celebrate_affinity_change, stringResource(affinity.labelRes())),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.celebrate_dismiss)) }
             }
         }
     }

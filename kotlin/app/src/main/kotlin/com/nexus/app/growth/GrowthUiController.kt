@@ -24,14 +24,14 @@ internal class GrowthUiController(
     private val exerciseRepo: ExerciseRepository?,
     private val ledger: RewardLedgerRepository,
     private val stateStore: GrowthStateStore,
-    /** 테스트가 세우는 초기 로드 상태 (#320) — 프로덕션은 항상 null. [ActivityUiController] 참고. */
-    private val initialLoad: GrowthLoad? = null,
+    /** 테스트가 세우는 초기 상태 (#320·#263) — 프로덕션은 항상 null. */
+    private val seed: GrowthSeed? = null,
 ) {
-    var load by mutableStateOf(initialLoad)
+    var load by mutableStateOf(seed?.load)
         private set
 
     /** 기준점 대비 변화 (#61) — 레벨업·성향 변화. 없으면 null. */
-    var change by mutableStateOf<GrowthChange?>(null)
+    var change by mutableStateOf(seed?.change)
         private set
 
     /** 상시 배지(#175) + 이달의 배지(#206) — 요약보다 늦게 도착한다. */
@@ -48,7 +48,7 @@ internal class GrowthUiController(
 
     /** 한 번의 로드 — 요약이 먼저 반영되고 배지는 뒤이어 채워진다 (#206). */
     suspend fun load() {
-        if (initialLoad != null) return // 테스트가 세운 상태 유지 (#320)
+        if (seed != null) return // 테스트가 세운 상태 유지 (#320)
         badgeSections = loadGrowthScreen(context, manager, exerciseRepo, ledger, stateStore) { loaded, detected ->
             load = loaded
             change = detected
