@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.nexus.app.R
+import com.nexus.app.diag.DeveloperToolsCard
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
@@ -59,5 +60,8 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
         WidgetPinCard()
         BackupCard()
         DeleteDataCard()
+        // 디버그 소스셋에만 실체가 있다 — 릴리스는 no-op 짝이 컴파일된다 (#245).
+        // 조건 없이 부르는 게 의도다: BuildConfig.DEBUG 분기면 도구 코드·문자열이 릴리스에 실린다.
+        DeveloperToolsCard(manager)
     }
 }

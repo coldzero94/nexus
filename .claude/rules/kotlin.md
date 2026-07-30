@@ -21,6 +21,9 @@ paths:
   `ColorTokenGuardTest` — a literal in a screen means dark theme and palette changes skip that one spot.
   Dimensions follow the same rule via `ui/NexusSpacing.kt` (not yet test-enforced).
 - Every screen must work with Health Connect permissions denied (demo mode).
+- **Debug-only tooling goes in `app/src/debug/`, never behind `BuildConfig.DEBUG` in main** (#245). A `BuildConfig.DEBUG` branch still ships the code and its strings in the release APK — that put a "wipe the ledger" button in a reverse-engineerable form next to the crown jewel. Pattern: real implementation in `src/debug`, a same-signature no-op in `src/release`, and main calls it unconditionally. `DeveloperToolsGateTest` pins release absence (source scan — unit tests build the debug variant and can't inspect a release APK).
+- Debug seeds write **synthetic ledger rows** (`synthetic-` key prefix), never real Health Connect records — a seeded record becomes an indistinguishable health-derived value in an append-only ledger.
+- `RoomDatabase.clearAllTables()` is blocking and asserts off-main-thread — wrap it in `withContext(Dispatchers.IO)`. Never add a delete query to a DAO in main: that gives production code the ability to erase the ledger.
 
 ## Testing
 

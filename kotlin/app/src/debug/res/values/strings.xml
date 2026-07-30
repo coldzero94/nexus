@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  디버그 전용 문자열 (#245). **이 파일은 debug 소스셋에만 있다** — 릴리스 APK에는 이 문자열이
+  아예 존재하지 않는다. 개발자 도구는 절대 Play로 나가지 않으므로 BuildConfig.DEBUG 분기로
+  숨기는 게 아니라 소스셋으로 갈라 컴파일 자체를 막는다. DeveloperToolsGateTest가 이걸 고정한다.
+
+  번역하지 않는다 — 두 사람이 읽는 화면이다.
+-->
+<resources>
+    <string name="dev_tools_title">개발자 도구 (디버그 전용)</string>
+    <string name="dev_tools_desc">릴리스 빌드에는 이 카드가 컴파일되지 않습니다.</string>
+
+    <string name="dev_tools_integrity_ok">원장 무결성: 위반 없음</string>
+    <string name="dev_tools_integrity_violations">원장 무결성 위반: %1$s</string>
+    <string name="dev_tools_integrity_unread">원장을 읽지 못했습니다</string>
+    <string name="dev_tools_recomputed_total">원장 재계산 총 XP: %1$d</string>
+
+    <string name="dev_tools_snapshot_title">진단 스냅샷</string>
+    <string name="dev_tools_snapshot_share">스냅샷 공유</string>
+    <string name="dev_tools_snapshot_subject">NEXUS 진단 스냅샷</string>
+
+    <string name="dev_tools_seed">합성 보상 시드 (7일)</string>
+    <string name="dev_tools_seed_done">합성 보상 %1$d건 추가</string>
+    <string name="dev_tools_seed_mixed_day">같은 날 산식 버전 섞기 (위반 재현)</string>
+    <string name="dev_tools_seed_orphan">고아 취소 넣기 (위반 재현)</string>
+
+    <string name="dev_tools_token_reset">Changes 토큰 리셋 마커 (#141 재현)</string>
+    <string name="dev_tools_token_cleared">토큰을 지우고 리셋 마커를 기록했습니다</string>
+
+    <string name="dev_tools_run_sync">동기화 워커 1회 실행</string>
+    <string name="dev_tools_sync_state">워커 상태: %1$s</string>
+
+    <string name="dev_tools_clear_ledger">원장 전체 삭제</string>
+    <string name="dev_tools_clear_sync">동기화 상태 초기화</string>
+    <string name="dev_tools_clear_firsts">계측 첫-발화 기록 초기화</string>
+    <string name="dev_tools_cleared">초기화했습니다</string>
+
+    <string name="dev_tools_refresh">다시 읽기</string>
+    <string name="dev_tools_verify_crash">무결성 검사 (위반 시 크래시)</string>
+</resources>

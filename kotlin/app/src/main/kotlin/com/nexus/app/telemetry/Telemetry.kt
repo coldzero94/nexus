@@ -65,5 +65,6 @@ object Telemetry {
         if (enabled) prefs.edit().putBoolean(event.signal, true).apply()
     }
 
-    private const val FIRSTS_PREFS = "nexus_telemetry_firsts"
+    /** 첫-발화 기록 prefs 이름 — 디버그 도구(#245)가 재현을 위해 초기화한다. */
+    internal const val FIRSTS_PREFS = "nexus_telemetry_firsts"
 }

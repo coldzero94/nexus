@@ -88,7 +88,8 @@ class TokenStore(context: Context) : SyncStateStore {
             .apply()
     }
 
-    private companion object {
+    /** prefs 키 — 디버그 도구(#245)가 클린 리셋을 위해 이름으로 접근한다. */
+    internal companion object {
         const val PREFS = "nexus_sync"
         const val KEY_TOKEN = "changes_token"
         const val KEY_LAST_SYNC = "last_sync_millis"

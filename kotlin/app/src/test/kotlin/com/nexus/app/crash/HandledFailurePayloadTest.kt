@@ -28,10 +28,12 @@ class HandledFailurePayloadTest {
     }
 
     @Test
-    fun `분류가 여덟 개를 넘지 않는다 — 신호가 늘면 리뷰가 필요하다`() {
-        // 상한 자체가 목적이 아니라, 늘어날 때 반드시 한 번 생각하게 만드는 장치다
+    fun `분류가 아홉 개를 넘지 않는다 — 신호가 늘면 리뷰가 필요하다`() {
+        // 상한 자체가 목적이 아니라, 늘어날 때 반드시 한 번 생각하게 만드는 장치다.
+        // 8 → 9: LEDGER_INTEGRITY 추가(#245). LEDGER_DB와 합치지 않은 이유는 대응이 정반대라서다 —
+        // DB 오류는 재시도·디스크 정리로 풀리고, 무결성 위반은 우리가 코드를 고쳐야 한다.
         assertTrue(
-            FailureCategory.entries.size <= 8,
+            FailureCategory.entries.size <= 9,
             "진단 신호가 ${FailureCategory.entries.size}개로 늘었다 — 각각이 원격으로 나가도 되는지 확인하세요",
         )
     }

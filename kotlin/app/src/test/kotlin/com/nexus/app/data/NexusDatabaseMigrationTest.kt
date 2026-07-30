@@ -3,6 +3,7 @@ package com.nexus.app.data
 import android.content.Context
 import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.runBlocking
@@ -102,6 +103,49 @@ class NexusDatabaseMigrationTest {
             "DB 버전이 올라갔다 — Migration을 addMigrations로 등록하고 이 테스트를 마이그레이션 검증으로 교체하세요",
         )
     }
+
+    /**
+     * 멱등성 유니크 인덱스가 살아 있는지 (#245).
+     *
+     * `(idempotencyKey, type)` 유니크 인덱스 + `OnConflictStrategy.IGNORE`가 **멱등 지급 방어의
+     * 본체**다(BACKEND §1 계약 1). `LedgerIntegrity`의 `DUPLICATE_GRANT` 검사는 이 인덱스에 동의만
+     * 할 수 있고 뚫린 멱등성을 새로 발견하지는 못한다 — 진짜 위험은 마이그레이션이 인덱스를
+     * 떨어뜨리는 것이고, 그러면 폰·워치 이중 지급이 아무 경보 없이 원장에 박제된다.
+     *
+     * 그래서 인덱스의 존재를 스키마 차원에서 못박는다. 여기가 그걸 지킬 유일한 지점이다.
+     */
+    @Test
+    fun idempotencyUniqueIndex_survivesSchemaCreation() {
+        helper.createDatabase(TEST_DB, 1).use { db ->
+            val unique = db.columnsOfUniqueIndexes("reward_events")
+
+            assertTrue(
+                setOf("idempotencyKey", "type") in unique,
+                "(idempotencyKey, type) 유니크 인덱스가 없다 — 멱등 지급 방어가 사라졌다",
+            )
+        }
+    }
+
+    /** 유니크 인덱스별 컬럼 집합. PRAGMA 두 번을 감싸 테스트 본문의 중첩을 낮춘다. */
+    private fun SupportSQLiteDatabase.columnsOfUniqueIndexes(table: String): List<Set<String>> =
+        query("PRAGMA index_list($table)").use { list ->
+            val names = mutableListOf<String>()
+            while (list.moveToNext()) {
+                if (list.getInt(list.getColumnIndexOrThrow("unique")) == 1) {
+                    names += list.getString(list.getColumnIndexOrThrow("name"))
+                }
+            }
+            names
+        }.map { name -> columnsOfIndex(name) }
+
+    private fun SupportSQLiteDatabase.columnsOfIndex(name: String): Set<String> =
+        query("PRAGMA index_info($name)").use { info ->
+            val columns = mutableSetOf<String>()
+            while (info.moveToNext()) {
+                columns += info.getString(info.getColumnIndexOrThrow("name"))
+            }
+            columns
+        }
 
     private companion object {
         const val TEST_DB = "migration-test.db"

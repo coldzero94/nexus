@@ -16,6 +16,8 @@ import androidx.work.WorkerParameters
 import com.nexus.app.crash.CrashReporting
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
+import com.nexus.app.diag.DiagnosticsCollector
+import com.nexus.app.diag.LedgerIntegrityGuard
 import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.FailureCategory
 import kotlinx.coroutines.flow.Flow
@@ -89,19 +91,22 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         },
     )
 
-    /**
-     * 실패 1건 기록 (#239) — 원격 관측 + 로컬 카운터.
-     *
-     * 로컬 카운터를 함께 남기는 이유: 원격은 DSN이 있어야 하고(알파 초기엔 없다) 표본도 지연된다.
-     * 기기에 마지막 분류와 연속 횟수가 있으면 디버그 도구(#245)가 즉석에서 읽을 수 있다.
-     */
-    private fun reportFailure(store: TokenStore, category: FailureCategory) {
-        store.recordFailure(category.name)
-        CrashReporting.recordHandledFailure(category)
-    }
-
     companion object {
         private const val TAG = "HealthSyncWorker"
+
+        /**
+         * 실패 1건 기록 (#239) — 원격 관측 + 로컬 카운터.
+         *
+         * 로컬 카운터를 함께 남기는 이유: 원격은 DSN이 있어야 하고(알파 초기엔 없다) 표본도 지연된다.
+         * 기기에 마지막 분류와 연속 횟수가 있으면 디버그 도구(#245)가 즉석에서 읽을 수 있다.
+         *
+         * 무결성 위반은 **여기를 쓰지 않는다** — 전용 슬롯([IntegrityMarkerStore])에 남긴다.
+         * 이 슬롯은 하나뿐이라 회복되지 않는 신호가 들어오면 `SYNC_PERMISSION`을 영구히 가린다.
+         */
+        private fun reportFailure(store: TokenStore, category: FailureCategory) {
+            store.recordFailure(category.name)
+            CrashReporting.recordHandledFailure(category)
+        }
 
         /** 테스트가 교체하는 협력자 — 프로덕션은 항상 기본값(#234). */
         internal var seam: Seam = Seam()
@@ -134,6 +139,26 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 todayXp = ledger.cappedXpOn(todayEpoch),
                 spriteState = if (todayActive) "walk" else "idle",
             )
+            verifyLedgerIntegrity(context)
+        }
+
+        /**
+         * 원장이 방금 늘었다 — 커밋된 내용이 불변식을 지키는지 본다 (#245).
+         *
+         * **읽기 전용 진단이 동기화 결과를 바꾸지 못하게** 두 겹으로 격리한다. ① 위젯 갱신 **뒤**에
+         * 둔다 — 앞에 두면 여기서 난 예외가 위젯 갱신을 건너뛰게 해, 토큰은 이미 소비됐는데 위젯만
+         * 옛 레벨에 굳는다. ② `runCatching`으로 감싼다 — `ledgerRows`는 알 수 없는 `type` 문자열에
+         * 일부러 던지는데(그게 이 기능이 찾으려는 손상이다) 그 예외가 `doWork`까지 올라가면
+         * `Result.failure()`가 되고, 그 경로엔 `reportFailure`가 없어 **아무 신호도 남지 않는다**.
+         *
+         * 검사 자체가 실패한 것도 신호이므로 [FailureCategory.LEDGER_DB]로 남긴다.
+         */
+        private suspend fun verifyLedgerIntegrity(context: Context) {
+            runCatching { LedgerIntegrityGuard.report(context, DiagnosticsCollector.ledgerRows(context)) }
+                .onFailure { e ->
+                    Log.w(TAG, "ledger integrity check failed", e)
+                    reportFailure(TokenStore(context), FailureCategory.LEDGER_DB)
+                }
         }
 
         private const val GRANT_WINDOW_DAYS = 7
