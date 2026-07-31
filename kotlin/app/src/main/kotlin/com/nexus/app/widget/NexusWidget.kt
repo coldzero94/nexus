@@ -116,32 +116,53 @@ private fun WidgetContent(context: Context, snapshot: WidgetSnapshot, sprite: an
 }
 
 /**
+ * 위젯이 **지금** 그릴 원정 표시 (#72, #246).
+ *
+ * 스냅샷은 원정 시작 시각만 담고 잔여 시간은 렌더 시점 산술이다 — 즉 스냅샷이 한 글자도 안 바뀌어도
+ * 이 값은 시간이 흐르면 바뀐다. 무변화 갱신 스킵(#246 AC ③)이 스냅샷만 보면 진행 중 원정의 위젯이
+ * "약 6시간 남음"에 얼어붙고 **개봉 대기 전환을 영영 알리지 못한다** — 4대 장치 ②가 죽는다.
+ * 그래서 스킵 판정과 렌더가 이 함수 하나를 공유한다(둘이 어긋날 수 없게).
+ */
+internal sealed interface ExpeditionDisplay {
+    /** 원정 없음 — 아침/저녁 장치가 상태 줄을 가져간다. */
+    data object None : ExpeditionDisplay
+    data object Ready : ExpeditionDisplay
+
+    /** 1시간 미만 — "약 0시간 남음"을 피하는 분기 (#72 리뷰). */
+    data object Soon : ExpeditionDisplay
+    data class Hours(val hours: Long) : ExpeditionDisplay
+}
+
+internal fun expeditionDisplay(startedAtMillis: Long, nowMillis: Long): ExpeditionDisplay =
+    when (val state = ExpeditionEngine.stateAt(startedAtMillis.takeIf { it != 0L }, nowMillis)) {
+        ExpeditionState.ReadyToOpen -> ExpeditionDisplay.Ready
+
+        is ExpeditionState.InProgress ->
+            remainingDisplayHours(state.remainingMillis)
+                ?.let { ExpeditionDisplay.Hours(it) }
+                ?: ExpeditionDisplay.Soon
+
+        ExpeditionState.Idle -> ExpeditionDisplay.None
+    }
+
+/**
  * 상태 한 줄 (#72) — 우선순위: 원정 개봉 대기 > 원정 진행 > 저녁 일지 > 아침 카드 > 없음.
  * 원정 잔여는 렌더 시점에 core 산술로 — 스냅샷 지연(≤15분)과 무관하게 정확.
  */
-private fun statusLine(context: Context, snapshot: WidgetSnapshot): String? {
-    when (
-        val state = ExpeditionEngine.stateAt(
-            snapshot.expeditionStartedAt.takeIf { it != 0L },
-            System.currentTimeMillis(),
-        )
-    ) {
-        ExpeditionState.ReadyToOpen -> return context.getString(R.string.widget_expedition_ready)
+private fun statusLine(context: Context, snapshot: WidgetSnapshot): String? =
+    when (val display = expeditionDisplay(snapshot.expeditionStartedAt, System.currentTimeMillis())) {
+        ExpeditionDisplay.Ready -> context.getString(R.string.widget_expedition_ready)
 
-        is ExpeditionState.InProgress -> {
-            val hours = remainingDisplayHours(state.remainingMillis)
-                ?: return context.getString(R.string.widget_expedition_soon)
-            return context.getString(R.string.widget_expedition_progress, hours)
+        ExpeditionDisplay.Soon -> context.getString(R.string.widget_expedition_soon)
+
+        is ExpeditionDisplay.Hours -> context.getString(R.string.widget_expedition_progress, display.hours)
+
+        ExpeditionDisplay.None -> when {
+            snapshot.journalPending -> context.getString(R.string.widget_journal_pending)
+            snapshot.morningPending -> context.getString(R.string.widget_morning_pending)
+            else -> null
         }
-
-        ExpeditionState.Idle -> Unit
     }
-    return when {
-        snapshot.journalPending -> context.getString(R.string.widget_journal_pending)
-        snapshot.morningPending -> context.getString(R.string.widget_morning_pending)
-        else -> null
-    }
-}
 
 /**
  * 잔여 표기 시간 — "약 N시간"엔 floor보다 반올림이 정확하고, 1시간 미만은 null

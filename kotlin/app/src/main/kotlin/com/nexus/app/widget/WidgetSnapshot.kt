@@ -34,6 +34,18 @@ class WidgetSnapshotStore(context: Context) {
         journalPending = prefs.getBoolean(KEY_JOURNAL, false),
     )
 
+    /**
+     * 마지막으로 **실제 푸시된** 렌더 키 (#246) — 스냅샷 + 시각 의존 표시를 합친 값.
+     *
+     * 위젯은 이걸 읽지 않는다(스냅샷 계약 밖). 무변화 갱신 스킵 판정만을 위한 메모라,
+     * 형식이 바뀌어도 최악이 갱신 한 번 더 도는 것이다.
+     */
+    var lastRenderKey: String
+        get() = prefs.getString(KEY_RENDER, "").orEmpty()
+        set(value) {
+            prefs.edit().putString(KEY_RENDER, value).apply()
+        }
+
     fun write(snapshot: WidgetSnapshot) {
         prefs.edit()
             .putInt(KEY_LEVEL, snapshot.level)
@@ -55,5 +67,6 @@ class WidgetSnapshotStore(context: Context) {
         const val KEY_EXPEDITION_AT = "expedition_started_at"
         const val KEY_MORNING = "morning_pending"
         const val KEY_JOURNAL = "journal_pending"
+        const val KEY_RENDER = "last_render_key"
     }
 }
