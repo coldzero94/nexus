@@ -16,9 +16,13 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
+import androidx.work.Configuration
+import androidx.work.WorkManager
+import androidx.work.testing.WorkManagerTestInitHelper
 import com.nexus.app.ui.LocalMotionScale
 import com.nexus.app.ui.NexusTheme
 import com.nexus.core.AnimationState
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,6 +50,23 @@ class SpriteRenderWasteTest {
     val composeRule = createComposeRule()
 
     private val context: Context get() = ApplicationProvider.getApplicationContext()
+
+    /**
+     * 이 클래스는 실제 앱을 부팅해 Compose를 태운다. 그러면 `androidx.startup`이 **진짜**
+     * WorkManager를 올리는데, 같은 JVM에서 뒤에 도는 테스트들은 "아직 없으면 테스트용을 깐다"는
+     * 패턴을 쓰므로 이미 올라온 진짜 인스턴스를 그대로 물려받는다 — 워커가 실제로 실행돼
+     * `SyncSelfHealTest`의 주기 워커 id가 바뀌는 식으로 **엉뚱한 클래스가 깨진다**(CI에서 실제로 겪음).
+     * 패키지명 순서상 이 클래스가 그 패턴을 쓰는 어느 클래스보다 먼저 도므로, 여기서 먼저 깔아 둔다.
+     */
+    @Before
+    fun installTestWorkManager() {
+        runCatching { WorkManager.getInstance(context) }.onFailure {
+            WorkManagerTestInitHelper.initializeTestWorkManager(
+                context,
+                Configuration.Builder().setExecutor { /* 실행하지 않는다 */ }.build(),
+            )
+        }
+    }
 
     /**
      * 프레임 한 틱.

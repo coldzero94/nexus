@@ -210,7 +210,7 @@ class WidgetUpdateSkipTest {
         update(todayXp = 120)
         assertNotEquals("", WidgetSnapshotStore(context).lastRenderKey)
 
-        NexusWidgetReceiver().onEnabled(context)
+        onWidgetInstalled(context)
 
         assertEquals("", WidgetSnapshotStore(context).lastRenderKey)
     }

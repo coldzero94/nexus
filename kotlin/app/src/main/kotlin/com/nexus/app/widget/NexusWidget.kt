@@ -181,9 +181,18 @@ class NexusWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        // 위젯 0→1 설치 시점 — 퍼널 (#47). 재설치 반복 집계는 recordOnce가 막는다.
-        Telemetry.recordOnce(context, TelemetryEvent.WIDGET_INSTALLED)
-        // 백업 복원으로 따라온 "이미 밀었음" 메모를 지운다 — 이 기기엔 아직 아무것도 안 그렸다 (#246)
-        WidgetSnapshotStore(context).clearPushMemo()
+        onWidgetInstalled(context)
     }
+}
+
+/**
+ * 위젯 0→1 설치 시 우리가 하는 일. 리시버 콜백에서 떼어 둔 이유는 **테스트가 이것만 부를 수 있게**다 —
+ * `GlanceAppWidgetReceiver.onEnabled`를 부르면 Glance 배관(WorkManager 포함)이 함께 올라와,
+ * 이후 같은 JVM에서 도는 테스트들이 자기 테스트용 WorkManager를 못 깔게 된다.
+ */
+internal fun onWidgetInstalled(context: Context) {
+    // 퍼널 (#47). 재설치 반복 집계는 recordOnce가 막는다.
+    Telemetry.recordOnce(context, TelemetryEvent.WIDGET_INSTALLED)
+    // 백업 복원으로 따라온 "이미 밀었음" 메모를 지운다 — 이 기기엔 아직 아무것도 안 그렸다 (#246)
+    WidgetSnapshotStore(context).clearPushMemo()
 }
