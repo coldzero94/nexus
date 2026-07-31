@@ -9,6 +9,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 /**
  * 위젯 무변화 갱신 스킵 (#246 AC ③) — 15분 워커가 값 변화와 무관하게 매번 168px ARGB(~113KB)를
@@ -48,9 +49,28 @@ class WidgetUpdateSkipTest {
 
     @Test
     fun `같은 값 같은 시각이면 렌더 키가 같다`() {
-        val snap = snapshot()
+        // 같은 인스턴스를 두 번 넘기면 동일성 기반 키에서도 통과한다 — 프로덕션은 매번 새로 만든
+        // 스냅샷을 저장된 문자열과 비교하므로 여기서도 따로 만든다
+        assertEquals(WidgetUpdater.renderKey(snapshot(), NOW), WidgetUpdater.renderKey(snapshot(), NOW))
+    }
 
-        assertEquals(WidgetUpdater.renderKey(snap, NOW), WidgetUpdater.renderKey(snap, NOW))
+    /**
+     * 렌더 키가 스냅샷의 **모든** 필드를 담는지. 키는 데이터 클래스 `toString`에 기대므로, 나중에 누가
+     * 필드를 본문에 선언하거나 `toString`을 손으로 쓰면 그 필드는 키에서 조용히 빠지고 위젯이 정확히
+     * 그 값에서만 얼어붙는다 — 찾기 가장 어려운 모양이다.
+     */
+    @Test
+    fun `렌더 키가 스냅샷의 모든 필드를 담는다`() {
+        val key = WidgetUpdater.renderKey(snapshot(), NOW)
+
+        // kotlin-reflect 없이 — 데이터 클래스 프로퍼티는 같은 이름의 인스턴스 필드로 내려간다.
+        // 정적 필드는 제외한다(컴파일러가 만든 `$stable` 등, 그리는 값이 아니다).
+        val missing = WidgetSnapshot::class.java.declaredFields
+            .filterNot { it.isSynthetic || java.lang.reflect.Modifier.isStatic(it.modifiers) }
+            .map { it.name }
+            .filterNot { key.contains(it) }
+
+        assertTrue(missing.isEmpty(), "렌더 키에서 빠진 필드: $missing")
     }
 
     @Test
@@ -111,8 +131,14 @@ class WidgetUpdateSkipTest {
 
     // ── 실제 갱신 경로: 스킵과 통과 ──
 
-    private suspend fun update(todayXp: Int) =
-        WidgetUpdater.update(context, cappedTotalXp = 500, todayXp = todayXp, spriteState = "idle", condition = 80)
+    private suspend fun update(todayXp: Int, push: suspend (Context) -> Unit = {}) = WidgetUpdater.update(
+        context,
+        cappedTotalXp = 500,
+        todayXp = todayXp,
+        spriteState = "idle",
+        condition = 80,
+        push = push,
+    )
 
     @Test
     fun `무변화 두 번째 호출은 스냅샷을 다시 쓰지 않는다`() = kotlinx.coroutines.test.runTest {
@@ -136,6 +162,57 @@ class WidgetUpdateSkipTest {
         update(todayXp = 999)
 
         assertEquals(999, WidgetSnapshotStore(context).read().todayXp)
+    }
+
+    /**
+     * 이 티켓의 가장 위험한 지점. 푸시가 실패했는데 "밀었음"으로 기록하면, 값이 그대로인 한 다음
+     * 15분 틱마다 스킵돼 위젯이 **영원히** 낡은 채로 남는다. 이 PR 전에는 매 틱이 다시 밀어 일시적
+     * 실패가 15분 안에 저절로 나았다 — 그 복구 경로를 없애면 안 된다.
+     *
+     * 홈 탭을 벗어나면 `Crossfade`가 컴포지션을 버려 `LaunchedEffect`가 취소되므로 이론이 아니다.
+     */
+    @Test
+    fun `푸시가 실패하면 스킵 메모가 전진하지 않는다`() = kotlinx.coroutines.test.runTest {
+        update(todayXp = 120) { error("glance 실패") }
+
+        assertEquals("", WidgetSnapshotStore(context).lastRenderKey, "안 밀린 내용이 '밀었음'으로 박제됐다")
+    }
+
+    @Test
+    fun `푸시가 실패한 뒤 다음 호출은 다시 시도한다`() = kotlinx.coroutines.test.runTest {
+        update(todayXp = 120) { error("glance 실패") }
+        var pushes = 0
+
+        update(todayXp = 120) { pushes++ }
+
+        assertEquals(1, pushes, "실패한 푸시 뒤에도 스킵됐다 — 위젯이 낡은 채로 갇힌다")
+    }
+
+    /**
+     * `updateAll`이 성공적으로 반환해도 실제로 그려졌다는 보장은 없다 — Glance는 합성을 세션 워커로
+     * 넘기고, 거기서 실패하면 자체 에러 레이아웃을 그린 뒤 삼킨다. 그래서 값이 그대로여도 한 시간에
+     * 한 번은 무조건 다시 민다. 잘못된 화면이 영구가 되지 않게.
+     */
+    @Test
+    fun `값이 그대로여도 상한 시간이 지나면 다시 민다`() = kotlinx.coroutines.test.runTest {
+        update(todayXp = 120)
+        WidgetSnapshotStore(context).lastPushedAtMillis = System.currentTimeMillis() - 2 * HOUR
+        var pushes = 0
+
+        update(todayXp = 120) { pushes++ }
+
+        assertEquals(1, pushes, "스킵이 상한 없이 이어진다 — 에러 화면에 갇히면 못 빠져나온다")
+    }
+
+    @Test
+    fun `위젯이 처음 배치되면 스킵 메모가 지워진다`() = kotlinx.coroutines.test.runTest {
+        // 백업 복원으로 따라온 메모는 이 기기에서 아무것도 안 그렸다는 사실과 어긋난다 (#238과 같은 부류)
+        update(todayXp = 120)
+        assertNotEquals("", WidgetSnapshotStore(context).lastRenderKey)
+
+        NexusWidgetReceiver().onEnabled(context)
+
+        assertEquals("", WidgetSnapshotStore(context).lastRenderKey)
     }
 
     @Test

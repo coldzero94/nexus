@@ -149,7 +149,7 @@ internal fun expeditionDisplay(startedAtMillis: Long, nowMillis: Long): Expediti
  * 상태 한 줄 (#72) — 우선순위: 원정 개봉 대기 > 원정 진행 > 저녁 일지 > 아침 카드 > 없음.
  * 원정 잔여는 렌더 시점에 core 산술로 — 스냅샷 지연(≤15분)과 무관하게 정확.
  */
-private fun statusLine(context: Context, snapshot: WidgetSnapshot): String? =
+internal fun statusLine(context: Context, snapshot: WidgetSnapshot): String? =
     when (val display = expeditionDisplay(snapshot.expeditionStartedAt, System.currentTimeMillis())) {
         ExpeditionDisplay.Ready -> context.getString(R.string.widget_expedition_ready)
 
@@ -183,5 +183,7 @@ class NexusWidgetReceiver : GlanceAppWidgetReceiver() {
         super.onEnabled(context)
         // 위젯 0→1 설치 시점 — 퍼널 (#47). 재설치 반복 집계는 recordOnce가 막는다.
         Telemetry.recordOnce(context, TelemetryEvent.WIDGET_INSTALLED)
+        // 백업 복원으로 따라온 "이미 밀었음" 메모를 지운다 — 이 기기엔 아직 아무것도 안 그렸다 (#246)
+        WidgetSnapshotStore(context).clearPushMemo()
     }
 }

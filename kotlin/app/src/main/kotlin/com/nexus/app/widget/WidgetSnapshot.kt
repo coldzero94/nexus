@@ -35,16 +35,39 @@ class WidgetSnapshotStore(context: Context) {
     )
 
     /**
-     * 마지막으로 **실제 푸시된** 렌더 키 (#246) — 스냅샷 + 시각 의존 표시를 합친 값.
+     * 마지막으로 **푸시를 시도하고 돌아온** 렌더 키 (#246) — 스냅샷 + 시각 의존 표시를 합친 값.
      *
-     * 위젯은 이걸 읽지 않는다(스냅샷 계약 밖). 무변화 갱신 스킵 판정만을 위한 메모라,
-     * 형식이 바뀌어도 최악이 갱신 한 번 더 도는 것이다.
+     * 위젯은 이걸 읽지 않는다(스냅샷 계약 밖). 무변화 갱신 스킵 판정만을 위한 메모다.
+     *
+     * "실제로 그려졌다"까지는 보장하지 못한다 — `updateAll`은 Glance 세션 워커에 일을 넘기고
+     * 즉시 반환하고, 그 뒤 합성이 실패하면 Glance가 자체 에러 레이아웃을 그린 뒤 삼킨다
+     * (`onCompositionError` 기본 구현). 그래서 이 키만으로 스킵하면 안 되고
+     * [WidgetUpdater]가 시간 상한을 함께 본다.
      */
     var lastRenderKey: String
         get() = prefs.getString(KEY_RENDER, "").orEmpty()
         set(value) {
             prefs.edit().putString(KEY_RENDER, value).apply()
         }
+
+    /** 마지막 푸시 시도 시각 — 스킵이 무한히 이어지지 않게 하는 상한의 기준점 (#246). */
+    var lastPushedAtMillis: Long
+        get() = prefs.getLong(KEY_PUSHED_AT, 0L)
+        set(value) {
+            prefs.edit().putLong(KEY_PUSHED_AT, value).apply()
+        }
+
+    /**
+     * 스킵 메모를 지운다 — 다음 갱신이 반드시 푸시하게.
+     *
+     * 위젯이 처음 배치될 때 부른다. 이 메모는 **이 기기에서 위젯에 무엇을 밀어 넣었는가**라는
+     * 기기 지역 사실인데 프리퍼런스가 클라우드 백업을 타고 복원되면(#238이 `nexus_sync`·
+     * `nexus_telemetry_firsts`에서 같은 문제를 막았다) 위젯을 한 번도 그린 적 없는 새 기기에
+     * "이미 그렸음"이 실린다.
+     */
+    fun clearPushMemo() {
+        prefs.edit().remove(KEY_RENDER).remove(KEY_PUSHED_AT).apply()
+    }
 
     fun write(snapshot: WidgetSnapshot) {
         prefs.edit()
@@ -68,5 +91,6 @@ class WidgetSnapshotStore(context: Context) {
         const val KEY_MORNING = "morning_pending"
         const val KEY_JOURNAL = "journal_pending"
         const val KEY_RENDER = "last_render_key"
+        const val KEY_PUSHED_AT = "last_pushed_at"
     }
 }

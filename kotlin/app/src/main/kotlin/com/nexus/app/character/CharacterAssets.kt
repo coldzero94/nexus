@@ -3,6 +3,7 @@ package com.nexus.app.character
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.annotation.DrawableRes
+import androidx.annotation.VisibleForTesting
 import com.nexus.core.BadgeAssetConvention
 import com.nexus.core.BadgeTable
 import com.nexus.core.BadgeTableReader
@@ -26,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * `getIdentifier`는 규약 기반 동적 조회가 목적이라 의도적 사용 — 에셋 추가에 코드 수정이 없어야
  * 한다는 E4-1 완료 기준 때문이다(정적 R 참조는 상태 추가마다 코드 수정이 필요해진다).
- * 비싼 건 이 호출 자체이므로 [CharacterAssets]가 이름당 한 번만 부른다(#246).
+ * 비싼 건 이 호출 자체이므로 [CharacterAssets]가 **인스턴스당** 이름 하나에 한 번만 부른다(#246).
  */
 @SuppressLint("DiscouragedApi")
 private fun Context.drawableIdByName(name: String): Int = resources.getIdentifier(name, "drawable", packageName)
@@ -50,6 +51,11 @@ class CharacterAssets(private val context: Context, private val lookup: (String)
      * res id는 프로세스 수명 동안 불변이다 — 설정 변경(다크 모드·로케일)은 id가 아니라 **로드 시점의
      * 자원 선택**을 바꾸므로 메모가 상하지 않는다. 없는 이름(0)도 캐시한다: 폴백 경로가 매 프레임
      * 헛조회를 반복하지 않게.
+     *
+     * 범위는 **인스턴스당**이다. 프로덕션은 여러 화면이 각자 [CharacterAssets]를 만들지만, 값비싼 건
+     * 반복 조회가 아니라 *한 화면이 프레임마다* 조회하는 것이라 컴포저블이 `remember`한 인스턴스
+     * 하나면 충분하다. 프로세스 전역으로 올리면 주입된 [lookup]을 다른 인스턴스의 캐시가 가로채
+     * 조회 횟수를 세는 테스트가 성립하지 않는다.
      */
     private val resolved = ConcurrentHashMap<String, Int>()
 
@@ -99,12 +105,10 @@ class CharacterAssets(private val context: Context, private val lookup: (String)
     fun badgeIconResIdOrNull(icon: String?): Int? = resolveDrawable(BadgeAssetConvention.iconName(icon))
         ?: resolveDrawable(BadgeAssetConvention.iconName(null))
 
-    private fun resolveDrawable(name: String): Int? = resolved
-        .computeIfAbsent(name) {
-            lookupCount.incrementAndGet()
-            lookup(it)
-        }
-        .takeIf { it != 0 }
+    private fun resolveDrawable(name: String): Int? {
+        resolveCount.incrementAndGet()
+        return resolved.computeIfAbsent(name, lookup).takeIf { it != 0 }
+    }
 
     /** 원정 보상 표 (#68). 보상 추가·수정 = JSON만(코드 무수정) — 배지 표와 같은 규약. */
     fun loadExpeditionRewards(): ExpeditionRewardTable =
@@ -112,13 +116,17 @@ class CharacterAssets(private val context: Context, private val lookup: (String)
 
     internal companion object {
         /**
-         * **실제로 수행된** res id 조회 횟수 (#246 AC ①).
+         * res id **해석 시도** 횟수 (#246 AC ①) — 캐시 히트도 센다.
          *
-         * 메모가 도는지는 반환값으로 드러나지 않는다 — 캐시 히트든 미스든 같은 값이 나오므로
-         * 호출 횟수로만 검증할 수 있다. 티커를 수십 프레임 돌린 뒤 이 값이 늘지 않아야 한다는 게
-         * 이 티켓 AC ①의 측정 가능한 형태다. 증가는 캐시 미스에서만 일어나 핫패스 비용이 없다.
+         * 미스만 세면 안 된다. 메모가 있는 한 프레임마다 [frameResIdOrNull]을 불러도 카운터는
+         * 그대로라, "프레임 루프 안에서 해석하지 않는다"는 AC의 나머지 절반이 측정되지 않는다
+         * (리뷰가 실제로 그 변형을 통과시켰다). 시도를 세면 해석을 루프 안으로 되돌리는 순간 드러난다.
+         *
+         * 히트도 공짜가 아니다 — [frameResIdOrNull]은 메모에 닿기 전에
+         * `CharacterAssetConvention.frameName`의 정규식 검증과 문자열 조립을 지난다.
          */
-        val lookupCount = AtomicInteger()
+        @VisibleForTesting
+        val resolveCount = AtomicInteger()
 
         const val META_PATH = "character/animations.json"
         const val DIALOGUE_PATH = "character/dialogue.json"

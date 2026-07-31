@@ -23,6 +23,9 @@ object WidgetUpdater {
         // 기분 배선 (#212): 홈이 평가한 렌더 상태를 전달. null이면 마지막 값 보존(워커는 기분 미평가).
         spriteState: String? = null,
         condition: Int? = null,
+        // 푸시 주입 (#246) — 실패한 푸시가 스킵 메모를 전진시키지 않는지는 실패를 만들어야만 검증된다.
+        // Robolectric에서 updateAll은 배치된 위젯이 없어 조용히 성공하므로 순서 계약이 보이지 않는다.
+        push: suspend (Context) -> Unit = { NexusWidget().updateAll(it) },
     ) {
         // best-effort 격리 (#40 리뷰 F1): 위젯은 코스메틱 부수효과 — 갱신 실패가
         // 홈 컴포지션을 죽이거나 성공한 동기화를 실패로 뒤집으면 안 된다. 광범위 catch는
@@ -46,12 +49,16 @@ object WidgetUpdater {
                     now.hour >= EveningJournalStore.OPEN_HOUR,
             )
             val renderKey = renderKey(next)
+            val nowMillis = System.currentTimeMillis()
             // 그릴 게 그대로면 쓰기도 updateAll도 건너뛴다 (#246 AC ③). 15분 워커가 값 변화와
             // 무관하게 매번 168px 비트맵을 새로 래스터화하고 RemoteViews를 밀어 넣던 낭비를 없앤다.
-            if (renderKey == store.lastRenderKey) return
+            if (renderKey == store.lastRenderKey && nowMillis - store.lastPushedAtMillis < MAX_SKIP_MILLIS) return
+            // 스냅샷 → 키 순서는 **의도적**이다. 사이에서 프로세스가 죽으면 낡은 키가 남아 다음 틱이
+            // 한 번 더 밀 뿐이지만, 뒤집으면 안 밀린 내용이 '밀었음'으로 박제돼 영영 스킵된다.
             store.write(next)
+            push(context)
             store.lastRenderKey = renderKey
-            NexusWidget().updateAll(context)
+            store.lastPushedAtMillis = nowMillis
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -68,6 +75,14 @@ object WidgetUpdater {
      */
     internal fun renderKey(snapshot: WidgetSnapshot, nowMillis: Long = System.currentTimeMillis()): String =
         "$snapshot|${expeditionDisplay(snapshot.expeditionStartedAt, nowMillis)}"
+
+    /**
+     * 스킵 상한 (#246). `updateAll`이 성공적으로 반환해도 **실제로 그려졌다는 보장은 없다** —
+     * Glance는 합성을 세션 워커로 넘기고, 거기서 실패하면 자체 에러 레이아웃을 그린 뒤 삼킨다.
+     * 그 상태에서 값까지 그대로면 스킵이 영원히 이어져 위젯이 에러 화면에 갇힌다. 한 시간마다
+     * 한 번은 무조건 다시 밀어 잘못된 상태를 스스로 걷어낸다 — 15분 주기 낭비의 대부분은 그대로 없앤 채.
+     */
+    private const val MAX_SKIP_MILLIS = 60L * 60L * 1000L
 
     private const val TAG = "WidgetUpdater"
 }
