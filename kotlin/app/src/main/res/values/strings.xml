@@ -183,6 +183,9 @@
     <string name="steps_title">최근 7일 걸음</string>
     <string name="steps_subtitle">삼성헬스 수치와 대조해 보세요 (동기화 지연으로 오늘 값은 늦을 수 있어요)</string>
     <string name="steps_loading">걸음을 읽는 중…</string>
+
+    <!-- 로딩 스켈레톤 (#268) — 빈 자리표시 블록들을 한 문장으로 묶어 낭독한다 -->
+    <string name="a11y_loading">불러오는 중</string>
     <string name="steps_error">걸음을 읽을 수 없어요</string>
     <string name="steps_date_format">M월 d일 (E)</string>
     <!-- 7일 걸음 막대 차트 (#258) -->

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +26,7 @@ import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.FirstRunNotice
+import com.nexus.app.ui.GrowthSkeleton
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
 import com.nexus.core.Badge
@@ -82,7 +82,7 @@ internal fun GrowthScreen(
             style = MaterialTheme.typography.headlineSmall,
         )
         when (val current = ui.load) {
-            null -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+            null -> GrowthSkeleton()
 
             GrowthLoad.PermissionDenied ->
                 ConnectNotice(
