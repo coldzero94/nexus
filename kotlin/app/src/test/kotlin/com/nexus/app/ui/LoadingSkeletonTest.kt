@@ -179,6 +179,10 @@ class LoadingSkeletonTest {
     /**
      * 리듀스드모션이면 지연도 이동도 없이 **즉시 최종 상태**여야 한다. 지연만 남기면 사용자는
      * 움직임 없이 '늦게 뜨는' 화면을 보게 되는데, 그건 애니메이션 제거의 취지가 아니다.
+     *
+     * 관측은 **루트 기준 위치**로 한다. 스태거는 `graphicsLayer`의 alpha·translationY만 바꿔
+     * 측정 크기를 건드리지 않으므로, 높이를 재는 방식은 스태거가 돌아도 통과한다
+     * (처음 쓴 버전이 실제로 그랬다). `positionInRoot`는 레이어 변환을 반영한다.
      */
     @Test
     fun `애니메이션 제거면 스태거 없이 즉시 자리를 잡는다`() {
@@ -188,10 +192,24 @@ class LoadingSkeletonTest {
         }
         composeRule.waitForIdle()
 
-        // 시간을 전혀 흘리지 않았는데도 이미 최종 크기여야 한다
-        val node = composeRule.onNodeWithContentDescription(MARKER).fetchSemanticsNode()
-        assertEquals(MARKER_PX, node.size.height)
+        // 시간을 전혀 흘리지 않았는데도 제자리여야 한다
+        assertEquals(0f, markerTop(), "리듀스드모션인데 아래에서 올라오는 중이다")
     }
+
+    /** 양성 대조 — 평소에는 실제로 아래에서 올라온다(위 단언이 '늘 0'이라 통과한 게 아니다). */
+    @Test
+    fun `평소에는 아래에서 올라온다`() {
+        composeRule.mainClock.autoAdvance = false
+        render {
+            Column { StaggerItem(TAIL_INDEX) { Marker() } }
+        }
+        composeRule.waitForIdle()
+
+        assertTrue(markerTop() > 0f, "스태거가 시작 위치를 잡지 못했다")
+    }
+
+    private fun markerTop(): Float =
+        composeRule.onNodeWithContentDescription(MARKER).fetchSemanticsNode().positionInRoot.y
 
     @Composable
     private fun Marker() {
@@ -211,7 +229,6 @@ class LoadingSkeletonTest {
         const val WIDTH = 300f
         const val MARKER = "스태거 대상"
         const val MARKER_DP = 40
-        const val MARKER_PX = 40 // Robolectric 기본 밀도 1.0
         const val TAIL_INDEX = 4
     }
 }
