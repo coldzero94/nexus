@@ -152,6 +152,13 @@
 
     <string name="onboarding_next">다음</string>
 
+    <!-- 캐릭터 만들기 (#42) — 권한 요청 전에 애착의 씨앗을 심는 단계 -->
+    <string name="onboarding_create_title">캐릭터를 만들어요</string>
+    <string name="onboarding_create_body">이름을 지어주고 꾸며보세요. 나중에 언제든 바꿀 수 있어요.</string>
+    <string name="onboarding_create_name_label">이름</string>
+    <string name="onboarding_create_name_hint">%1$d자까지 · 비워두면 나중에 지어도 돼요</string>
+    <string name="onboarding_create_skip">나중에 할게요</string>
+
     <!-- 온보딩: 권한 설명 -->
     <string name="permission_rationale_title">건강 데이터 연결이 필요해요</string>
     <string name="permission_rationale_body">캐릭터를 키우려면 Health Connect에서 활동 데이터를 읽어야 해요. 원본 수치는 기기 밖으로 나가지 않아요.</string>

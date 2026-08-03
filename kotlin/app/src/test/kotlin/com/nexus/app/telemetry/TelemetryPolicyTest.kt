@@ -59,6 +59,7 @@ class TelemetryPolicyTest {
             "funnel.expeditionOpened",
             // 온보딩 스텝별 (#226) — 4단계 이탈 지점과 거부·데모 선택
             "funnel.onboardingStageWelcome",
+            "funnel.onboardingStageCreate",
             "funnel.onboardingStageRationale",
             "funnel.onboardingStageSamsungHealth",
             "funnel.onboardingStageWeeklyGoal",

@@ -1,12 +1,16 @@
 package com.nexus.core
 
 /** 온보딩 스텝 (#6·#225). 순서는 [OnboardingFlow.steps]가 정한다 — 선언 순서에 기대지 않는다. */
-enum class OnboardingStage { WELCOME, RATIONALE, SAMSUNG_HEALTH, WEEKLY_GOAL }
+enum class OnboardingStage { WELCOME, CREATE, RATIONALE, SAMSUNG_HEALTH, WEEKLY_GOAL }
 
 /**
  * 온보딩 경로 (#225, E14-15) — 진행 표시와 뒤로가기가 **실제로 지나는 스텝**만 세게 한다.
  *
  * ## 왜 경로를 계산하는가
+ *
+ * [OnboardingStage.CREATE]는 **권한 요청 전**에 온다(#42). 이름을 짓고 꾸민 캐릭터가 생긴 뒤에
+ * 권한을 물어야 "내 것을 키우기 위해 허락한다"가 되고, 순서가 뒤집히면 아직 아무것도 아닌 앱이
+ * 건강 데이터부터 요구하는 모양이 된다. 가용성과 무관하므로 두 경로 모두에 있다.
  *
  * 흐름이 모든 사용자에게 같지 않다. Health Connect를 쓸 수 없거나 업데이트가 필요한 기기는 권한
  * 설명(RATIONALE)을 건너뛴다(#236 — 거기서 권한을 요청하면 실패한다). 그래서 스텝을 enum 선언
@@ -27,12 +31,18 @@ object OnboardingFlow {
     fun steps(healthAvailable: Boolean): List<OnboardingStage> = if (healthAvailable) {
         listOf(
             OnboardingStage.WELCOME,
+            OnboardingStage.CREATE,
             OnboardingStage.RATIONALE,
             OnboardingStage.SAMSUNG_HEALTH,
             OnboardingStage.WEEKLY_GOAL,
         )
     } else {
-        listOf(OnboardingStage.WELCOME, OnboardingStage.SAMSUNG_HEALTH, OnboardingStage.WEEKLY_GOAL)
+        listOf(
+            OnboardingStage.WELCOME,
+            OnboardingStage.CREATE,
+            OnboardingStage.SAMSUNG_HEALTH,
+            OnboardingStage.WEEKLY_GOAL,
+        )
     }
 
     /**

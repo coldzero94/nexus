@@ -161,10 +161,17 @@ private fun OnboardingSteps(
             progress = progress,
             // 3상태 소비 (#236) — UpdateRequired에서 권한 요청으로 보내면 실패한다.
             // 안내 스텝으로 보내면 데모 랜딩의 '업데이트' CTA까지 이어진다.
-            onNext = {
-                onStage(if (healthAvailable) OnboardingStage.RATIONALE else OnboardingStage.SAMSUNG_HEALTH)
-            },
+            // 캐릭터 만들기는 가용성과 무관하게 항상 다음이다 (#42) — 권한보다 먼저 와야 한다
+            onNext = { onStage(OnboardingStage.CREATE) },
         )
+
+        OnboardingStage.CREATE -> StepScaffold(progress) {
+            CreateCharacterContent(
+                onDone = {
+                    onStage(if (healthAvailable) OnboardingStage.RATIONALE else OnboardingStage.SAMSUNG_HEALTH)
+                },
+            )
+        }
 
         OnboardingStage.RATIONALE -> RationaleStep(
             progress = progress,
@@ -356,6 +363,7 @@ private fun SamsungHealthStep(progress: @Composable () -> Unit, onDone: () -> Un
 /** 스텝 → 진입 이벤트 (#226). 매핑을 한곳에 둬 스텝 추가 시 계측 누락을 눈에 보이게 한다. */
 private fun OnboardingStage.enterEvent(): TelemetryEvent = when (this) {
     OnboardingStage.WELCOME -> TelemetryEvent.ONBOARDING_STAGE_WELCOME
+    OnboardingStage.CREATE -> TelemetryEvent.ONBOARDING_STAGE_CREATE
     OnboardingStage.RATIONALE -> TelemetryEvent.ONBOARDING_STAGE_RATIONALE
     OnboardingStage.SAMSUNG_HEALTH -> TelemetryEvent.ONBOARDING_STAGE_SAMSUNG_HEALTH
     OnboardingStage.WEEKLY_GOAL -> TelemetryEvent.ONBOARDING_STAGE_WEEKLY_GOAL

@@ -39,13 +39,16 @@ enum class TelemetryEvent(val signal: String) {
     /** 온보딩 1단계 진입 = 앱을 처음 열고 시작한 사람. 퍼널의 분모. */
     ONBOARDING_STAGE_WELCOME("funnel.onboardingStageWelcome"),
 
-    /** 2단계 — 권한이 왜 필요한지 설명. */
+    /** 2단계 — 캐릭터 만들기(#42). 권한 화면 직전 이탈을 이 지점과 비교해 읽는다. */
+    ONBOARDING_STAGE_CREATE("funnel.onboardingStageCreate"),
+
+    /** 3단계 — 권한이 왜 필요한지 설명. */
     ONBOARDING_STAGE_RATIONALE("funnel.onboardingStageRationale"),
 
-    /** 3단계 — 삼성헬스 연동 안내. HC 미가용·업데이트 필요면 여기로 온다(#236). */
+    /** 4단계 — 삼성헬스 연동 안내. HC 미가용·업데이트 필요면 여기로 온다(#236). */
     ONBOARDING_STAGE_SAMSUNG_HEALTH("funnel.onboardingStageSamsungHealth"),
 
-    /** 4단계 — 주간 목표 선택. */
+    /** 5단계 — 주간 목표 선택. */
     ONBOARDING_STAGE_WEEKLY_GOAL("funnel.onboardingStageWeeklyGoal"),
 
     /**
