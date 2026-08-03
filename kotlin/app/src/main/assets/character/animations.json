@@ -2,7 +2,38 @@
   "version": 1,
   "defaultState": "idle",
   "states": {
-    "idle": { "frames": 2, "frameDurationMs": 600 },
-    "walk": { "frames": 2, "frameDurationMs": 350 }
+    "idle": {
+      "frames": 2,
+      "frameDurationMs": 600
+    },
+    "walk": {
+      "frames": 2,
+      "frameDurationMs": 350
+    },
+    "calm_smile": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "jump_hyped": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "proud_sparkle": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "bored_lookaround": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "cozy_roll": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    }
   }
 }
