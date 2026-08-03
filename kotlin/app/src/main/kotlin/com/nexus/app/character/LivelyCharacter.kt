@@ -117,12 +117,23 @@ internal fun LivelyCharacter(
 }
 
 /**
+ * 숨쉬기 진폭 (#217) — 감축이면 1f(진폭 없음).
+ *
+ * 순수 함수인 이유는 **이게 검증 가능한 유일한 형태**이기 때문이다(#338). 진폭은 `graphicsLayer`
+ * 안에서만 읽혀 시맨틱에도 측정 크기에도 드러나지 않고, 무한 전환이 도는지는 `waitForIdle`로도
+ * 알 수 없다. 상시 미동은 전정기관 장애가 있는 사용자에게 증상을 유발할 수 있어, 관측이 어렵다는
+ * 이유로 검증을 포기할 자리가 아니다.
+ */
+internal fun breathTargetScale(motionScale: Float): Float =
+    if (ReduceMotion.isReduced(motionScale)) 1f else BREATH_SCALE
+
+/**
  * 숨쉬기 스케일 (#217) — [State]로 돌려주어 호출측이 draw 단계에서만 읽게 한다.
  * 컴포지션에서 읽으면 무한 트랜지션이 매 프레임 리컴포즈를 유발한다([LivelyCharacter] KDoc).
  */
 @Composable
 private fun rememberBreathScale(motionScale: Float): State<Float> {
-    if (ReduceMotion.isReduced(motionScale)) return remember { mutableFloatStateOf(1f) }
+    if (breathTargetScale(motionScale) == 1f) return remember { mutableFloatStateOf(1f) }
     val transition = rememberInfiniteTransition(label = "breath")
     return transition.animateFloat(
         initialValue = 1f,

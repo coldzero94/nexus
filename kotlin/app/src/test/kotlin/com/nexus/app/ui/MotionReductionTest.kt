@@ -4,6 +4,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
+import com.nexus.app.character.breathTargetScale
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,6 +59,28 @@ class MotionReductionTest {
     @Test
     fun `평소 축하는 스케일 스프링이 붙는다`() {
         assertNotEquals(fadeIn(), enterTransition(motionScale = 1f), "축하 연출이 페이드로 죽었다")
+    }
+
+    // ── 상시 미동 (#217) ──
+
+    /**
+     * 캐릭터 숨쉬기는 상시 반복이라 **가장 타협 불가**한 자리다 — 전정기관 장애가 있는 사용자에게
+     * 증상을 유발할 수 있다. 그런데 진폭은 `graphicsLayer` 안에서만 읽혀 관측할 수 없었고,
+     * 게이트를 걷어내도 아무 테스트도 안 깨졌다(#338 감사). 결정을 순수 함수로 끌어내 고정한다.
+     */
+    @Test
+    fun `애니메이션 제거면 숨쉬기 진폭이 없다`() {
+        assertEquals(1f, breathTargetScale(motionScale = 0f), message = "감축인데 캐릭터가 계속 숨쉰다")
+    }
+
+    @Test
+    fun `평소에는 숨쉬기 진폭이 있다`() {
+        assertNotEquals(1f, breathTargetScale(motionScale = 1f), message = "숨쉬기가 죽었다 — 정적 마스코트가 된다")
+    }
+
+    @Test
+    fun `부분 감속에서도 숨쉰다`() {
+        assertNotEquals(1f, breathTargetScale(motionScale = 0.5f), message = "0.5배를 '제거'로 뭉갰다")
     }
 
     /**

@@ -72,6 +72,61 @@ class MotionHarnessGuardTest {
         )
     }
 
+    // ── 프로덕션 쪽: 모션 값이 스케일을 통과하는가 ──
+
+    private val mainRoot = File(File("..").canonicalFile, "app/src/main/kotlin/com/nexus/app")
+
+    private fun mainSources(): List<File> {
+        assertTrue(mainRoot.isDirectory, "프로덕션 경로가 어긋났다: $mainRoot")
+        return mainRoot.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+    }
+
+    /**
+     * 애니메이션 스펙에 **날 duration 상수**가 들어가면 부분 감속(0.5배·10배)이 무시된다.
+     *
+     * 변형 감사(#338)에서 `StaggeredAppearance`·`MainActivity`의 `motionDuration()`을 걷어내도
+     * 아무 테스트도 깨지지 않았다. duration은 `animationSpec` 안으로 들어가 그리기에만 영향을 줘
+     * 관측할 수 없다 — 소스로 막는 수밖에 없다.
+     *
+     * 위반 시 화면은 멀쩡해 보이고, 탭 전환만 늘어지는데 카드는 전속력으로 끝나는 식으로 어긋난다.
+     */
+    @Test
+    fun `애니메이션 스펙은 스케일된 duration을 쓴다`() {
+        val raw = mainSources()
+            .filter { it.name != MOTION_TOKENS } // 토큰 정의 파일 자체는 예외
+            .flatMap { file ->
+                val text = file.readText()
+                // 상수 사용처마다 **바로 앞**이 스케일 함수인지 본다 — 변수로 호이스팅해도 잡힌다
+                DURATION_USE.findAll(text)
+                    .filter { m ->
+                        !SCALED.containsMatchIn(text.substring(maxOf(0, m.range.first - 24), m.range.first))
+                    }
+                    .map { "${file.name}: ${it.value}" }
+            }
+
+        assertTrue(raw.isEmpty(), "날 duration 상수가 스펙에 들어갔다 — 부분 감속이 무시된다: $raw")
+    }
+
+    /**
+     * 무한 애니메이션은 **반드시** 모션 감축 판정을 거쳐야 한다.
+     *
+     * duration 스케일링으로는 무한 반복을 없앨 수 없다(0ms의 무한 반복은 여전히 무한 반복).
+     * 상시 미동은 전정기관 장애가 있는 사용자에게 증상을 유발할 수 있어 타협 대상이 아니다(#217).
+     * `LivelyCharacter`의 숨쉬기 게이트를 걷어내도 아무 테스트도 안 깨졌다(#338 감사).
+     */
+    @Test
+    fun `무한 애니메이션은 모션 감축을 거친다`() {
+        val ungated = mainSources().filter { file ->
+            val text = file.readText()
+            text.contains("rememberInfiniteTransition") && !MOTION_GATE.containsMatchIn(text)
+        }
+
+        assertTrue(
+            ungated.isEmpty(),
+            "무한 애니메이션이 모션 감축 판정 없이 돈다: ${ungated.map { it.name }}",
+        )
+    }
+
     private companion object {
         const val SELF = "MotionHarnessGuardTest.kt"
 
@@ -89,5 +144,16 @@ class MotionHarnessGuardTest {
          * 확인하는 테스트가 있으면 통과 — 이름 규칙 대신 존재로 본다.
          */
         val POSITIVE_CONTROL = Regex("""motionScale = 1f|LocalMotionScale provides 1f|평소|양성 대조""")
+
+        const val MOTION_TOKENS = "NexusMotion.kt"
+
+        /** duration 토큰 사용처. */
+        val DURATION_USE = Regex("""NexusMotion\.DURATION_\w+""")
+
+        /** 바로 앞이 스케일 함수인가. */
+        val SCALED = Regex("""motionDuration\(|scaledDuration\(""")
+
+        /** 모션 감축 판정을 거쳤는가 — 컴포저블 헬퍼든 core 판정이든 하나면 된다. */
+        val MOTION_GATE = Regex("""reduceMotion\(\)|ReduceMotion\.isReduced""")
     }
 }
