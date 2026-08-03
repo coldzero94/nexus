@@ -26,6 +26,7 @@ import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
 import com.nexus.app.ui.StaggerItem
+import com.nexus.app.ui.ambienceBackground
 import com.nexus.core.ClassAffinity
 import com.nexus.core.ConditionEngine
 import com.nexus.core.ExpeditionState
@@ -103,9 +104,17 @@ internal fun HomeScreen(
         )
     }
 
+    // 시간대·계절 앰비언스 (#115) — 배경만 물든다. 시각은 컴포지션마다 다시 읽어 앱을 켜 둔 채
+    // 저녁이 되면 다음 재구성에서 바뀐다(포그라운드 복귀·탭 전환이 자연히 그 시점을 만든다).
+    val now = remember { java.time.LocalDateTime.now() }
     Column(
         modifier = modifier
             .fillMaxSize()
+            .ambienceBackground(
+                hour = now.hour,
+                month = now.monthValue,
+                surface = MaterialTheme.colorScheme.surface,
+            )
             .verticalScroll(rememberScrollState())
             .padding(NexusSpacing.screen),
         horizontalAlignment = Alignment.CenterHorizontally,

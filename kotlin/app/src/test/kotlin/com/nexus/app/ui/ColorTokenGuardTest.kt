@@ -23,8 +23,14 @@ import kotlin.test.assertEquals
  * 이 저장소엔 정책을 테스트로 강제하는 선례가 이미 있다(`TelemetryPolicyTest`의 이벤트 allowlist).
  */
 class ColorTokenGuardTest {
-    /** 색 토큰 **정의** 파일 — 여기서만 리터럴을 쓴다. */
-    private val tokenFiles = setOf("NexusColors.kt", "VizColors.kt")
+    /**
+     * 색 토큰 **정의** 파일 — 여기서만 리터럴을 쓴다. 그 밖에서 `Color(0x…)`가 나오면 실패.
+     *
+     * `AmbienceColors.kt`(#115)가 세 번째다. M3 스킴(NexusColors)·데이터 시각화(VizColors)와
+     * 별개 팔레트인 이유: 앰비언스는 **표면에 얹는 틴트**라 스킴 롤에 대응시킬 수 없고,
+     * 데이터 의미도 없다. 색을 시간대·계절이라는 자기 어휘로 갖는다.
+     */
+    private val tokenFiles = setOf("NexusColors.kt", "VizColors.kt", "AmbienceColors.kt")
 
     /** `Color(0xFF…)` 형태의 하드코딩 색. 토큰을 거치지 않은 색이 바로 이 모양으로 들어온다. */
     private val colorLiteral = Regex("""Color\(\s*0x""")
