@@ -143,11 +143,13 @@ private fun BadgeSectionsState.newlyUnlockedBadges(): List<Badge> {
     return standardBadges + monthlyBadges
 }
 
-/** 배지 영역 (#175·#206·#113) — 상시 배지 + 이달의 배지 + 평생 마일스톤. 각각 없으면 그 카드만 생략. */
+/** 수집 영역 (#175·#206·#113·#112) — 상시·이달 배지 + 평생 마일스톤 + 이야기 도감. 없으면 그 카드만 생략. */
 @Composable
 private fun BadgeSections(state: BadgeSectionsState) {
     state.standard?.let { BadgesCard(it) }
     state.monthly?.let { MonthlyBadgesCard(it) }
     // 평생 축은 맨 아래 — 상시·월간 배지보다 호흡이 길어 먼저 보일 이유가 없다 (#113)
     state.milestones?.let { MilestonesCard(it) }
+    // 도감은 목록이 아니라 읽을거리라 가장 아래 (#112)
+    state.codex?.let { StoryCodexCard(it) }
 }
