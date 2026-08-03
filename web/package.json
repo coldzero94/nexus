@@ -1,0 +1,21 @@
+{
+  "name": "nexus-web",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "check:policy": "node scripts/check-policy.mjs",
+    "verify": "astro build && astro check && node scripts/check-policy.mjs"
+  },
+  "dependencies": {
+    "astro": "^5.14.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "typescript": "^5.9.2"
+  },
+  "packageManager": "pnpm@10.33.0"
+}

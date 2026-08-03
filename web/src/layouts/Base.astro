@@ -1,0 +1,33 @@
+---
+import '../styles/global.css'
+
+interface Props {
+  title: string
+  description: string
+}
+
+const { title, description } = Astro.props
+---
+
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <!-- OG는 **초기 HTML**에 있어야 한다 — 카카오 스크래퍼는 JS를 안 돌린다(.claude/rules/web.md) -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ko_KR" />
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <a href="/">NEXUS</a> · <a href="/privacy/">개인정보처리방침</a>
+    </footer>
+  </body>
+</html>

@@ -42,6 +42,7 @@ All Gradle commands run from `kotlin/`. Requires JDK 21 and Android SDK (`kotlin
 - Format: `./gradlew spotlessApply` before every commit. Static analysis: `./gradlew detekt` (Compose rules included). CI blocks on both `spotlessCheck` + `detekt`. Legacy findings live in `kotlin/detekt-baseline.xml` — shrink it, never grow it
 - Release build: `./gradlew :app:assembleRelease` — 업로드 키 property(4종) 없으면 **debug 키로 폴백**(로컬 무중단, Play 업로드·인플레이스 업데이트 불가). versionCode는 `-Pnexus.versionCode=N`(기본 1, CI는 run_number). 키스토어 커밋 금지 — 배관·키 재발급 절차는 `docs/STACK.md §10`
 - AGP 9 has built-in Kotlin — never apply `org.jetbrains.kotlin.android`
+- Web (`web/`, pnpm — run from `web/`): `pnpm install` · `pnpm verify` (build + astro check + 정책 정합). CI blocks on `pnpm verify`, and the app manifest is a trigger path — 건강 권한을 추가하면 정책 페이지도 같은 PR에서 고쳐야 한다
 
 ## Project management (GitHub)
 
