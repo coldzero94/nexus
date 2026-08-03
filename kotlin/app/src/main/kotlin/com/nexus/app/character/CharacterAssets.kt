@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.annotation.VisibleForTesting
+import com.nexus.core.Anniversaries
+import com.nexus.core.AnniversaryTable
 import com.nexus.core.BadgeAssetConvention
 import com.nexus.core.BadgeTable
 import com.nexus.core.BadgeTableReader
@@ -136,6 +138,7 @@ class CharacterAssets(internal val context: Context, private val lookup: (String
         const val BADGE_PATH = "character/badges.json"
         const val MILESTONE_PATH = "character/milestones.json"
         const val STORY_PATH = "character/story_fragments.json"
+        const val ANNIVERSARY_PATH = "character/anniversaries.json"
         const val MONTHLY_BADGE_PATH = "character/monthly_badges.json"
         const val EQUIPMENT_PATH = "character/equipment.json"
         const val EXPEDITION_PATH = "character/expeditions.json"
@@ -168,3 +171,7 @@ internal fun CharacterAssets.loadMilestoneTable(): BadgeTable =
  */
 internal fun CharacterAssets.loadStoryFragments(): StoryFragmentTable =
     context.assets.open(CharacterAssets.STORY_PATH).bufferedReader().use { StoryDropPicker.parse(it.readText()) }
+
+/** 기념일 표 (#111) — [loadMilestoneTable] 선례와 같은 확장. */
+internal fun CharacterAssets.loadAnniversaries(): AnniversaryTable =
+    context.assets.open(CharacterAssets.ANNIVERSARY_PATH).bufferedReader().use { Anniversaries.parse(it.readText()) }

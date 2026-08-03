@@ -37,6 +37,8 @@ class RewardLedgerRepositoryTest {
         override suspend fun activeDaysLifetime(): Int =
             rows.groupBy { it.epochDay }.count { (_, v) -> v.sumOf { it.xp } > 0 }
 
+        override suspend fun firstEpochDay(): Long? = rows.minOfOrNull { it.epochDay }
+
         override suspend fun all(): List<RewardEventEntity> = rows.toList()
     }
 
