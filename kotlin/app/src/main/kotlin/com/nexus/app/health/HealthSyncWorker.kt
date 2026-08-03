@@ -13,13 +13,18 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.nexus.app.character.CharacterAssets
+import com.nexus.app.character.loadStoryFragments
 import com.nexus.app.crash.CrashReporting
 import com.nexus.app.data.NexusDatabase
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.diag.DiagnosticsCollector
 import com.nexus.app.diag.LedgerIntegrityGuard
+import com.nexus.app.growth.DROP_PERCENT
+import com.nexus.app.growth.StoryCollectionStore
 import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.FailureCategory
+import com.nexus.core.StoryDropPicker
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
 import java.time.LocalDate
@@ -108,6 +113,20 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
             CrashReporting.recordHandledFailure(category)
         }
 
+        /**
+         * 조각 드롭을 대기 집합에 적는다 (#112).
+         *
+         * 실패해도 동기화를 멈추지 않는다 — 원장 append가 이 워커의 본업이고, 조각은 다음
+         * 주기나 화면 로드가 같은 세션을 다시 굴려 그대로 복구한다(순수 함수).
+         */
+        private fun collectStoryFragments(context: Context, sessionIds: List<String>) {
+            runCatching {
+                val table = CharacterAssets(context).loadStoryFragments()
+                val dropped = sessionIds.mapNotNull { StoryDropPicker.drop(it, table, DROP_PERCENT) }
+                StoryCollectionStore(context).collect(dropped.map { it.id }.toSet())
+            }.onFailure { Log.w(TAG, "story fragment drop skipped", it) }
+        }
+
         /** 테스트가 교체하는 협력자 — 프로덕션은 항상 기본값(#234). */
         internal var seam: Seam = Seam()
 
@@ -125,6 +144,10 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 DeviceSourceStore(context),
             ).readRecentSessions(days = GRANT_WINDOW_DAYS)
             ledger.grantSessions(sessions, zone, epochMillis = now)
+            // 이야기 조각 드롭 (#112) — 완료 기준이 "운동 반영 시"라 반영이 일어나는 여기서 굴린다.
+            // 화면 로드만 굴리면 성장 탭을 28일 넘게 안 연 사용자는 그 기간의 조각을 영영 잃는다
+            // (드롭이 세션 id의 순수 함수라 여기서도 굴려도 조각이 늘지 않는다).
+            collectStoryFragments(context, sessions.filter(ledger::isRewardable).map { it.id })
             deletedIds.forEach { id ->
                 if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
             }

@@ -19,6 +19,8 @@ import com.nexus.core.MonthlyBadgeTable
 import com.nexus.core.MonthlyBadgeTableReader
 import com.nexus.core.MoodTable
 import com.nexus.core.MoodTriggerTable
+import com.nexus.core.StoryDropPicker
+import com.nexus.core.StoryFragmentTable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -133,6 +135,7 @@ class CharacterAssets(internal val context: Context, private val lookup: (String
         const val MOOD_PATH = "character/mood_triggers.json"
         const val BADGE_PATH = "character/badges.json"
         const val MILESTONE_PATH = "character/milestones.json"
+        const val STORY_PATH = "character/story_fragments.json"
         const val MONTHLY_BADGE_PATH = "character/monthly_badges.json"
         const val EQUIPMENT_PATH = "character/equipment.json"
         const val EXPEDITION_PATH = "character/expeditions.json"
@@ -158,3 +161,10 @@ internal fun CharacterAssets.frameResIds(state: String, frames: Int): List<Int?>
  */
 internal fun CharacterAssets.loadMilestoneTable(): BadgeTable =
     context.assets.open(CharacterAssets.MILESTONE_PATH).bufferedReader().use { BadgeTableReader.parse(it.readText()) }
+
+/**
+ * 이야기 조각 표 (#112) — 조각 추가·수정 = JSON만(코드 무수정), 배지·원정 표와 같은 규약.
+ * 로더의 핵심 책임이 아니라 그 위의 파생이라 확장으로 둔다([loadMilestoneTable] 선례).
+ */
+internal fun CharacterAssets.loadStoryFragments(): StoryFragmentTable =
+    context.assets.open(CharacterAssets.STORY_PATH).bufferedReader().use { StoryDropPicker.parse(it.readText()) }

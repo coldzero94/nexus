@@ -15,6 +15,7 @@ import com.nexus.core.GrowthCalculator
 import com.nexus.core.GrowthSummary
 import com.nexus.core.LevelCurve
 import com.nexus.core.SessionInput
+import com.nexus.core.StoryFragment
 import com.nexus.core.XpExplainer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -54,7 +55,12 @@ internal suspend fun loadGrowthScreen(
     stateStore: GrowthStateStore,
     onSummary: (GrowthLoad, GrowthChange?) -> Unit,
 ): BadgeSectionsState {
-    val loaded = if (exerciseRepo == null) GrowthLoad.PermissionDenied else loadGrowth(exerciseRepo, ledger)
+    val result = if (exerciseRepo == null) {
+        GrowthLoadResult(GrowthLoad.PermissionDenied)
+    } else {
+        loadGrowth(exerciseRepo, ledger)
+    }
+    val loaded = result.load
     if (loaded !is GrowthLoad.Success) {
         onSummary(loaded, null)
         return BadgeSectionsState()
@@ -74,10 +80,13 @@ internal suspend fun loadGrowthScreen(
         val monthly = async { loadMonthlyBadges(context, manager, ledger) }
         // 마일스톤은 원장만 읽어 HC를 기다리지 않는다 — 순차로 두면 걸음 집계 뒤로 밀린다 (#113)
         val milestones = async { loadMilestones(context, ledger, cumulativeXp = loaded.state.summary.totalXp) }
+        // 조각 드롭은 **세션을 이미 읽은 결과**로 굴린다 — HC를 다시 부르지 않는다 (#112)
+        val codex = async { loadStoryCodex(context, result.sessionIds) }
         BadgeSectionsState(
             standard = standard.await(),
             monthly = monthly.await(),
             milestones = milestones.await(),
+            codex = codex.await(),
         )
     }
 }
@@ -85,11 +94,19 @@ internal suspend fun loadGrowthScreen(
 /** 평생 누적 마일스톤 상태 (#113) — 배지와 같은 형식이지만 별개 축(표·prefs·카드가 따로). */
 internal data class MilestoneState(val table: BadgeTable, val unlocked: Set<String>, val newlyUnlocked: Set<String>)
 
+/** 도감 상태 (#112) — 모은 조각과 전체 수. 새로 얻은 조각은 화면이 강조할 수 있게 따로 준다. */
+internal data class StoryCodexState(
+    val collected: List<StoryFragment>,
+    val total: Int,
+    val newlyFound: List<StoryFragment>,
+)
+
 /** 배지 영역 상태 (#175·#206) — 둘 다 부가 정보라 각각 null이면 그 카드만 생략한다. */
 internal data class BadgeSectionsState(
     val standard: BadgeState? = null,
     val monthly: MonthlyBadgeState? = null,
     val milestones: MilestoneState? = null,
+    val codex: StoryCodexState? = null,
 )
 
 /**
@@ -106,11 +123,20 @@ private fun detectChange(store: GrowthStateStore, summary: GrowthSummary): Growt
 }
 
 /**
+ * 성장 로드 결과 — 화면 상태와 **세션 id**를 함께 낸다.
+ *
+ * id를 딸려 보내는 이유: 이야기 조각 드롭(#112)이 세션 id의 함수인데, 이걸 위해 Health Connect를
+ * 한 번 더 읽으면 같은 데이터를 두 번 기다리게 된다. 화면 상태에 id를 넣지 않은 이유는 그 반대다 —
+ * 표시에 쓰이지 않는 값이 화면 상태에 섞이면 무엇이 렌더에 필요한 값인지 흐려진다.
+ */
+private data class GrowthLoadResult(val load: GrowthLoad, val sessionIds: List<String> = emptyList())
+
+/**
  * ActivityScreen.loadActivity와 같은 catch 계약 (#130 — 실패는 드러내고 취소는 전파).
  * 단 SecurityException은 실패가 아닌 [GrowthLoad.PermissionDenied]로 — 권한 회수는
  * 데모 안내+재연결 유도가 맞다(#144).
  */
-private suspend fun loadGrowth(repo: ExerciseRepository, ledger: RewardLedgerRepository): GrowthLoad = try {
+private suspend fun loadGrowth(repo: ExerciseRepository, ledger: RewardLedgerRepository): GrowthLoadResult = try {
     val zone = ZoneId.systemDefault()
     val raw = repo.readRecentSessions(days = ClassAffinityCalculator.WINDOW_DAYS)
     // 화면 로드도 원장을 최신으로(멱등) — 워커 주기를 기다리지 않고 표시가 원장과 일치 (#163)
@@ -128,43 +154,51 @@ private suspend fun loadGrowth(repo: ExerciseRepository, ledger: RewardLedgerRep
     // 성향·능력치·오늘 분해는 스펙대로 28일 창 유지.
     val ledgerTotal = ledger.cappedTotalXp()
     val summary = GrowthCalculator.compute(sessions)
-    GrowthLoad.Success(
-        GrowthUiState(
-            summary = summary.copy(
-                totalXp = ledgerTotal,
-                level = LevelCurve.displayLevel(ledgerTotal),
-                progress = LevelCurve.progressToNextLevel(ledgerTotal),
+    GrowthLoadResult(
+        load = GrowthLoad.Success(
+            GrowthUiState(
+                summary = summary.copy(
+                    totalXp = ledgerTotal,
+                    level = LevelCurve.displayLevel(ledgerTotal),
+                    progress = LevelCurve.progressToNextLevel(ledgerTotal),
+                ),
+                today = XpExplainer.explainDay(sessions, epochDay = LocalDate.now(zone).toEpochDay()),
+                // 누적 XP는 위에서 이미 구했다(ledgerTotal) — 게이트가 재질의하면 집계가 두 번 돈다
+                awaitingFirstData = FirstRun.isAwaitingFirstData(
+                    ledgerTotal,
+                    hasAnyHealthData = sessions.isNotEmpty(),
+                ),
             ),
-            today = XpExplainer.explainDay(sessions, epochDay = LocalDate.now(zone).toEpochDay()),
-            // 누적 XP는 위에서 이미 구했다(ledgerTotal) — 게이트가 재질의하면 집계가 두 번 돈다
-            awaitingFirstData = FirstRun.isAwaitingFirstData(ledgerTotal, hasAnyHealthData = sessions.isNotEmpty()),
         ),
+        // 원장 지급과 같은 문을 통과한 세션만 굴린다 — 수기 입력이 조각을 주면 도감이
+        // 신뢰 장치 밖의 유일한 보상면이 된다 (#112 리뷰)
+        sessionIds = raw.filter(ledger::isRewardable).map { it.id },
     )
 } catch (e: CancellationException) {
     throw e
 } catch (e: IOException) {
     Log.w(TAG, "growth load IO failure", e)
     CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
-    GrowthLoad.Failure
+    GrowthLoadResult(GrowthLoad.Failure)
 } catch (e: RemoteException) {
     Log.w(TAG, "growth load remote failure", e)
     CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
-    GrowthLoad.Failure
+    GrowthLoadResult(GrowthLoad.Failure)
 } catch (e: SecurityException) {
     Log.w(TAG, "growth load permission failure", e)
     CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
-    GrowthLoad.PermissionDenied
+    GrowthLoadResult(GrowthLoad.PermissionDenied)
 } catch (e: IllegalArgumentException) {
     Log.w(TAG, "growth load invalid-argument failure", e)
     CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
-    GrowthLoad.Failure
+    GrowthLoadResult(GrowthLoad.Failure)
 } catch (e: IllegalStateException) {
     Log.w(TAG, "growth load state failure", e)
     CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
-    GrowthLoad.Failure
+    GrowthLoadResult(GrowthLoad.Failure)
 } catch (e: android.database.SQLException) {
     // 원장 DB 문제(디스크·손상)는 화면 크래시 대신 에러 표시 (#163)
     Log.w(TAG, "growth ledger db failure", e)
     CrashReporting.recordHandledFailure(FailureCategory.GROWTH_LOAD)
-    GrowthLoad.Failure
+    GrowthLoadResult(GrowthLoad.Failure)
 }

@@ -46,6 +46,10 @@ internal class GrowthUiController(
     var badgeCelebrationVisible by mutableStateOf(true)
         private set
 
+    /** 조각 축하 가시성 (#112) — 배지 축하와 같은 토글 패턴. */
+    var storyCelebrationVisible by mutableStateOf(true)
+        private set
+
     /** 로드 재시도 트리거 (#227) — 키가 바뀌면 화면의 LaunchedEffect가 다시 돈다. */
     var reloadKey by mutableIntStateOf(0)
         private set
@@ -56,6 +60,7 @@ internal class GrowthUiController(
         // 새 로드는 새 축하 기회다 — 리셋하지 않으면 한 번 닫은 뒤 이 컨트롤러가 사는 동안
         // 새 배지가 열려도 카드가 안 뜬다(지금은 도달 불가지만 새 갱신 경로가 생기면 실버그가 된다)
         badgeCelebrationVisible = true
+        storyCelebrationVisible = true
         badgeSections = loadGrowthScreen(context, manager, exerciseRepo, ledger, stateStore) { loaded, detected ->
             load = loaded
             change = detected
@@ -93,5 +98,11 @@ internal class GrowthUiController(
     fun dismissBadgeCelebration() {
         badgeCelebrationVisible = false
         (seed?.badgeCelebration ?: BadgeCelebrationStore(context)).clear()
+    }
+
+    /** 조각 축하 확인 (#112) — 대기 집합을 비운다. 획득 자체는 수집 목록에 남는다. */
+    fun dismissStoryCelebration() {
+        storyCelebrationVisible = false
+        (seed?.storyCollection ?: StoryCollectionStore(context)).acknowledge()
     }
 }

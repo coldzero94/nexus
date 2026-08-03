@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.WorkManager
@@ -27,6 +28,7 @@ import com.nexus.core.ClassAffinity
 import com.nexus.core.DayXpExplanation
 import com.nexus.core.GrowthSummary
 import com.nexus.core.Stat
+import com.nexus.core.StoryFragment
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -315,6 +317,64 @@ class GrowthScreenRenderTest {
         composeRule.onNodeWithText(string(R.string.badge_unlock_title)).assertIsDisplayed()
     }
 
+    private fun codex(newly: List<StoryFragment> = emptyList()) = BadgeSectionsState(
+        codex = StoryCodexState(collected = listOf(FRAGMENT), total = 8, newlyFound = newly),
+    )
+
+    /** 완료 기준의 "확률적으로 '조각 획득' 알림이 뜨고" — 도감 카운터만 오르면 획득 순간이 없다. */
+    @Test
+    fun `새 조각이 있으면 획득 축하가 뜬다`() {
+        render(successState(awaiting = false), badges = codex(newly = listOf(FRAGMENT)))
+
+        composeRule.onNodeWithText(string(R.string.story_drop_title)).assertIsDisplayed()
+    }
+
+    /** 양성 대조 — 위 단언이 '항상 뜬다'로 통과하지 않는지. */
+    @Test
+    fun `새 조각이 없으면 획득 축하가 안 뜬다`() {
+        render(successState(awaiting = false), badges = codex())
+
+        composeRule.onNodeWithText(string(R.string.story_drop_title)).assertDoesNotExist()
+    }
+
+    /**
+     * 축하는 한 번에 하나 (#218의 계약을 잇는다). 조각은 배지보다 뒤 — 밀린 쪽은 각자의
+     * 대기 집합에 남아 다음 진입에서 뜬다.
+     */
+    @Test
+    fun `배지 축하가 있으면 조각 축하는 뜨지 않는다`() {
+        val badges = withPendingBadge()
+
+        render(
+            successState(awaiting = false),
+            badges = badges.copy(codex = codex(newly = listOf(FRAGMENT)).codex),
+        )
+
+        composeRule.onNodeWithText(string(R.string.badge_unlock_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.story_drop_title)).assertDoesNotExist()
+    }
+
+    /**
+     * 배선 가드 (#112) — 카드 컴포저블이 있는 것과 화면이 그걸 쓰는 건 다른 명제다.
+     * #268에서 기능 전체를 되돌려도 테스트가 초록이었던 게 이 차이 때문이다.
+     */
+    @Test
+    fun `모은 이야기 조각이 있으면 도감을 그린다`() {
+        render(successState(awaiting = false), badges = codex())
+
+        // 도감은 화면 맨 아래라 470px 뷰포트 밖이다 — 스크롤해서 실제로 그려졌는지 본다
+        composeRule.onNodeWithText(string(R.string.growth_codex_title, 1, 8)).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText(FRAGMENT.body).performScrollTo().assertIsDisplayed()
+    }
+
+    /** 조각이 없으면 카드 자체가 없어야 한다 — 성장 탭은 이미 잠긴 목록이 셋이다. */
+    @Test
+    fun `도감 상태가 없으면 카드를 안 그린다`() {
+        render(successState(awaiting = false))
+
+        composeRule.onNodeWithText(string(R.string.growth_codex_title, 1, 8)).assertDoesNotExist()
+    }
+
     @Test
     fun `첫 데이터 대기면 빈 상태만 그리고 레벨 게이지는 숨긴다`() {
         render(successState(awaiting = true))
@@ -323,3 +383,6 @@ class GrowthScreenRenderTest {
         composeRule.onNodeWithContentDescription(string(R.string.a11y_level_gauge)).assertDoesNotExist()
     }
 }
+
+/** 도감 테스트용 조각 — 카피는 표에서 오므로 내용은 무관하다. */
+private val FRAGMENT = StoryFragment(id = "f1", title = "첫 길", body = "처음 걸어본 길이었다.")
