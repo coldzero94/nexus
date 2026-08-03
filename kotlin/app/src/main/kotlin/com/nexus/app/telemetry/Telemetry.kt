@@ -31,8 +31,7 @@ object Telemetry {
      *
      * 두 번 불러도 안전해야 한다 — 동의를 껐다 켜면 다시 온다.
      */
-    fun init(context: Context) {
-        val appId = BuildConfig.TELEMETRYDECK_APP_ID
+    fun init(context: Context, appId: String = BuildConfig.TELEMETRYDECK_APP_ID) {
         if (appId.isBlank()) {
             Log.i(TAG, "app ID absent — telemetry off")
             return

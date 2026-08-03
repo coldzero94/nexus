@@ -47,8 +47,7 @@ object CrashReporting {
      * [com.nexus.app.settings.AnalyticsConsent]가 부른다. 두 번 불러도 안전해야 한다 —
      * 동의를 껐다 켜면 다시 온다.
      */
-    fun init(context: Context) {
-        val dsn = BuildConfig.SENTRY_DSN
+    fun init(context: Context, dsn: String = BuildConfig.SENTRY_DSN) {
         if (dsn.isBlank()) {
             Log.i(TAG, "DSN absent — crash reporting off")
             return
