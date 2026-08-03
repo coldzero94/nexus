@@ -19,6 +19,7 @@ import com.nexus.app.settings.RestModeStore
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.widget.WidgetUpdater
+import com.nexus.core.Anniversary
 import com.nexus.core.EnergyEngine
 import com.nexus.core.ExpeditionReward
 import com.nexus.core.ExpeditionRewardPicker
@@ -56,6 +57,14 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
     var levelUp by mutableStateOf<LevelUpState?>(null)
         private set
 
+    /** 함께한 N일 기념일 (#111) — 아직 축하 안 한 기념일. 없으면 null. */
+    var anniversary by mutableStateOf<Anniversary?>(null)
+        private set
+
+    /** 기념일 카드 가시성 — dismiss는 토글(노드를 즉시 빼면 exit 연출이 생략된다). */
+    var anniversaryVisible by mutableStateOf(true)
+        private set
+
     /** 기분 배선 (#212) — 렌더 상태(표정 아트 or idle/walk 폴백)와 채택 기분 대사 풀. */
     var spriteState by mutableStateOf("idle")
         private set
@@ -81,6 +90,15 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
     fun dismissLevelUp(state: HomeUiState) {
         stores.growth.recordSeen(state.level, state.affinity, state.stats)
         levelUp = null
+    }
+
+    /**
+     * 기념일 확인 (#111) — 소비를 여기서 하는 이유는 [dismissLevelUp]과 같다: 감지 시점에
+     * 기록하면 회전·프로세스 사망으로 축하가 영영 사라진다(#61 리뷰).
+     */
+    fun dismissAnniversary() {
+        anniversaryVisible = false
+        anniversary?.let { stores.together.celebratedDays = it.days }
     }
 
     /**
@@ -135,6 +153,8 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
             settlementDelta = settleOnLoad(stores.settlement, loaded.state.cappedTotalXp)
             morningVisible = shouldShowMorningCard(stores.morning)
             journalVisible = shouldShowJournal(stores.journal, now)
+            anniversaryVisible = true
+            anniversary = loadAnniversary(context, stores.ledger, cardEpochDay, stores.together)
         }
     }
 
@@ -228,6 +248,9 @@ internal class HomeStores(context: android.content.Context) {
     val goal = GoalStore(context)
     val streak = StreakStore(context)
     val onboarding = OnboardingStore(context)
+
+    /** 첫 만남 날짜·마지막 축하 기념일 (#111). */
+    val together = TogetherStore(context)
 
     // 홈·성장이 공유하는 레벨 마커 (#219) — 어느 쪽이 먼저 보든 한 번만 축하한다
     val growth = GrowthStateStore(context)

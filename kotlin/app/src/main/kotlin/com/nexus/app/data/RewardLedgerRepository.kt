@@ -96,6 +96,9 @@ class RewardLedgerRepository(private val dao: RewardEventDao) {
     suspend fun cappedXpOn(epochDay: Long): Int =
         LedgerMath.cappedTotalXp(dao.xpByDay().filter { it.epochDay == epochDay }.associate { it.epochDay to it.xp })
 
+    /** 원장 첫 활동일 (#111) — 첫 만남 날짜를 소급 추정하는 하한. */
+    suspend fun firstEpochDay(): Long? = dao.firstEpochDay()
+
     /** 표시용 누적 XP — 일 상한 적용(core LedgerMath). */
     suspend fun cappedTotalXp(): Int = LedgerMath.cappedTotalXp(dao.xpByDay().associate { it.epochDay to it.xp })
 

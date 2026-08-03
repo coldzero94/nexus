@@ -30,6 +30,10 @@ interface RewardEventDao {
     @Query("SELECT COUNT(*) FROM (SELECT epochDay FROM reward_events GROUP BY epochDay HAVING SUM(xp) > 0)")
     suspend fun activeDaysLifetime(): Int
 
+    /** 원장의 가장 이른 활동일 — '언제부터 함께였나'의 하한 (#111). 비어 있으면 null. */
+    @Query("SELECT MIN(epochDay) FROM reward_events")
+    suspend fun firstEpochDay(): Long?
+
     /** 백업 내보내기용 전체 원장 (#51) — sequence 순서 유지. */
     @Query("SELECT * FROM reward_events ORDER BY sequence")
     suspend fun all(): List<RewardEventEntity>

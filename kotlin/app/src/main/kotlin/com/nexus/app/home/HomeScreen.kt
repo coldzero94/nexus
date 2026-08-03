@@ -151,6 +151,9 @@ private fun HomeLoaded(state: HomeUiState, ui: HomeUiController) {
         LevelUpCard(up.level, up.risenStats, visible = true) { ui.dismissLevelUp(state) }
         return
     }
+    // 기념일은 아침 카드보다 위 (#111) — 아침 카드는 매일 오는 안내고 기념일은 그 하루뿐이다.
+    // 레벨업(위)에는 양보한다: 레벨업은 방금 한 일에 대한 반응이라 즉시성이 더 크다.
+    AnniversaryCard(ui.anniversary, visible = ui.anniversaryVisible) { ui.dismissAnniversary() }
     if (ui.morningVisible) MorningCard(state, onDismiss = { ui.dismissCard(HomeCard.MORNING) })
     // 첫 세션 루프 (#211) — 코치와 축하는 상호 배타(core 판정), 각각 1회
     when (state.firstSessionCue) {
