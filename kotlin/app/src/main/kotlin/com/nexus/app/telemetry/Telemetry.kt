@@ -47,7 +47,8 @@ object Telemetry {
                 .showDebugLogs(BuildConfig.DEBUG)
             TelemetryDeck.start(context.applicationContext, builder)
         }
-            // SDK에게 물어서 정한다 — CrashReporting과 같은 이유(#349 리뷰)
+            // SDK에게 물어서 정한다 — CrashReporting과 같은 이유(#349 리뷰). 던지는 경로는
+            // 테스트가 고정하고, 이 형태는 '조용히 꺼지는' 경우까지 덮는 방어다
             .onSuccess { enabled = TelemetryDeck.getInstance() != null }
             .onFailure { Log.w(TAG, "telemetry start failed", it) }
     }

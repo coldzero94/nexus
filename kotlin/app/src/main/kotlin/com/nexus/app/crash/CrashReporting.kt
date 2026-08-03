@@ -55,9 +55,10 @@ object CrashReporting {
             return
         }
         runCatching { initSentry(context, dsn) }
-            // 플래그는 **SDK에게 물어서** 정한다. "init이 안 던졌다"로 올리면 잘못된 DSN처럼
-            // SDK가 조용히 스스로를 끄는 경우에 "보내는 중"이라고 거짓 보고한다(#349 리뷰).
-            // `isActive`는 이 기능의 관측 가능한 계약이라 SDK 상태와 어긋나면 안 된다.
+            // 플래그는 **init 뒤에**, 그리고 SDK에게 물어서 정한다. 앞에 두면 init이 던졌을 때
+            // "보내는 중"이라고 거짓 보고한다(#349 리뷰가 잘못된 DSN으로 재현 — 테스트가 고정).
+            // `isEnabled()`로 정하는 건 그 위의 방어다: SDK가 던지지 않고 조용히 스스로를 끄는
+            // 경우까지 덮는다(현재 테스트로는 도달 경로가 없어 단언하지 않는다).
             .onSuccess { enabled = Sentry.isEnabled() }
             .onFailure { Log.w(TAG, "crash reporting init failed", it) }
     }
