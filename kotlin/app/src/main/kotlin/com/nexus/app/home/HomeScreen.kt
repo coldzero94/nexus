@@ -202,8 +202,9 @@ private fun HomeContent(
             Text(text = nextGoalText(state), style = MaterialTheme.typography.bodyMedium)
         }
     }
-    // 신선도는 푸터 위치 (#221) — 평소엔 조용한 한 줄, 오래 밀렸을 때만 안내 카드로 커진다
-    FreshnessRow(onSyncFinished = onSyncFinished)
+    // 신선도는 푸터 위치 (#221) — 평소엔 조용한 한 줄, 오래 밀렸을 때만 안내 카드로 커진다.
+    // 자체 등장 연출이 없는 평범한 푸터라 위 카드들과 같은 스태거를 탄다(혼자 즉시 뜨면 튄다).
+    StaggerItem(StaggerOrder.TAIL) { FreshnessRow(onSyncFinished = onSyncFinished) }
 }
 
 @Composable

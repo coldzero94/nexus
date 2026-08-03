@@ -4,16 +4,22 @@ import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.LinearGradient
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
@@ -23,7 +29,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -83,6 +90,33 @@ class LoadingSkeletonTest {
         assertTrue(height > MIN_SKELETON_PX, "스켈레톤 높이가 ${height}px")
     }
 
+    /**
+     * 탭마다 **다른 형태**여야 한다. 셋을 같은 스켈레톤으로 바꿔치기해도 위 세 테스트는 전부 통과한다 —
+     * 사실상 같은 테스트를 세 번 쓴 셈이었다(리뷰 지적). 카드 구성이 실제로 다른지 본다.
+     */
+    @Test
+    fun `탭마다 스켈레톤 형태가 다르다`() {
+        // 셋을 한 컴포지션에 나란히 세워 각자의 고유 높이를 잰다(스크롤 컨테이너라 잘리지 않는다).
+        // setContent는 테스트당 한 번만 부를 수 있어 이렇게 묶는다.
+        composeRule.setContent {
+            NexusTheme {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    HomeSkeleton()
+                    GrowthSkeleton()
+                    ActivitySkeleton()
+                }
+            }
+        }
+        composeRule.waitForIdle()
+
+        val heights = composeRule.onAllNodesWithContentDescription(loading())
+            .fetchSemanticsNodes()
+            .map { it.size.height }
+
+        assertEquals(3, heights.size)
+        assertEquals(heights.distinct().size, heights.size, "탭 스켈레톤이 서로 같다: $heights")
+    }
+
     // ── 접근성: 한 노드 ──
 
     private fun loading() = context.getString(R.string.a11y_loading)
@@ -119,44 +153,78 @@ class LoadingSkeletonTest {
     // ── AC ③ 리듀스드모션 ──
 
     /**
-     * shimmer가 도는지는 **무엇이 칠해지는가**로 본다. 크기·위치·시맨틱이 전혀 안 바뀌는 연출이라
-     * 시맨틱 트리로는 볼 수 없고, 이 하네스에선 컴포즈 노드의 픽셀도 캡처할 수 없다
-     * (`captureToImage`가 idle에 도달하지 못한다). 그래서 그리기 결정을 순수 함수로 끌어냈다.
+     * shimmer 색 순서가 **두 스킴 모두에서** 성립하는지.
+     *
+     * 처음엔 하이라이트로 `surface`를 썼다. 라이트에서는 `surfaceVariant`보다 밝지만 다크에서는
+     * 훨씬 어두워서, 반짝임이 아니라 **카드에 뚫린 검은 구멍**이 지나가는 것처럼 보였다. 다크 테마가
+     * 갤럭시 기본값인 걸 생각하면 그대로 나갈 수 없는 결함이다. `onSurface` 알파 두 단계로 바꿔
+     * "하이라이트가 바탕보다 카드와 더 대비된다"가 스킴과 무관하게 성립하게 했다.
      */
     @Test
-    fun `애니메이션 제거면 하이라이트 없는 단색을 칠한다`() {
-        val brush = skeletonBrush(phase = null, base = BASE, highlight = HIGHLIGHT, width = WIDTH)
+    fun `하이라이트는 두 스킴 모두에서 바탕보다 대비가 크다`() {
+        listOf("라이트" to NexusLightColors, "다크" to NexusDarkColors).forEach { (name, scheme) ->
+            val (base, highlight) = skeletonColors(scheme)
+            val card = scheme.surfaceContainerLow
 
-        assertEquals(SolidColor(BASE), brush, "리듀스드모션인데 그라디언트를 칠한다")
+            val baseGap = kotlin.math.abs(over(base, card).luminance() - card.luminance())
+            val highlightGap = kotlin.math.abs(over(highlight, card).luminance() - card.luminance())
+
+            assertTrue(highlightGap > baseGap, "$name: 하이라이트가 바탕보다 덜 도드라진다 — 밴드가 구멍처럼 보인다")
+        }
+    }
+
+    /** 알파 합성 — 반투명 색을 카드 위에 얹었을 때 실제로 보이는 색. */
+    private fun over(fg: Color, bg: Color): Color = Color(
+        red = fg.red * fg.alpha + bg.red * (1 - fg.alpha),
+        green = fg.green * fg.alpha + bg.green * (1 - fg.alpha),
+        blue = fg.blue * fg.alpha + bg.blue * (1 - fg.alpha),
+    )
+
+    /**
+     * 밴드가 왼쪽 밖에서 오른쪽 밖까지 지나가는지. shimmer는 그리기만 바꿔 시맨틱으로도
+     * 픽셀로도(이 하네스에선 `captureToImage`가 idle에 도달하지 못한다) 관측할 수 없어,
+     * 위치 산술을 순수 함수로 끌어내 고정한다.
+     */
+    @Test
+    fun `밴드는 화면 밖에서 시작해 화면 밖으로 나간다`() {
+        val width = 300f
+        val band = width * 0.4f
+
+        assertTrue(skeletonBandLeft(0f, width, band) <= -band, "시작이 화면 안이라 밴드가 튀어나온다")
+        assertTrue(skeletonBandLeft(1f, width, band) >= width, "끝이 화면 안이라 밴드가 걸린 채 끝난다")
     }
 
     @Test
-    fun `평소에는 하이라이트가 지나가는 그라디언트를 칠한다`() {
-        val brush = skeletonBrush(phase = 0.5f, base = BASE, highlight = HIGHLIGHT, width = WIDTH)
+    fun `위상이 커지면 밴드가 오른쪽으로 간다`() {
+        val width = 300f
+        val band = width * 0.4f
 
-        assertTrue(brush is LinearGradient, "shimmer가 단색으로 죽었다")
-    }
-
-    /** 위상이 바뀌면 브러시도 바뀐다 — 같으면 반짝임이 화면에서 멈춰 있다는 뜻이다. */
-    @Test
-    fun `위상이 다르면 그라디언트도 다르다`() {
-        assertNotEquals(
-            skeletonBrush(phase = 0f, base = BASE, highlight = HIGHLIGHT, width = WIDTH),
-            skeletonBrush(phase = 0.5f, base = BASE, highlight = HIGHLIGHT, width = WIDTH),
-        )
+        assertTrue(skeletonBandLeft(0.6f, width, band) > skeletonBandLeft(0.3f, width, band))
     }
 
     /**
-     * 무한 애니메이션이 실제로 **기동되지 않는지**. 돌고 있으면 컴포지션이 idle에 도달하지 못해
-     * `waitForIdle()`이 타임아웃한다 — 리듀스드모션에서 이 호출이 즉시 돌아온다는 것 자체가 단언이다.
+     * 무한 애니메이션이 실제로 **기동되지 않는지**를 위상 공급값으로 본다.
+     *
+     * 처음엔 `waitForIdle()`이 타임아웃하지 않는 것으로 대신했는데, 이 하네스에서는 무한 전환이
+     * 돌아도 idle이 그냥 돌아온다 — shimmer를 항상 켜도 통과하는 공허한 테스트였다(리뷰가 실증).
      */
+    private fun shimmerPhase(motionScale: Float): Float? {
+        var phase: State<Float>? = null
+        render(motionScale = motionScale) {
+            SkeletonScreen { phase = LocalShimmerPhase.current }
+        }
+        composeRule.waitForIdle()
+        return phase?.value
+    }
+
     @Test
     fun `애니메이션 제거면 무한 전환이 기동되지 않는다`() {
-        render(motionScale = 0f) { HomeSkeleton() }
+        assertNull(shimmerPhase(motionScale = 0f), "리듀스드모션인데 위상이 공급됐다 — shimmer가 돈다")
+    }
 
-        composeRule.waitForIdle()
-
-        composeRule.onNodeWithContentDescription(loading()).assertIsDisplayed()
+    @Test
+    fun `평소에는 위상이 공급된다`() {
+        assertNotNull(shimmerPhase(motionScale = 1f), "shimmer가 아예 기동되지 않았다")
     }
 
     // ── AC ② 스태거 ──
@@ -208,6 +276,49 @@ class LoadingSkeletonTest {
         assertTrue(markerTop() > 0f, "스태거가 시작 위치를 잡지 못했다")
     }
 
+    /**
+     * AC ②의 "최초 1회". **되돌리면 카드가 영영 안 보인다** — `remember`를 빼면 재구성마다 새
+     * `Animatable(0f)`이 생기고 이펙트는 옛 인스턴스를 잡고 있어 alpha가 0에 굳는다. 그런데도
+     * 지금까지 아무 테스트도 깨지지 않았다(리뷰 지적).
+     *
+     * 관측은 `onGloballyPositioned`의 **궤적**으로 한다. `fetchSemanticsNode().positionInRoot`는
+     * `setContent` 직후 첫 프레임에만 믿을 수 있어(그 뒤엔 낡은 값을 계속 준다) 재생 여부 비교에
+     * 쓰면 조용히 공허해진다 — 같은 함정을 세 번째로 밟지 않기 위한 방식이다.
+     */
+    @Test
+    fun `자리를 잡은 뒤에는 재구성해도 다시 재생되지 않는다`() {
+        val seen = mutableListOf<Float>()
+        val bump = mutableIntStateOf(0)
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            NexusTheme {
+                Column {
+                    StaggerItem(0) {
+                        Column(
+                            Modifier
+                                .width(MARKER_DP.dp)
+                                .height((MARKER_DP + bump.intValue).dp)
+                                .onGloballyPositioned { seen += it.positionInRoot().y }
+                                .semantics { contentDescription = MARKER },
+                        ) {}
+                    }
+                }
+            }
+        }
+        composeRule.mainClock.advanceTimeBy(SETTLE_MS)
+        composeRule.waitForIdle()
+        assertTrue(seen.any { it > 0f }, "등장이 아예 재생되지 않았다 — 아래 단언이 공허해진다")
+        assertEquals(0f, seen.last(), "등장이 끝나지 않았다")
+        seen.clear()
+
+        // 대상 자신을 재구성시킨다(부모만 흔들면 컴포즈가 건너뛰어 아무것도 증명하지 못한다)
+        composeRule.runOnIdle { bump.intValue = 1 }
+        composeRule.mainClock.advanceTimeBy(SETTLE_MS)
+        composeRule.waitForIdle()
+
+        assertTrue(seen.all { it == 0f }, "재구성만으로 등장이 다시 재생됐다: $seen")
+    }
+
     private fun markerTop(): Float =
         composeRule.onNodeWithContentDescription(MARKER).fetchSemanticsNode().positionInRoot.y
 
@@ -224,11 +335,9 @@ class LoadingSkeletonTest {
     private companion object {
         /** 카드 몇 장 분량 — 중앙 스피너 하나(≈100px)와 확실히 구분되는 값. */
         const val MIN_SKELETON_PX = 400
-        val BASE = Color(0xFF888888)
-        val HIGHLIGHT = Color(0xFFCCCCCC)
-        const val WIDTH = 300f
         const val MARKER = "스태거 대상"
         const val MARKER_DP = 40
         const val TAIL_INDEX = 4
+        const val SETTLE_MS = 2_000L
     }
 }

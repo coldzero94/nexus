@@ -73,6 +73,9 @@ fun ActivitySkeleton(modifier: Modifier = Modifier) {
     }
 }
 
-private const val HOME_SUMMARY_CARDS = 3
-private const val GROWTH_SECTION_CARDS = 3
+/** 히어로 아래 기세·주간목표·오늘·원정·다음목표·신선도 — 실제 스택과 맞춘다 (#268 AC ④). */
+private const val HOME_SUMMARY_CARDS = 5
+
+/** 히어로 아래 오늘XP·능력치·범위·장비·배지. */
+private const val GROWTH_SECTION_CARDS = 5
 private const val SESSION_ROWS = 3

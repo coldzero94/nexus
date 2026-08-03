@@ -14,21 +14,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.unit.dp
 import com.nexus.app.R
 
@@ -49,8 +54,12 @@ import com.nexus.app.R
  *
  * 스켈레톤은 **한 노드**다([SkeletonScreen]이 `clearAndSetSemantics`). 빈 블록 열두 개를 각각
  * 읽으면 스크린리더 사용자에겐 의미 없는 소음이고, 정작 "불러오는 중"이라는 사실이 전달되지 않는다.
+ *
+ * 위상 공급 지점이 `internal`인 이유는 **리듀스드모션에서 무한 전환이 정말 안 도는지**를 테스트가
+ * 이 값으로만 확인할 수 있기 때문이다 — shimmer는 크기·위치·시맨틱을 바꾸지 않고, 무한 전환이
+ * 돌아도 `waitForIdle()`은 이 하네스에서 그냥 돌아온다(리뷰가 그 함정을 실증했다).
  */
-private val LocalShimmerPhase = compositionLocalOf<Float?> { null }
+internal val LocalShimmerPhase = compositionLocalOf<State<Float>?> { null }
 
 /**
  * 스켈레톤 화면 루트 — shimmer를 한 번 구동하고, 전체를 낭독 한 문장으로 묶는다.
@@ -61,13 +70,22 @@ private val LocalShimmerPhase = compositionLocalOf<Float?> { null }
 @Composable
 fun SkeletonScreen(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val label = stringResource(R.string.a11y_loading)
-    // null = 정적 — 리듀스드모션이면 위상 자체를 만들지 않는다(무한 반복은 duration 스케일링으로 못 없앤다)
+    // null = 정적 — 리듀스드모션이면 위상 자체를 만들지 않는다(무한 반복은 duration 스케일링으로 못 없앤다).
+    // **State를 그대로 넘긴다**: 여기서 `.value`를 읽으면 이 컴포저블이 매 프레임 재구성되고, 그러면
+    // 위의 stringResource(= Resources.getString)까지 프레임마다 돈다. 값이 아니라 참조를 내려보내면
+    // 구독은 실제로 그리는 곳([SkeletonBlock]의 drawBehind)에서만 일어난다 (#246 규율).
     val phase = if (reduceMotion()) null else rememberShimmerPhase()
     CompositionLocalProvider(LocalShimmerPhase provides phase) {
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .clearAndSetSemantics { contentDescription = label },
+                .clearAndSetSemantics {
+                    contentDescription = label
+                    // 로딩은 사용자 조작 없이 나타났다 사라진다 — live region이 없으면 재시도로 다시
+                    // 로딩에 들어간 것도, 로딩이 끝난 것도 스크린리더에 아무 말 없이 지나간다
+                    // (`docs/A11Y-TALKBACK.md`의 비동기 도착 콘텐츠 규칙)
+                    liveRegion = LiveRegionMode.Polite
+                },
             verticalArrangement = Arrangement.spacedBy(NexusSpacing.lg),
             content = content,
         )
@@ -75,10 +93,10 @@ fun SkeletonScreen(modifier: Modifier = Modifier, content: @Composable ColumnSco
 }
 
 @Composable
-private fun rememberShimmerPhase(): Float {
+private fun rememberShimmerPhase(): State<Float> {
     val transition = rememberInfiniteTransition(label = "skeleton")
     // 무한 전환은 프레임 클럭 위에서 돌아 화면이 안 그려지면 자연히 멈춘다(#246의 티커와 다른 점).
-    val phase by transition.animateFloat(
+    return transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -87,7 +105,6 @@ private fun rememberShimmerPhase(): Float {
         ),
         label = "shimmerPhase",
     )
-    return phase
 }
 
 /**
@@ -116,38 +133,48 @@ fun SkeletonCard(modifier: Modifier = Modifier, content: @Composable ColumnScope
 @Composable
 fun SkeletonBlock(modifier: Modifier = Modifier, widthFraction: Float = 1f, height: Int = SkeletonHeight.BODY) {
     val phase = LocalShimmerPhase.current
-    val base = MaterialTheme.colorScheme.surfaceVariant
-    val highlight = MaterialTheme.colorScheme.surface
+    val (base, highlight) = skeletonColors(MaterialTheme.colorScheme)
+    // 밴드 브러시는 **크기 고정**이라 한 번 만들면 프레임마다 재사용된다 — 매 프레임 새 Brush를 만들면
+    // ShaderBrush의 크기 기반 셰이더 캐시가 한 번도 안 맞아 네이티브 그라디언트가 계속 새로 생긴다.
+    val band = remember(highlight) {
+        Brush.horizontalGradient(listOf(Color.Transparent, highlight, Color.Transparent))
+    }
     Column(
         modifier
             .fillMaxWidth(widthFraction)
             .height(height.dp)
             .clip(RoundedCornerShape(CORNER_DP.dp))
-            .drawBehind { drawRect(skeletonBrush(phase, base, highlight, size.width)) },
+            .drawBehind {
+                drawRect(SolidColor(base))
+                // 위상 구독이 여기서만 일어난다 — 재구성이 아니라 다시 그리기만 돈다
+                val p = phase?.value ?: return@drawBehind
+                val bandWidth = size.width * BAND_FRACTION
+                translate(left = skeletonBandLeft(p, size.width, bandWidth)) {
+                    drawRect(band, size = Size(bandWidth, size.height))
+                }
+            },
     ) {}
 }
 
 /**
- * 블록이 실제로 칠해질 브러시 (#268 AC ③).
+ * 스켈레톤 블록의 바탕·하이라이트 색 (#268).
  *
- * 순수 함수인 이유는 **이게 검증 가능한 유일한 형태**이기 때문이다. shimmer는 크기도 위치도
- * 시맨틱도 바꾸지 않고 픽셀만 바꾸는데, 이 하네스(Robolectric)에서는 컴포즈 노드의 픽셀을
- * 캡처할 수 없다(`captureToImage`가 idle에 도달하지 못한다). 그리기 결정을 값으로 끌어내면
- * "리듀스드모션에서 정적 회색인가"를 그대로 단언할 수 있다.
- *
- * @param phase null이면 정적(리듀스드모션) — 하이라이트 없는 단색.
+ * `surface`를 하이라이트로 쓰면 **다크에서 뒤집힌다** — 라이트에서는 `surfaceVariant`보다 밝지만
+ * 다크에서는 훨씬 어두워서, 반짝임이 아니라 카드에 뚫린 검은 구멍이 지나가는 것처럼 보인다.
+ * `onSurface`의 알파 두 단계로 잡으면 두 스킴 모두에서 "하이라이트가 바탕보다 카드와 더 대비된다"가
+ * 자동으로 성립한다. `SkeletonContrastTest`가 그 순서를 두 스킴에서 고정한다.
  */
-internal fun skeletonBrush(phase: Float?, base: Color, highlight: Color, width: Float): Brush {
-    if (phase == null) return SolidColor(base)
-    // 밴드가 왼쪽 밖에서 오른쪽 밖까지 지나가게 한 폭만큼 여유를 준다
-    val travel = width * (BAND_FRACTION * 2 + 1)
-    val start = -width * BAND_FRACTION + travel * phase
-    return Brush.linearGradient(
-        colors = listOf(base, highlight, base),
-        start = Offset(start, 0f),
-        end = Offset(start + width * BAND_FRACTION, 0f),
-    )
-}
+internal fun skeletonColors(scheme: ColorScheme): Pair<Color, Color> =
+    scheme.onSurface.copy(alpha = BASE_ALPHA) to scheme.onSurface.copy(alpha = HIGHLIGHT_ALPHA)
+
+/**
+ * 밴드의 왼쪽 좌표 (#268) — 위상 0에서 왼쪽 밖, 1에서 오른쪽 밖.
+ *
+ * 순수 함수인 이유는 shimmer가 **그리기만** 바꿔 시맨틱으로도 픽셀로도(이 하네스에선
+ * `captureToImage`가 idle에 도달하지 못한다) 관측할 수 없기 때문이다.
+ */
+internal fun skeletonBandLeft(phase: Float, width: Float, bandWidth: Float): Float =
+    -bandWidth + (width + bandWidth * 2) * phase
 
 /** 블록 높이 규격 — 실제 타이포·컴포넌트 높이에 맞춘 값. */
 object SkeletonHeight {
@@ -172,4 +199,6 @@ object SkeletonHeight {
 
 private const val SHIMMER_MS = 1_200
 private const val BAND_FRACTION = 0.4f
+private const val BASE_ALPHA = 0.10f
+private const val HIGHLIGHT_ALPHA = 0.22f
 private const val CORNER_DP = 6

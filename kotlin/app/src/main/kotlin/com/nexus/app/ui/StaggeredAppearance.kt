@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.nexus.core.ReduceMotion
 import kotlinx.coroutines.delay
 
 /**
@@ -36,13 +37,26 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun Modifier.staggeredAppearance(index: Int): Modifier {
-    // 시스템 '애니메이션 제거'(#228) — 지연도 이동도 없이 즉시 최종 상태 (AC ③)
-    if (reduceMotion()) return this
-
+    val scale = LocalMotionScale.current
+    val reduced = ReduceMotion.isReduced(scale)
+    // 상태와 이펙트를 **분기 위로** 올린다. 분기 아래에 두면 시스템 애니메이션을 껐다 켜는 순간
+    // 새 Animatable(0f)이 만들어져, 이미 다 읽은 화면의 카드들이 통째로 사라졌다가 다시 올라온다
+    // (`rememberSystemMotionScale`이 포그라운드 복귀마다 재조회하므로 실제로 지나는 경로다).
+    val duration = motionDuration(NexusMotion.DURATION_MEDIUM)
     val progress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        delay(staggerDelayMs(index))
-        progress.animateTo(1f, tween(NexusMotion.DURATION_MEDIUM, easing = NexusMotion.EmphasizedDecelerate))
+    LaunchedEffect(reduced) {
+        if (progress.value == 1f) return@LaunchedEffect // 이미 자리를 잡았으면 다시 재생하지 않는다
+        if (reduced) {
+            progress.snapTo(1f)
+            return@LaunchedEffect
+        }
+        delay(NexusMotion.scaledDuration(staggerDelayMs(index).toInt(), scale).toLong())
+        progress.animateTo(
+            targetValue = 1f,
+            // 부분 감속(0.5배·10배)도 살린다 — 이진값으로 뭉개면 탭 전환은 늘어지는데 카드만
+            // 전속력으로 끝나 둘이 어긋난다(`NexusMotion` 계약)
+            animationSpec = tween(duration, easing = NexusMotion.EmphasizedDecelerate),
+        )
     }
     return graphicsLayer {
         alpha = progress.value
