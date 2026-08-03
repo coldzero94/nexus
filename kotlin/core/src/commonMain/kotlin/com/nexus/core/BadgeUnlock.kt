@@ -44,6 +44,12 @@ data class BadgeContext(
     val streakDays: Int = 0,
     val expeditionsCompleted: Int = 0,
     val bestDaySteps: Int = 0,
+    /**
+     * **평생** 활동일 수 (#113) — 원장에서 센다. [activeDaysTotal]은 읽기 창(28일) 안이라 장기
+     * 성취를 표현할 수 없다: 100일을 함께한 사용자도 창 밖으로 나간 날은 세지 않는다.
+     * 원장은 append-only라 이 값이 **줄어들지 않는다**(불퇴행).
+     */
+    val activeDaysLifetime: Int = 0,
 ) {
     fun toVars(): Map<String, Double> = mapOf(
         "level" to level.toDouble(),
@@ -52,6 +58,7 @@ data class BadgeContext(
         "streakDays" to streakDays.toDouble(),
         "expeditionsCompleted" to expeditionsCompleted.toDouble(),
         "bestDaySteps" to bestDaySteps.toDouble(),
+        "activeDaysLifetime" to activeDaysLifetime.toDouble(),
     )
 
     companion object {
@@ -63,6 +70,7 @@ data class BadgeContext(
             "streakDays",
             "expeditionsCompleted",
             "bestDaySteps",
+            "activeDaysLifetime",
         )
     }
 }

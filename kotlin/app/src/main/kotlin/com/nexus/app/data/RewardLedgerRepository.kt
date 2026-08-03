@@ -15,6 +15,12 @@ import java.time.ZoneId
  */
 class RewardLedgerRepository(private val dao: RewardEventDao) {
 
+    /**
+     * 평생 활동일 수 (#113) — 순 XP가 양수인 날만. 읽기 창과 무관한 **전 기간** 집계라
+     * 평생 마일스톤의 유일한 소스다.
+     */
+    suspend fun activeDaysLifetime(): Int = dao.activeDaysLifetime()
+
     /** 지급 append — 이미 지급된 키면 false(멱등 무시). */
     suspend fun grant(
         idempotencyKey: String,

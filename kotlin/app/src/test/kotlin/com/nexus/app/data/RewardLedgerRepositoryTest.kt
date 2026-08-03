@@ -33,6 +33,10 @@ class RewardLedgerRepositoryTest {
 
         override suspend fun count(): Long = rows.size.toLong()
 
+        /** 평생 활동일 (#113) — 순 XP가 양수인 날만. */
+        override suspend fun activeDaysLifetime(): Int =
+            rows.groupBy { it.epochDay }.count { (_, v) -> v.sumOf { it.xp } > 0 }
+
         override suspend fun all(): List<RewardEventEntity> = rows.toList()
     }
 

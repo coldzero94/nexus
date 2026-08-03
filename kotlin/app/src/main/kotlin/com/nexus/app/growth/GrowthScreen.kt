@@ -143,9 +143,11 @@ private fun BadgeSectionsState.newlyUnlockedBadges(): List<Badge> {
     return standardBadges + monthlyBadges
 }
 
-/** 배지 영역 (#175·#206) — 상시 배지 + 이달의 배지. 각각 부가 정보라 없으면 그 카드만 생략한다. */
+/** 배지 영역 (#175·#206·#113) — 상시 배지 + 이달의 배지 + 평생 마일스톤. 각각 없으면 그 카드만 생략. */
 @Composable
 private fun BadgeSections(state: BadgeSectionsState) {
     state.standard?.let { BadgesCard(it) }
     state.monthly?.let { MonthlyBadgesCard(it) }
+    // 평생 축은 맨 아래 — 상시·월간 배지보다 호흡이 길어 먼저 보일 이유가 없다 (#113)
+    state.milestones?.let { MilestonesCard(it) }
 }
