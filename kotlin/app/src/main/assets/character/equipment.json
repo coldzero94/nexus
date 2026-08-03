@@ -1,8 +1,54 @@
 {
   "version": "v1",
-  "note": "장비 카탈로그(#37, E5-4). layerState는 캐릭터 레이어 규약 character_{layerState}_0. 임시 그래픽 — 실제 에셋은 #76(슬롯 2×4종)에서 교체. 아이템 추가 = 여기 + 드로어블만(코드 무수정).",
+  "note": "장비 카탈로그(#37, E5-4). layerState는 캐릭터 레이어 규약 character_{layerState}_0. 아이템 추가 = 여기 + 드로어블만(코드 무수정). 드로어블은 tools/character_assets.py가 생성한다 (#76).",
   "items": [
-    { "id": "straw_hat", "slot": "HEAD", "layerState": "hat_straw", "name": "밀짚모자" },
-    { "id": "red_scarf", "slot": "ACCESSORY", "layerState": "scarf_red", "name": "빨간 목도리" }
+    {
+      "id": "straw_hat",
+      "slot": "HEAD",
+      "layerState": "hat_straw",
+      "name": "밀짚모자"
+    },
+    {
+      "id": "wool_beanie",
+      "slot": "HEAD",
+      "layerState": "hat_beanie",
+      "name": "털모자"
+    },
+    {
+      "id": "leaf_band",
+      "slot": "HEAD",
+      "layerState": "band_leaf",
+      "name": "잎사귀 머리띠"
+    },
+    {
+      "id": "bud_crown",
+      "slot": "HEAD",
+      "layerState": "crown_bud",
+      "name": "새싹 왕관"
+    },
+    {
+      "id": "red_scarf",
+      "slot": "ACCESSORY",
+      "layerState": "scarf_red",
+      "name": "빨간 목도리"
+    },
+    {
+      "id": "bell_collar",
+      "slot": "ACCESSORY",
+      "layerState": "collar_bell",
+      "name": "방울 목걸이"
+    },
+    {
+      "id": "leaf_pendant",
+      "slot": "ACCESSORY",
+      "layerState": "pendant_leaf",
+      "name": "잎사귀 펜던트"
+    },
+    {
+      "id": "side_pouch",
+      "slot": "ACCESSORY",
+      "layerState": "pouch_side",
+      "name": "옆주머니"
+    }
   ]
 }

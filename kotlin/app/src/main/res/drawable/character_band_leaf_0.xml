@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="96"
+    android:viewportHeight="96">
+    <!-- 생성: tools/character_assets.py (#66) — 손으로 고치지 말고 생성기를 고칠 것 -->
+    <path
+        android:fillColor="#6FA96B"
+        android:pathData="M27,30c12,4 30,4 42,0l0,4c-12,4 -30,4 -42,0z" />
+    <path
+        android:fillColor="#4E8250"
+        android:pathData="M66,29c6,-5 12,-3 12,3c-5,4 -10,3 -12,-3z" />
+    <path
+        android:fillColor="#6FA96B"
+        android:pathData="M64,33c6,2 9,7 6,11c-5,-1 -7,-6 -6,-11z" />
+</vector>

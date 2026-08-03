@@ -5,9 +5,9 @@
     android:viewportHeight="96">
     <!-- 생성: tools/character_assets.py (#66) — 손으로 고치지 말고 생성기를 고칠 것 -->
     <path
-        android:fillColor="#E5544B"
-        android:pathData="M30,64c11,7 25,7 36,0c2,4 2,7 0,10c-12,6 -24,6 -36,0c-2,-3 -2,-6 0,-10z" />
+        android:fillColor="#6B5545"
+        android:pathData="M34,63c8,6 20,6 28,0c1,1 1,2 0,3c-9,6 -19,6 -28,0c-1,-1 -1,-2 0,-3z" />
     <path
-        android:fillColor="#B93B34"
-        android:pathData="M60,72c6,2 8,9 5,15c-4,1 -7,-1 -8,-4c2,-4 3,-8 3,-11z" />
+        android:fillColor="#6FA96B"
+        android:pathData="M48,68c6,2 9,8 6,13c-6,-1 -9,-7 -6,-13z" />
 </vector>
