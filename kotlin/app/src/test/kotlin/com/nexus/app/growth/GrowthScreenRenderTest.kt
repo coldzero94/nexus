@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.Configuration
 import androidx.work.WorkManager
@@ -27,6 +28,7 @@ import com.nexus.core.ClassAffinity
 import com.nexus.core.DayXpExplanation
 import com.nexus.core.GrowthSummary
 import com.nexus.core.Stat
+import com.nexus.core.StoryFragment
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -313,6 +315,34 @@ class GrowthScreenRenderTest {
         render(summaryWith(emptyMap()), badges = withPendingBadge())
 
         composeRule.onNodeWithText(string(R.string.badge_unlock_title)).assertIsDisplayed()
+    }
+
+    /**
+     * 배선 가드 (#112) — 카드 컴포저블이 있는 것과 화면이 그걸 쓰는 건 다른 명제다.
+     * #268에서 기능 전체를 되돌려도 테스트가 초록이었던 게 이 차이 때문이다.
+     */
+    @Test
+    fun `모은 이야기 조각이 있으면 도감을 그린다`() {
+        val fragment = StoryFragment(id = "f1", title = "첫 길", body = "처음 걸어본 길이었다.")
+
+        render(
+            successState(awaiting = false),
+            badges = BadgeSectionsState(
+                codex = StoryCodexState(collected = listOf(fragment), total = 8, newlyFound = emptyList()),
+            ),
+        )
+
+        // 도감은 화면 맨 아래라 470px 뷰포트 밖이다 — 스크롤해서 실제로 그려졌는지 본다
+        composeRule.onNodeWithText(string(R.string.growth_codex_title, 1, 8)).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText(fragment.body).performScrollTo().assertIsDisplayed()
+    }
+
+    /** 조각이 없으면 카드 자체가 없어야 한다 — 성장 탭은 이미 잠긴 목록이 셋이다. */
+    @Test
+    fun `도감 상태가 없으면 카드를 안 그린다`() {
+        render(successState(awaiting = false))
+
+        composeRule.onNodeWithText(string(R.string.growth_codex_title, 1, 8)).assertDoesNotExist()
     }
 
     @Test
