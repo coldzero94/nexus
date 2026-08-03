@@ -78,9 +78,10 @@ def body_paths(lift=0.0, squash=0.0, arm_y=57.0, foot_dx=0.0, droop_right_ear=Fa
         out.append(fill(BODY, f"M62,{ear_y}c6,-4 12,-1 12,5c-1,4 -6,5 -9,2c1,-3 0,-5 -3,-7z"))
     else:
         out.append(fill(BODY, f"M63,{ear_y + 2}c4.5,-6.5 3,-14 -3.5,-11.5c-2,3.5 0.5,8.5 3.5,11.5z"))
-    # 팔·발 — 몸 뒤에서 살짝 삐져나온다
-    out.append(fill(BODY, ell(48 - rx + 1, arm_y + t, 7, 10.5)))
-    out.append(fill(BODY, ell(48 + rx - 1, arm_y + t, 7, 10.5)))
+    # 팔 — 몸 **밖으로** 충분히 빼야 팔로 읽힌다. 실루엣에 묻히면 머리 옆 덩어리(볼살)로 보인다.
+    out.append(fill(BODY, ell(48 - rx - 1.5, arm_y + t + 6, 5.5, 8.5)))
+    out.append(fill(BODY, ell(48 + rx + 1.5, arm_y + t + 6, 5.5, 8.5)))
+    # 발
     out.append(fill(BODY, ell(37 - foot_dx, bot + 0.5, 9, 5.5)))
     out.append(fill(BODY, ell(59 + foot_dx, bot + 0.5, 9, 5.5)))
     # 몸통
