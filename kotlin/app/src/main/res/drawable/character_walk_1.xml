@@ -3,14 +3,58 @@
     android:height="96dp"
     android:viewportWidth="96"
     android:viewportHeight="96">
-    <!-- 임시 그래픽 — 캐릭터 에셋은 #66에서 교체. 규약: character_{state}_{frame} (#25) -->
+    <!-- 생성: tools/character_assets.py (#66) — 손으로 고치지 말고 생성기를 고칠 것 -->
     <path
         android:fillColor="#FFB74D"
-        android:pathData="M48,8a40,40 0 1,0 0,80a40,40 0 1,0 0,-80z" />
+        android:pathData="M77.36,64.3c8,0 10,-8 6,-12c2,6 -2,9 -7,8z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M33,28.9c-4.5,-6.5 -3,-14 3.5,-11.5c2,3.5 -0.5,8.5 -3.5,11.5z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M63,28.9c4.5,-6.5 3,-14 -3.5,-11.5c-2,3.5 0.5,8.5 3.5,11.5z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M11.64,63.0a5.5,8.5 0 1,0 11.0,0a5.5,8.5 0 1,0 -11.0,0z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M73.36,63.0a5.5,8.5 0 1,0 11.0,0a5.5,8.5 0 1,0 -11.0,0z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M31.0,80.19999999999999a9,5.5 0 1,0 18,0a9,5.5 0 1,0 -18,0z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M47.0,80.19999999999999a9,5.5 0 1,0 18,0a9,5.5 0 1,0 -18,0z" />
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M18.64,51.3a29.36,28.4 0 1,0 58.72,0a29.36,28.4 0 1,0 -58.72,0z" />
+    <path
+        android:fillColor="#FFD9A6"
+        android:pathData="M30.64,59.3a17.36,14.399999999999999 0 1,0 34.72,0a17.36,14.399999999999999 0 1,0 -34.72,0z" />
+    <path
+        android:fillColor="#EF7A5C"
+        android:fillAlpha="0.45"
+        android:pathData="M23.5,57.3a5,3.5 0 1,0 10,0a5,3.5 0 1,0 -10,0z" />
+    <path
+        android:fillColor="#EF7A5C"
+        android:fillAlpha="0.45"
+        android:pathData="M62.5,57.3a5,3.5 0 1,0 10,0a5,3.5 0 1,0 -10,0z" />
     <path
         android:fillColor="#3E2723"
-        android:pathData="M34,42a4,4 0 1,0 0,8a4,4 0 1,0 0,-8z M62,42a4,4 0 1,0 0,8a4,4 0 1,0 0,-8z" />
+        android:pathData="M33.5,46.3a5.5,6 0 1,0 11.0,0a5.5,6 0 1,0 -11.0,0z" />
     <path
         android:fillColor="#3E2723"
-        android:pathData="M38,64q10,4 20,0" />
+        android:pathData="M51.5,46.3a5.5,6 0 1,0 11.0,0a5.5,6 0 1,0 -11.0,0z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M39.0,43.8a2,2 0 1,0 4,0a2,2 0 1,0 -4,0z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M57.0,43.8a2,2 0 1,0 4,0a2,2 0 1,0 -4,0z" />
+    <path
+        android:pathData="M43,59.3c2.5,3.5 7.5,3.5 10,0"
+        android:strokeColor="#3E2723"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
 </vector>
