@@ -276,28 +276,10 @@ private fun StepScaffold(progress: @Composable () -> Unit, content: @Composable 
 private fun WelcomeStep(progress: @Composable () -> Unit, onNext: () -> Unit) = StepScaffold(progress) {
     // 브랜드 워드마크 (#261) — 온보딩 최전선 상단
     NexusWordmark()
-    Spacer(Modifier.height(NexusSpacing.xl))
-    CharacterComposer.CharacterSprite(state = "idle", modifier = Modifier.size(120.dp))
-    Text(
-        text = stringResource(R.string.onboarding_character_hint),
-        style = MaterialTheme.typography.labelSmall,
-    )
-    Spacer(Modifier.height(NexusSpacing.xl))
-    Text(
-        text = stringResource(R.string.onboarding_welcome_title),
-        style = MaterialTheme.typography.headlineMedium,
-        textAlign = TextAlign.Center,
-    )
-    Spacer(Modifier.height(NexusSpacing.md))
-    Text(
-        text = stringResource(R.string.onboarding_welcome_body),
-        style = MaterialTheme.typography.bodyMedium,
-        textAlign = TextAlign.Center,
-    )
-    Spacer(Modifier.height(NexusSpacing.xxl))
-    Button(onClick = onNext, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.onboarding_next))
-    }
+    Spacer(Modifier.height(NexusSpacing.lg))
+    // 첫 만남은 정적 소개가 아니라 **부화 서사**다 (#110) — 깨어난 뒤에 이름을 짓는 순서라야
+    // 명명이 폼 작성이 아니라 첫 유대가 된다.
+    HatchSceneContent(onDone = onNext)
 }
 
 @Composable

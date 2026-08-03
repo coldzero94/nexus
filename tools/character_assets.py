@@ -141,6 +141,51 @@ def sparkle(cx, cy, r):
     return fill(SPARK, f"M{cx},{cy - r}q{r * 0.28},{r * 0.72} {r},{r}q-{r * 0.72},{r * 0.28} -{r},{r}q-{r * 0.28},-{r * 0.72} -{r},-{r}q{r * 0.72},-{r * 0.28} {r},-{r}z")
 
 
+def hatch():
+    """부화 4컷 (#110, E7-6) — 알 → 금 → 갈라짐 → 깨어남.
+
+    캐릭터와 **같은 96×96 좌표계**를 쓴다. 마지막 컷에서 알 껍데기가 벌어지며 그 안에서 몸이
+    드러나므로, 알 중심을 캐릭터 몸 중심(48, 51)에 맞춰야 연출이 이어진다.
+
+    프레임이 아니라 **상태 4개**다 — 씬이 진행을 제어하며 하나씩 갈아끼운다. 애니메이션 티커에
+    맡기면 리듀스드모션에서 통째로 멈춰 서사가 끊긴다(#228).
+    """
+    items = {}
+    shell = "#F3E3C7"
+    shell_dk = "#DCC49B"
+    speck = "#C9A87C"
+
+    def egg(crack=None, spots=True):
+        out = [
+            # 알 — 아래가 둥글고 위가 좁은 달걀꼴
+            fill(shell, "M48,16c15,0 26,16 26,31c0,17 -12,29 -26,29c-14,0 -26,-12 -26,-29c0,-15 11,-31 26,-31z"),
+            fill(shell_dk, "M48,76c-14,0 -26,-12 -26,-29c0,-3 0.4,-6 1,-9c4,14 13,22 25,22c12,0 21,-8 25,-22c0.6,3 1,6 1,9c0,17 -12,29 -26,29z"),
+        ]
+        if spots:
+            out += [
+                fill(speck, ell(38, 40, 4, 3), "0.55"),
+                fill(speck, ell(58, 52, 5, 3.5), "0.45"),
+                fill(speck, ell(45, 62, 3.5, 2.5), "0.5"),
+            ]
+        if crack:
+            out.append(stroke(INK, crack, 2.2))
+        return out
+
+    items["egg_0"] = egg()
+    items["egg_1"] = egg(crack="M40,44l6,5l-4,6")
+    items["egg_2"] = egg(crack="M34,40l7,6l-5,7l8,5l-4,7l9,4", spots=False)
+    # 마지막 컷 — 껍데기가 갈라져 벌어지고 그 사이로 몸이 보인다
+    body, cy = body_paths(squash=2.0)
+    items["egg_3"] = body + blush(cy) + eyes_arc(cy, down=True) + [
+        stroke(INK, f"M43,{cy + 8}c2.5,3.5 7.5,3.5 10,0"),
+        fill(shell, "M16,70c8,6 20,9 32,9c12,0 24,-3 32,-9l-6,14c-8,4 -17,6 -26,6c-9,0 -18,-2 -26,-6z"),
+        fill(shell_dk, "M16,70c8,6 20,9 32,9c12,0 24,-3 32,-9l-2,5c-8,5 -19,8 -30,8c-11,0 -22,-3 -30,-8z"),
+        sparkle(20, 22, 5.0),
+        sparkle(78, 26, 4.0),
+    ]
+    return items
+
+
 def equipment():
     """장비 레이어 (#76) — 캐릭터와 **같은 96×96 좌표계**에 그린다.
 
@@ -260,6 +305,9 @@ def build():
     files["character_cozy_roll_0"] = paths
 
     for state, paths in equipment().items():
+        files[f"character_{state}_0"] = paths
+
+    for state, paths in hatch().items():
         files[f"character_{state}_0"] = paths
 
     for name, paths in files.items():

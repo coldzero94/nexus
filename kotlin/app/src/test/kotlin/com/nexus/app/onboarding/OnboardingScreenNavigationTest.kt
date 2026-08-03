@@ -52,6 +52,17 @@ class OnboardingScreenNavigationTest {
 
     private fun back() = composeRule.onNodeWithContentDescription(string(R.string.onboarding_back))
 
+    /**
+     * 부화 씬(#110)을 지난다 — 알을 세 번 두드려 깨우고 "인사하기".
+     * 이 파일의 관심사는 경로·진행 표시이지 연출이 아니라, 최단 경로로 통과시킨다.
+     */
+    private fun passHatch() {
+        repeat(HATCH_TAPS) {
+            composeRule.onNodeWithContentDescription(string(R.string.hatch_tap_hint)).performClick()
+        }
+        composeRule.onNodeWithText(string(R.string.hatch_meet)).performScrollTo().performClick()
+    }
+
     /** 캐릭터 만들기(#42)를 건너뛰고 지난다 — 이 파일의 관심사는 경로·진행 표시이지 작명이 아니다. */
     private fun passCreate() = composeRule
         .onNodeWithText(string(R.string.onboarding_create_skip))
@@ -78,7 +89,7 @@ class OnboardingScreenNavigationTest {
     fun `다음을 누르면 2단계로 가고 뒤로가 생긴다`() {
         render()
 
-        composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passHatch()
 
         progress(2, 4).assertIsDisplayed()
         back().assertIsDisplayed()
@@ -92,7 +103,7 @@ class OnboardingScreenNavigationTest {
     @Test
     fun `뒤로 가면 건너뛴 스텝이 아니라 첫 스텝으로 돌아간다`() {
         render()
-        composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passHatch()
         passCreate()
 
         back().performClick()
@@ -106,7 +117,7 @@ class OnboardingScreenNavigationTest {
     @Test
     fun `마지막 스텝까지 진행 번호가 이어진다`() {
         render()
-        composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passHatch()
         passCreate()
 
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).performClick()
@@ -124,7 +135,7 @@ class OnboardingScreenNavigationTest {
         val initial = GoalStore(context).weeklyGoalDays
         val picked = if (initial == PICK_A) PICK_B else PICK_A
         render()
-        composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passHatch()
         passCreate()
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).performClick()
         composeRule.onNodeWithText(string(R.string.goal_days_format, picked)).performClick()
@@ -150,7 +161,7 @@ class OnboardingScreenNavigationTest {
         restorer.setContent {
             NexusTheme { OnboardingScreen(manager = HealthConnectManager(context), onFinished = {}) }
         }
-        composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passHatch()
         passCreate()
         progress(3, 4).assertIsDisplayed()
 
@@ -168,7 +179,7 @@ class OnboardingScreenNavigationTest {
         restorer.setContent {
             NexusTheme { OnboardingScreen(manager = HealthConnectManager(context), onFinished = {}) }
         }
-        composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passHatch()
         passCreate()
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).performClick()
         composeRule.onNodeWithText(string(R.string.goal_days_format, picked)).performClick()
@@ -183,7 +194,7 @@ class OnboardingScreenNavigationTest {
     fun `목표를 확정하면 온보딩이 끝난다`() {
         var finished: Boolean? = null
         render(onFinished = { finished = it })
-        composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passHatch()
         passCreate()
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).performClick()
 
@@ -194,6 +205,8 @@ class OnboardingScreenNavigationTest {
     }
 
     private companion object {
+        const val HATCH_TAPS = 3
+
         const val PICK_A = 3
         const val PICK_B = 5
     }
