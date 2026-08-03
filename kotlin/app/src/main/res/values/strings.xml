@@ -4,6 +4,14 @@
 
     <!-- 온보딩: 환영 / 캐릭터 생성 -->
     <string name="onboarding_welcome_title">함께 자랄 동료를 만나요</string>
+
+    <!-- 첫 만남·부화 (#110) -->
+    <string name="hatch_title">무언가 움직여요</string>
+    <string name="hatch_body">알이 조금씩 흔들리고 있어요. 두드려서 깨워볼까요?</string>
+    <string name="hatch_title_done">깨어났어요!</string>
+    <string name="hatch_body_done">당신의 움직임으로만 자라는 동료예요. 앞으로 잘 부탁해요.</string>
+    <string name="hatch_tap_hint">알을 두드려 깨우기</string>
+    <string name="hatch_meet">인사하기</string>
     <string name="onboarding_welcome_body">당신의 걷기·러닝·근력이 이 아이의 능력치로 새겨져요. 체크리스트 없이, 움직이면 알아서 자랍니다.</string>
     <string name="onboarding_character_hint">곧 만나게 될 동료예요</string>
     <string name="character_content_desc">내 캐릭터</string>

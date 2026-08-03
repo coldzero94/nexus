@@ -34,6 +34,26 @@
       "frames": 1,
       "frameDurationMs": 600,
       "loop": false
+    },
+    "egg_0": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "egg_1": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "egg_2": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "egg_3": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
     }
   }
 }
