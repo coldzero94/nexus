@@ -2,6 +2,7 @@ package com.nexus.app.telemetry
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.nexus.app.BuildConfig
 import com.telemetrydeck.sdk.TelemetryDeck
 
@@ -21,7 +22,15 @@ object Telemetry {
     @Volatile
     private var enabled = false
 
-    /** [com.nexus.app.NexusApplication]에서 1회 호출. 앱 ID가 없으면 계측 전체가 no-op. */
+    /** 지금 신호를 보내는 상태인가 (#349) — 동의 토글 테스트가 읽는다. */
+    @get:VisibleForTesting
+    val isActive: Boolean get() = enabled
+
+    /**
+     * [com.nexus.app.settings.AnalyticsConsent]가 부른다. 앱 ID가 없으면 계측 전체가 no-op.
+     *
+     * 두 번 불러도 안전해야 한다 — 동의를 껐다 켜면 다시 온다.
+     */
     fun init(context: Context) {
         val appId = BuildConfig.TELEMETRYDECK_APP_ID
         if (appId.isBlank()) {
@@ -34,6 +43,18 @@ object Telemetry {
             .showDebugLogs(BuildConfig.DEBUG)
         TelemetryDeck.start(context.applicationContext, builder)
         enabled = true
+    }
+
+    /**
+     * 계측 중단 (#349) — 동의를 끈 순간부터 아무것도 안 나간다.
+     *
+     * 플래그만 내리지 않고 SDK까지 멈추는 이유: 우리 래퍼를 안 거치는 신호(세션·수명주기)가
+     * SDK 안에 있다. 플래그만 내리면 "껐는데 세션 신호는 계속 나가는" 상태가 된다.
+     */
+    fun stop() {
+        enabled = false
+        runCatching { TelemetryDeck.stop() }
+            .onFailure { Log.w(TAG, "telemetry stop failed", it) }
     }
 
     /**

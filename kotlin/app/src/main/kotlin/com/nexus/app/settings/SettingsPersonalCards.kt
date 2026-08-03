@@ -164,3 +164,26 @@ internal fun ReminderCard() {
         },
     )
 }
+
+/**
+ * 계측·오류 보고 토글 (#349, E8-11) — 기본 켜짐, 끄면 즉시 멈춘다.
+ *
+ * 데이터 영역에 두는 이유: 이건 "내 데이터가 어디로 가는가"의 문제라 백업과 같은 묶음이다.
+ * 활동 영역(알림·목표)에 두면 취향 설정처럼 읽힌다.
+ */
+@Composable
+internal fun AnalyticsConsentCard() {
+    val context = LocalContext.current
+    var enabled by remember { mutableStateOf(AnalyticsConsent.isEnabled(context)) }
+
+    NexusSwitchCard(
+        title = stringResource(R.string.settings_analytics),
+        description = stringResource(R.string.settings_analytics_desc),
+        checked = enabled,
+        onCheckedChange = { checked ->
+            // 저장과 적용을 한 진입점에서 — 나누면 "껐는데 이번 실행에선 계속 나가는" 창이 생긴다
+            AnalyticsConsent.set(context, checked)
+            enabled = checked
+        },
+    )
+}

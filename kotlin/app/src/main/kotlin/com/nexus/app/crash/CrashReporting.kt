@@ -2,6 +2,7 @@ package com.nexus.app.crash
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.nexus.app.BuildConfig
 import com.nexus.core.FailureCategory
 import io.sentry.Sentry
@@ -33,18 +34,26 @@ object CrashReporting {
      * DSN이 없으면(알파 초기·디버그) 조용히 아무것도 하지 않는다 — 호출부가 분기하지 않게.
      */
     fun recordHandledFailure(category: FailureCategory) {
-        if (BuildConfig.SENTRY_DSN.isBlank()) return
+        if (BuildConfig.SENTRY_DSN.isBlank() || !enabled) return
         // 메시지가 아니라 breadcrumb·level로 — 검색 가능한 분류 하나면 운영 판단에 충분하다.
         Sentry.captureMessage(HANDLED_PREFIX + category.name, SentryLevel.WARNING)
     }
 
-    /** [com.nexus.app.NexusApplication]에서 1회 호출. */
+    /** 지금 오류를 보내는 상태인가 (#349) — 동의 토글 테스트가 읽는다. */
+    @get:VisibleForTesting
+    val isActive: Boolean get() = enabled
+
+    /**
+     * [com.nexus.app.settings.AnalyticsConsent]가 부른다. 두 번 불러도 안전해야 한다 —
+     * 동의를 껐다 켜면 다시 온다.
+     */
     fun init(context: Context) {
         val dsn = BuildConfig.SENTRY_DSN
         if (dsn.isBlank()) {
             Log.i(TAG, "DSN absent — crash reporting off")
             return
         }
+        enabled = true
         SentryAndroid.init(context.applicationContext) { options ->
             options.dsn = dsn
             options.isSendDefaultPii = false // 기본값이지만 계약이므로 명시
@@ -60,6 +69,21 @@ object CrashReporting {
             }
         }
     }
+
+    /**
+     * 오류 보고 중단 (#349) — 동의를 끈 순간부터 아무것도 안 나간다.
+     *
+     * `Sentry.close()`까지 부르는 이유는 [com.nexus.app.telemetry.Telemetry.stop]과 같다:
+     * 미처리 크래시 핸들러는 우리 래퍼를 안 거치므로, 플래그만 내리면 다음 크래시가 그대로 나간다.
+     */
+    fun stop() {
+        enabled = false
+        runCatching { Sentry.close() }
+            .onFailure { Log.w(TAG, "crash reporting stop failed", it) }
+    }
+
+    @Volatile
+    private var enabled = false
 
     /** 처리된-실패 메시지 접두어 — Sentry에서 미처리 크래시와 구분해 필터링한다. */
     private const val HANDLED_PREFIX = "handled:"

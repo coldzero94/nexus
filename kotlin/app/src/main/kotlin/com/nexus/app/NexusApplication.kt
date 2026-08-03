@@ -5,14 +5,14 @@ import android.util.Log
 import com.nexus.app.crash.CrashReporting
 import com.nexus.app.diag.DiagnosticsCollector
 import com.nexus.app.diag.LedgerIntegrityGuard
-import com.nexus.app.telemetry.Telemetry
+import com.nexus.app.settings.AnalyticsConsent
 import com.nexus.core.FailureCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * 앱 진입점 (#46) — 계측·크래시 수집 초기화(설정값 없으면 각각 no-op)만 담당한다.
+ * 앱 진입점 (#46) — 계측·크래시 수집 초기화(동의 없거나 설정값 없으면 각각 no-op)만 담당한다.
  * 여기서 이벤트를 발화하면 안 된다: 워커·위젯 기동 콜드스타트도 이 onCreate를 지나므로
  * "앱 열림"류 신호가 백그라운드마다 집계된다 (#46 리뷰 F1 — 발화는 MainActivity에서).
  *
@@ -26,8 +26,9 @@ class NexusApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        Telemetry.init(this)
-        CrashReporting.init(this)
+        // 계측·오류 보고는 **동의를 거쳐서만** 시작한다 (#349) — 여기서 직접 init하면
+        // 껐다고 저장한 사용자에게 다음 실행부터 다시 켜진다
+        AnalyticsConsent.applyStored(this)
         verifyLedgerIntegrity()
     }
 
