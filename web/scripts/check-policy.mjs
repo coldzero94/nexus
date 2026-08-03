@@ -8,10 +8,21 @@
  * 그런데 어긋나는 순간은 조용하다 — 앱에 권한 한 줄을 더한 사람이 웹 페이지를 고칠 이유가 없고,
  * 페이지는 여전히 잘 뜬다. 그래서 **매니페스트를 진실로 삼아** 페이지가 그걸 다 설명하는지 센다.
  *
+ * ## 권한 표 안에서만 찾는다
+ *
+ * 처음엔 페이지 전체에서 문구를 찾았는데, 그러면 **표를 통째로 지워도 통과한다** — '심박'·'수면'
+ * 같은 단어가 요약 카드와 "저장하지 않습니다" 문장에도 나오기 때문이다. 심사가 대조하는 건
+ * 권한별 **이용 목적**이고 그건 표에만 있다. 반대 방향(유령 권한)도 같은 이유로 표로 좁혀야 한다:
+ * 안 그러면 "수면을 저장하지 않습니다"라는 **맞는 문장** 때문에 과다 고지로 잡히고, 자연스러운
+ * 수정이 맞는 문장을 지우는 쪽이 된다.
+ *
  * ## 무엇을 못 잡는가
  *
- * 문장이 옳은지는 못 잡는다 — "심박을 읽습니다"라고 적혀만 있으면 통과한다. 잡는 건 **누락**이다:
- * 새 권한을 선언하고 페이지에 안 적은 경우, 그리고 페이지에만 있고 앱엔 없는 유령 권한.
+ * 문장이 옳은지는 못 잡는다 — 표에 "심박 / 아무거나"라고 적혀만 있으면 통과한다. 잡는 건
+ * **누락**이다: 새 권한을 선언하고 표에 안 적은 경우, 그리고 표에만 있고 앱엔 없는 유령 권한.
+ *
+ * 건강 권한(`android.permission.health.*`)만 센다 — 알림 등 다른 권한은 이 검사의 대상이 아니다
+ * (심사가 대조하는 건 Health Connect 권한 화면이다).
  */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -32,7 +43,21 @@ const REQUIRED_PHRASE = {
 }
 
 const manifest = readFileSync(manifestPath, 'utf8')
-const policy = readFileSync(policyPath, 'utf8')
+
+let policy
+try {
+  policy = readFileSync(policyPath, 'utf8')
+} catch {
+  console.error(`빌드 결과가 없다: ${policyPath}\n먼저 \`pnpm build\`를 돌릴 것.`)
+  process.exit(1)
+}
+
+/** 권한 표 본문 — 이 안에서만 문구를 찾는다(위 KDoc 참고). */
+const permissionTable = policy.match(/<table[^>]*data-policy="permissions"[\s\S]*?<\/table>/)?.[0]
+if (!permissionTable) {
+  console.error('정책 페이지에 data-policy="permissions" 표가 없다 — 권한별 이용 목적이 사라졌다')
+  process.exit(1)
+}
 
 const declared = [...manifest.matchAll(/android\.permission\.health\.([A-Z_]+)/g)].map((m) => m[1])
 const failures = []
@@ -46,14 +71,14 @@ for (const permission of new Set(declared)) {
     )
     continue
   }
-  if (!policy.includes(phrase)) {
-    failures.push(`'${permission}' 권한을 선언했는데 정책 페이지에 '${phrase}' 설명이 없다`)
+  if (!permissionTable.includes(phrase)) {
+    failures.push(`'${permission}' 권한을 선언했는데 권한 표에 '${phrase}' 행이 없다`)
   }
 }
 
 for (const [permission, phrase] of Object.entries(REQUIRED_PHRASE)) {
-  if (!declared.includes(permission) && policy.includes(phrase)) {
-    failures.push(`정책 페이지가 '${phrase}'를 설명하는데 앱은 '${permission}'를 선언하지 않는다 (과다 고지)`)
+  if (!declared.includes(permission) && permissionTable.includes(phrase)) {
+    failures.push(`권한 표가 '${phrase}'를 설명하는데 앱은 '${permission}'를 선언하지 않는다 (과다 고지)`)
   }
 }
 
