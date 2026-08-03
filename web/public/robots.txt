@@ -1,0 +1,4 @@
+# .well-known은 절대 막지 않는다 — App Links(#103) 검증이 무증상으로 실패한다
+# (docs/ARCHITECTURE.md §4의 3대 함정 중 하나).
+User-agent: *
+Allow: /

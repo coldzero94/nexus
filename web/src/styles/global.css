@@ -1,0 +1,115 @@
+/*
+ * 앱과 같은 팔레트 (kotlin/app/.../ui/NexusColors.kt). 웹은 토큰 시스템을 공유하지 않으므로
+ * 값을 여기 한 번만 적고 변수로 쓴다 — 페이지마다 흩어지면 앱과 어긋난 걸 아무도 못 본다.
+ */
+:root {
+  --bg: #fdf6ec;
+  --surface: #fdf1e4;
+  --ink: #3e2723;
+  --ink-soft: #6d5348;
+  --accent: #ffb74d;
+  --accent-ink: #8a5a1c;
+  --radius: 16px;
+  --measure: 42rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17130e;
+    --surface: #1f1b13;
+    --ink: #f2e7dc;
+    --ink-soft: #c3b2a4;
+    --accent: #ffb74d;
+    --accent-ink: #ffd9a6;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', sans-serif;
+  line-height: 1.7;
+  /* 한국어 본문은 단어 단위로 끊어야 읽힌다 — 기본 break-word는 낱글자로 잘린다 */
+  word-break: keep-all;
+}
+
+main {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 3rem 1.25rem 5rem;
+}
+
+h1 {
+  font-size: 1.9rem;
+  line-height: 1.35;
+  margin: 0 0 0.5rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin: 2.5rem 0 0.5rem;
+}
+
+p,
+li {
+  color: var(--ink-soft);
+}
+
+a {
+  color: var(--accent-ink);
+}
+
+.lede {
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  margin-top: 0;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.card p:last-child,
+.card ul:last-child {
+  margin-bottom: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  vertical-align: top;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+footer {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 1.25rem 3rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.updated {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}

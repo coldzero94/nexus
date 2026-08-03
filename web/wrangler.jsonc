@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers 정적 자산 배포 (docs/ARCHITECTURE.md §3 — 무료·상업 허용).
+  // 배포는 도메인 확정 뒤(#101). 여기 이름은 확정 시 함께 정한다.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nexus-web",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./dist",
+    // 확장자 없는 경로도 서빙하되 정책 URL 자체는 디렉터리 형식이라 이 설정에 기대지 않는다
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

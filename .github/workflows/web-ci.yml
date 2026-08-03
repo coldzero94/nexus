@@ -1,0 +1,39 @@
+name: web
+
+on:
+  pull_request:
+    paths:
+      - "web/**"
+      # 정책 페이지가 매니페스트 권한을 다 설명하는지 검사하므로 앱 권한 변경도 트리거한다 (#52)
+      - "kotlin/app/src/main/AndroidManifest.xml"
+      - ".github/workflows/web-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "kotlin/app/src/main/AndroidManifest.xml"
+      - ".github/workflows/web-ci.yml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: pnpm/action-setup@7088e561eb65bb68695d245aa206f005ef30921d # v4.1.0
+        with:
+          version: 10
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      # 빌드 → 타입 검사 → 정책 정합(권한 누락·과다 고지·OG 누락)
+      - run: pnpm verify
