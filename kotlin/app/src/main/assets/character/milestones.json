@@ -1,0 +1,48 @@
+{
+  "version": "v1",
+  "note": "평생 누적 마일스톤(#113, E5-13). 배지와 같은 엔진·같은 표 형식이지만 별개 축이다 — 배지는 '무엇을 해냈나', 마일스톤은 '얼마나 오래·얼마나 많이'. when은 BadgeContext.VARS 어휘. 원시 걸음·거리는 원장에 없어(제품 불변식) 이 축에 쓸 수 없다. 추가 = 이 파일 + 글리프 드로어블만(코드 무수정). 최저 문턱은 7일 — 알파(14일) 안에 축이 한 번은 열려야 '장기 누적'이라는 개념이 전달된다. 배지의 week_streak(7일 **연속**)와 달리 이건 **누적**이라 쉬는 날이 섞여도 열린다.",
+  "badges": [
+    {
+      "id": "together_7",
+      "icon": "first_step",
+      "name": "함께한 첫 이레",
+      "description": "7일을 함께 움직였어요.",
+      "when": "activeDaysLifetime >= 7"
+    },
+    {
+      "id": "together_30",
+      "icon": "streak",
+      "name": "한 달을 함께",
+      "description": "30일을 함께 움직였어요.",
+      "when": "activeDaysLifetime >= 30"
+    },
+    {
+      "id": "together_100",
+      "icon": "streak",
+      "name": "백 일의 동행",
+      "description": "100일을 함께 움직였어요.",
+      "when": "activeDaysLifetime >= 100"
+    },
+    {
+      "id": "together_365",
+      "icon": "streak",
+      "name": "일 년의 기록",
+      "description": "365일을 함께 움직였어요.",
+      "when": "activeDaysLifetime >= 365"
+    },
+    {
+      "id": "xp_10k",
+      "icon": "level",
+      "name": "만 점의 성장",
+      "description": "누적 10,000 XP를 넘겼어요.",
+      "when": "cumulativeXp >= 10000"
+    },
+    {
+      "id": "expedition_25",
+      "icon": "expedition",
+      "name": "스물다섯 번의 모험",
+      "description": "원정을 25번 완료했어요.",
+      "when": "expeditionsCompleted >= 25"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import com.nexus.app.crash.CrashReporting
 import com.nexus.app.data.RewardLedgerRepository
 import com.nexus.app.health.ExerciseRepository
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.core.BadgeTable
 import com.nexus.core.ClassAffinityCalculator
 import com.nexus.core.FailureCategory
 import com.nexus.core.FirstRun
@@ -71,12 +72,25 @@ internal suspend fun loadGrowthScreen(
     return coroutineScope {
         val standard = async { loadBadges(context, manager, cumulativeXp = loaded.state.summary.totalXp) }
         val monthly = async { loadMonthlyBadges(context, manager, ledger) }
-        BadgeSectionsState(standard = standard.await(), monthly = monthly.await())
+        // 마일스톤은 원장만 읽어 HC를 기다리지 않는다 — 순차로 두면 걸음 집계 뒤로 밀린다 (#113)
+        val milestones = async { loadMilestones(context, ledger, cumulativeXp = loaded.state.summary.totalXp) }
+        BadgeSectionsState(
+            standard = standard.await(),
+            monthly = monthly.await(),
+            milestones = milestones.await(),
+        )
     }
 }
 
+/** 평생 누적 마일스톤 상태 (#113) — 배지와 같은 형식이지만 별개 축(표·prefs·카드가 따로). */
+internal data class MilestoneState(val table: BadgeTable, val unlocked: Set<String>, val newlyUnlocked: Set<String>)
+
 /** 배지 영역 상태 (#175·#206) — 둘 다 부가 정보라 각각 null이면 그 카드만 생략한다. */
-internal data class BadgeSectionsState(val standard: BadgeState? = null, val monthly: MonthlyBadgeState? = null)
+internal data class BadgeSectionsState(
+    val standard: BadgeState? = null,
+    val monthly: MonthlyBadgeState? = null,
+    val milestones: MilestoneState? = null,
+)
 
 /**
  * 기준점 대비 변화 감지 (#61): 레벨업은 상승만(최초 방문·창 이탈로 인한 하락은 무연출),

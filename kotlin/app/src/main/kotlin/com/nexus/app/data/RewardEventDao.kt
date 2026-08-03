@@ -20,6 +20,16 @@ interface RewardEventDao {
     @Query("SELECT COUNT(*) FROM reward_events")
     suspend fun count(): Long
 
+    /**
+     * 평생 활동일 수 (#113) — 일자별 **순** XP가 양수인 날만.
+     *
+     * 취소 행이 하루를 통째로 상쇄하면 그날은 활동일이 아니다. `COUNT(DISTINCT epochDay)`로 세면
+     * 삭제된 기록이 영원히 남아 "함께한 100일"이 거짓이 된다. 읽기 창과 무관한 **전 기간** 집계라
+     * 여기가 평생 지표의 유일한 소스다.
+     */
+    @Query("SELECT COUNT(*) FROM (SELECT epochDay FROM reward_events GROUP BY epochDay HAVING SUM(xp) > 0)")
+    suspend fun activeDaysLifetime(): Int
+
     /** 백업 내보내기용 전체 원장 (#51) — sequence 순서 유지. */
     @Query("SELECT * FROM reward_events ORDER BY sequence")
     suspend fun all(): List<RewardEventEntity>

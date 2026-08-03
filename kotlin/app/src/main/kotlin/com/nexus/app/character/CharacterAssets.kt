@@ -42,7 +42,7 @@ private fun Context.drawableIdByName(name: String): Int = resources.getIdentifie
  *   **테스트가 실제 조회 횟수를 세야 하기 때문**이다(#246 AC ①) — 메모가 도는지는 반환값으로는
  *   드러나지 않고 호출 횟수로만 드러난다.
  */
-class CharacterAssets(private val context: Context, private val lookup: (String) -> Int = context::drawableIdByName) {
+class CharacterAssets(internal val context: Context, private val lookup: (String) -> Int = context::drawableIdByName) {
 
     /**
      * 이름 → res id 메모 (#246). 프레임 티커가 매 틱 조회하면 리플렉션(`getIdentifier`)이
@@ -132,6 +132,7 @@ class CharacterAssets(private val context: Context, private val lookup: (String)
         const val DIALOGUE_PATH = "character/dialogue.json"
         const val MOOD_PATH = "character/mood_triggers.json"
         const val BADGE_PATH = "character/badges.json"
+        const val MILESTONE_PATH = "character/milestones.json"
         const val MONTHLY_BADGE_PATH = "character/monthly_badges.json"
         const val EQUIPMENT_PATH = "character/equipment.json"
         const val EXPEDITION_PATH = "character/expeditions.json"
@@ -148,3 +149,12 @@ class CharacterAssets(private val context: Context, private val lookup: (String)
  */
 internal fun CharacterAssets.frameResIds(state: String, frames: Int): List<Int?> =
     List(frames.coerceAtLeast(1)) { frameResIdOrNull(state, it) }
+
+/**
+ * 평생 누적 마일스톤 표 (#113) — 배지와 **같은 형식·같은 엔진**, 별개 축.
+ *
+ * 엔진을 복제하지 않는 이유: 해금 판정·영속·축하·목록 UI를 전부 다시 만들게 되고, 그때부터 두 축의
+ * 동작이 조용히 갈라진다. 로더의 핵심 책임이 아니라 그 위의 파생이라 확장으로 둔다([frameResIds] 선례).
+ */
+internal fun CharacterAssets.loadMilestoneTable(): BadgeTable =
+    context.assets.open(CharacterAssets.MILESTONE_PATH).bufferedReader().use { BadgeTableReader.parse(it.readText()) }
