@@ -72,6 +72,24 @@ class SkeletonWiringTest {
         assertTrue(layer.contains("translationY ="), "등장에서 슬라이드가 빠졌다")
     }
 
+    /**
+     * 진행값이 재구성을 넘겨 살아남는지 — `remember`가 빠지면 재구성마다 새 `Animatable(0f)`이 생겨
+     * **카드가 alpha 0·12dp 아래에 영구히 굳는다**(화면에서 영영 안 보인다).
+     *
+     * 소스로 잡는 이유: 이 하네스에서 관측이 불가능하다. `fetchSemanticsNode().positionInRoot`는
+     * `setContent` 직후 첫 프레임 이후로는 낡은 값을 계속 주고(실측), `onGloballyPositioned` 궤적은
+     * 레이아웃이 다시 돌 때만 갱신돼 그리기 전용 변화를 놓친다. 관측 불가를 인정하고 삭제를 막는다.
+     */
+    @Test
+    fun `등장 진행값이 재구성을 넘겨 보존된다`() {
+        val text = File(repo, "app/src/main/kotlin/com/nexus/app/ui/StaggeredAppearance.kt").readText()
+
+        assertTrue(
+            text.contains("remember { Animatable("),
+            "Animatable이 remember 밖에 있다 — 재구성마다 초기화돼 카드가 영구히 안 보이게 된다",
+        )
+    }
+
     private companion object {
         val LOADING_BRANCHES = mapOf(
             "home/HomeScreen.kt" to "HomeSkeleton",
