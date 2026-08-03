@@ -105,8 +105,9 @@ internal fun GrowthScreen(
  *
  * ## 축하는 한 번에 하나만 (#218)
  *
- * 레벨업·성향 변화(#61)가 우선이다. 두 축하가 겹치면 각각의 무게가 반씩 깎이고 화면 상단이 카드
- * 두 장으로 막힌다. 배지 축하는 대기 집합에 남아 있으므로 **다음 진입에서 뜬다** — 놓치지 않는다.
+ * 레벨업·성향 변화(#61) → 배지(#218) → 이야기 조각(#112) 순으로 하나만 뜬다. 두 축하가 겹치면
+ * 각각의 무게가 반씩 깎이고 화면 상단이 카드 두 장으로 막힌다. 밀린 축하는 각자의 대기 집합에
+ * 남아 있으므로 **다음 진입에서 뜬다** — 놓치지 않는다.
  */
 @Composable
 private fun GrowthLoaded(state: GrowthUiState, ui: GrowthUiController) {
@@ -118,6 +119,12 @@ private fun GrowthLoaded(state: GrowthUiState, ui: GrowthUiController) {
         // 재발화하고, 레벨업이 우선순위를 가져간 방문에서는 누락된다 (#218 리뷰)
         val newBadges = remember(ui.badgeSections) { ui.badgeSections.newlyUnlockedBadges() }
         BadgeUnlockCard(newBadges, visible = ui.badgeCelebrationVisible) { ui.dismissBadgeCelebration() }
+        // 조각은 배지보다 뒤 — 배지는 '해냈다'고, 조각은 '뭔가 생겼다'다. 둘 다 대기 집합에
+        // 남으므로 이번에 밀린 쪽은 다음 진입에서 뜬다 (#218의 계약을 그대로 잇는다)
+        if (newBadges.isEmpty()) {
+            val newFragments = ui.badgeSections.codex?.newlyFound.orEmpty()
+            StoryDropCard(newFragments, visible = ui.storyCelebrationVisible) { ui.dismissStoryCelebration() }
+        }
     }
     GrowthContent(state)
     // 오늘 성장이 있으면 걷는 모습으로 미리보기 — 홈 캐릭터와 같은 감각 (#37)

@@ -34,8 +34,12 @@ import java.io.IOException
  *
  * ## 드롭은 어디서 굴러가는가
  *
- * 세션을 읽는 쪽(성장 로드)이 굴린다. 결과가 세션 id의 순수 함수라(core [StoryDropPicker])
- * 워커가 같은 세션을 몇 번 다시 읽어도 조각이 늘지 않는다 — 그게 이 기능이 성립하는 조건이다.
+ * 세션을 읽는 **두 곳**이 각각 굴린다: 동기화 워커(#112 — 15분마다, 탭을 안 열어도 쌓인다)와
+ * 성장 로드. 결과가 세션 id의 순수 함수라(core [StoryDropPicker]) 같은 세션을 몇 번 다시 읽어도
+ * 조각이 늘지 않기 때문에 두 곳에서 굴려도 안전하다 — 그게 이 기능이 성립하는 조건이다.
+ *
+ * 워커만 굴리게 하지 않는 이유: 워커 창은 7일이고 화면 창은 28일이라, 워커가 놓친 기간(앱을
+ * 오래 안 켠 사용자)을 화면 로드가 메운다.
  */
 internal suspend fun loadStoryCodex(context: Context, sessionIds: List<String>): StoryCodexState? = try {
     val (table, store) = withContext(Dispatchers.IO) {
@@ -43,17 +47,25 @@ internal suspend fun loadStoryCodex(context: Context, sessionIds: List<String>):
     }
     // 세션마다 굴린다 — 같은 세션은 항상 같은 답이라 재동기화에 안전하다
     val dropped = sessionIds.mapNotNull { StoryDropPicker.drop(it, table, DROP_PERCENT) }
-    val newlyIds = withContext(Dispatchers.IO) { store.collect(dropped.map { it.id }.toSet()) }
-    val byId = table.fragments.associateBy { it.id }
+    // 대기 집합은 워커가 미리 채워둘 수 있다 — 여기서 새로 얻은 것만 보면 백그라운드 획득을 놓친다
+    val (collected, pending) = withContext(Dispatchers.IO) {
+        store.collect(dropped.map { it.id }.toSet())
+        store.collected to store.pending
+    }
     StoryCodexState(
-        collected = table.fragments.filter { it.id in store.collected },
+        collected = table.fragments.filter { it.id in collected },
         total = table.fragments.size,
-        newlyFound = newlyIds.mapNotNull { byId[it] },
+        newlyFound = table.fragments.filter { it.id in pending },
     )
 } catch (e: CancellationException) {
     throw e
 } catch (e: IOException) {
     Log.w(TAG_CODEX, "story codex IO failure", e)
+    null
+} catch (e: IllegalStateException) {
+    // 형제 로더(loadBadges·loadMilestones)와 같은 계약 — 여기서 새면 async 스코프가 통째로
+    // 취소돼 배지·이달·마일스톤까지 함께 사라진다
+    Log.w(TAG_CODEX, "story codex state failure", e)
     null
 } catch (e: IllegalArgumentException) {
     Log.w(TAG_CODEX, "story fragment table invalid", e)

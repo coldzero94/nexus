@@ -331,6 +331,8 @@
     <!-- 평생 누적 마일스톤 (#113) — 배지와 별개 축 -->
     <string name="growth_milestones_title">함께한 기록 %1$d / %2$d</string>
     <!-- 이야기 조각 도감 (#112) -->
+    <string name="story_drop_title">이야기 조각을 물어왔어요</string>
+    <string name="story_drop_title_multi">이야기 조각 %1$d개를 물어왔어요</string>
     <string name="growth_codex_title">이야기 조각 %1$d / %2$d</string>
     <string name="growth_codex_empty">함께 움직이다 보면 가끔 무언가를 물어와요.</string>
     <!-- 월 한정 배지 (#206) -->

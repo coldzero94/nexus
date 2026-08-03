@@ -67,7 +67,7 @@ class RewardLedgerRepository(private val dao: RewardEventDao) {
     suspend fun grantSessions(sessions: List<ExerciseSummary>, zone: ZoneId, epochMillis: Long) {
         sessions.forEach { session ->
             val type = session.type ?: return@forEach
-            if (!TrustPolicy.isXpEligible(session.trustTier)) return@forEach
+            if (!isRewardable(session)) return@forEach
             grant(
                 idempotencyKey = session.id,
                 xp = (
@@ -81,6 +81,16 @@ class RewardLedgerRepository(private val dao: RewardEventDao) {
             )
         }
     }
+
+    /**
+     * 보상 대상 세션 — 원장 지급과 **같은 문**을 쓰라고 공개한다 (#112 리뷰).
+     *
+     * 이야기 조각 드롭이 이 필터를 안 거치면, 수기 입력(Tier C)은 XP가 0인데 조각은 준다 —
+     * 앱에서 신뢰 장치(#9·#205)가 안 걸리는 유일한 보상면이 되고, 손으로 적기만 하면 도감이 찬다.
+     * 매핑 안 된 종목(`type == null`)도 마찬가지로 보상 대상이 아니다.
+     */
+    fun isRewardable(session: ExerciseSummary): Boolean =
+        session.type != null && TrustPolicy.isXpEligible(session.trustTier)
 
     /** 특정 일자의 상한 적용 XP (#36 아침 카드 "어제의 성장"). */
     suspend fun cappedXpOn(epochDay: Long): Int =

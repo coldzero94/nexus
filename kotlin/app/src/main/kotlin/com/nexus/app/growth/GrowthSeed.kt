@@ -29,4 +29,6 @@ internal data class GrowthSeed(
      * 별 파라미터로 두면 컨스트럭터가 detekt 임계를 넘는다.
      */
     val badgeCelebration: BadgeCelebrationStore? = null,
+    /** 조각 축하 대기 저장소 (#112) — 배지와 같은 이유로 테스트가 격리된 prefs를 넘긴다. */
+    val storyCollection: StoryCollectionStore? = null,
 )

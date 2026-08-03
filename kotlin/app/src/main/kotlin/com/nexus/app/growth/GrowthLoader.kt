@@ -170,7 +170,9 @@ private suspend fun loadGrowth(repo: ExerciseRepository, ledger: RewardLedgerRep
                 ),
             ),
         ),
-        sessionIds = raw.map { it.id },
+        // 원장 지급과 같은 문을 통과한 세션만 굴린다 — 수기 입력이 조각을 주면 도감이
+        // 신뢰 장치 밖의 유일한 보상면이 된다 (#112 리뷰)
+        sessionIds = raw.filter(ledger::isRewardable).map { it.id },
     )
 } catch (e: CancellationException) {
     throw e
