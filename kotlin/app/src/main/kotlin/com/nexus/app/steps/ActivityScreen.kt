@@ -27,11 +27,13 @@ import com.nexus.app.health.ExerciseSummary
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.health.StepRepository
 import com.nexus.app.health.TokenStore
+import com.nexus.app.ui.ActivitySkeleton
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.FirstRunNotice
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
+import com.nexus.app.ui.StaggerItem
 import com.nexus.core.FailureCategory
 import com.nexus.core.FirstRun
 import java.io.IOException
@@ -83,7 +85,7 @@ internal fun ActivityScreen(
         verticalArrangement = Arrangement.spacedBy(NexusSpacing.lg),
     ) {
         when (val current = ui.load) {
-            null -> Text(stringResource(R.string.steps_loading), style = MaterialTheme.typography.bodyMedium)
+            null -> ActivitySkeleton()
 
             ActivityLoad.PermissionDenied ->
                 ConnectNotice(onReconnect, body = stringResource(R.string.activity_demo_body))
@@ -111,21 +113,27 @@ internal fun ActivityScreen(
  */
 @Composable
 private fun ActivitySections(data: ActivityData, store: TokenStore) {
-    NexusCard(title = stringResource(R.string.steps_title)) {
-        Text(stringResource(R.string.steps_subtitle), style = MaterialTheme.typography.bodySmall)
-        StepBarChart(data.steps)
-        if (data.manualSteps > 0L) {
-            Text(
-                text = stringResource(R.string.steps_manual_excluded, data.manualSteps),
-                style = MaterialTheme.typography.bodySmall,
-            )
+    StaggerItem(0) {
+        NexusCard(title = stringResource(R.string.steps_title)) {
+            Text(stringResource(R.string.steps_subtitle), style = MaterialTheme.typography.bodySmall)
+            StepBarChart(data.steps)
+            if (data.manualSteps > 0L) {
+                Text(
+                    text = stringResource(R.string.steps_manual_excluded, data.manualSteps),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
     }
-    NexusCard(title = stringResource(R.string.sessions_title)) {
-        SessionsSection(data.sessions)
+    StaggerItem(1) {
+        NexusCard(title = stringResource(R.string.sessions_title)) {
+            SessionsSection(data.sessions)
+        }
     }
-    NexusCard(title = stringResource(R.string.sync_title)) {
-        Text(text = syncFooter(store), style = MaterialTheme.typography.bodySmall)
+    StaggerItem(2) {
+        NexusCard(title = stringResource(R.string.sync_title)) {
+            Text(text = syncFooter(store), style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 

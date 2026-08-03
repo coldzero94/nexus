@@ -15,6 +15,7 @@ import com.nexus.app.R
 import com.nexus.app.ui.CardEmphasis
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.app.ui.StaggerItem
 import com.nexus.app.ui.animatedGaugeProgress
 import com.nexus.app.ui.gaugeSemantics
 import com.nexus.core.ClassAffinityCalculator
@@ -36,9 +37,10 @@ import com.nexus.core.XpEngine
  */
 @Composable
 internal fun GrowthContent(data: GrowthUiState) {
-    GrowthHeroCard(data.summary)
-    TodayXpCard(data.today)
-    StatsCard(data.summary)
+    // 위에서부터 짧게 시차를 두고 올라온다 (#268)
+    StaggerItem(0) { GrowthHeroCard(data.summary) }
+    StaggerItem(1) { TodayXpCard(data.today) }
+    StaggerItem(2) { StatsCard(data.summary) }
     Text(
         stringResource(R.string.growth_scope_note, ClassAffinityCalculator.WINDOW_DAYS),
         style = MaterialTheme.typography.bodySmall,

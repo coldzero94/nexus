@@ -21,6 +21,7 @@ paths:
   `ColorTokenGuardTest` — a literal in a screen means dark theme and palette changes skip that one spot.
   Dimensions follow the same rule via `ui/NexusSpacing.kt`.
 - **Vertical rhythm inside the 4 tabs comes from `Arrangement.spacedBy(NexusSpacing…)`, never a manual `Spacer`** (#260). `TabRhythmGuardTest` scans the whole `home`/`steps`/`growth`/`settings` packages — scanning only the root screen files missed a real case, because sections live in separate files here (#311). Full-screen scenes (onboarding, welcome-back, initial-level) are exempt and listed explicitly in the test.
+- **로딩 분기는 `ui/LoadingSkeletons.kt`의 탭별 스켈레톤을 쓴다**(#268) — 중앙 스피너·맨 텍스트 금지. 카드 수와 높이를 실제 콘텐츠와 맞춰야 완료 순간의 레이아웃 점프가 사라진다. 무한 애니메이션(shimmer)은 **화면당 하나**만 구동하고(`SkeletonScreen`), 리듀스드모션에서는 기동하지 않는다 — 무한 반복은 `motionDuration()` 스케일링으로 없앨 수 없다. 스켈레톤은 `clearAndSetSemantics`로 한 노드다.
 - **`ConnectNotice`/`RetryNotice`/`FirstRunNotice` are already `NexusCard`s** — place them as siblings in the screen `Column`, never inside a section card. Nesting gives two same-colored cards and two `heading()` nodes, which reads as a rendering failure.
 - List rows use `ui/NexusListRow` + `ui/NexusDividedList`. A right-aligned value column must stay in the **same merged semantics node** as its label (`docs/A11Y-TALKBACK.md`) — otherwise TalkBack reads the value last, with no antecedent.
 - Every screen must work with Health Connect permissions denied (demo mode).

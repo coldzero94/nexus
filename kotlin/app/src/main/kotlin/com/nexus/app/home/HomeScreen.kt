@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,9 +21,11 @@ import com.nexus.app.R
 import com.nexus.app.health.HealthConnectManager
 import com.nexus.app.ui.ConnectNotice
 import com.nexus.app.ui.FirstRunNotice
+import com.nexus.app.ui.HomeSkeleton
 import com.nexus.app.ui.NexusCard
 import com.nexus.app.ui.NexusSpacing
 import com.nexus.app.ui.RetryNotice
+import com.nexus.app.ui.StaggerItem
 import com.nexus.core.ClassAffinity
 import com.nexus.core.ConditionEngine
 import com.nexus.core.ExpeditionState
@@ -111,7 +112,7 @@ internal fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(NexusSpacing.lg),
     ) {
         when (val current = ui.load) {
-            null -> CircularProgressIndicator()
+            null -> HomeSkeleton()
 
             HomeLoad.PermissionDenied -> ConnectNotice(onReconnect)
 
@@ -182,20 +183,28 @@ private fun HomeContent(
     onSyncFinished: () -> Unit,
 ) {
     // 상단 히어로 — 캐릭터·대사·컨디션을 묶어 최상위 앵커로 (#256). 아래는 종속 상세 카드.
-    HomeHero(spriteState, moodLines, state.condition, state.moodContext.restMode, state.greeting)
-    StreakRow(state.streak)
+    // 인덱스 순서대로 짧게 시차를 두고 올라온다 (#268) — 한꺼번에 튀면 어디를 볼지 알 수 없다.
+    StaggerItem(StaggerOrder.HERO) {
+        HomeHero(spriteState, moodLines, state.condition, state.moodContext.restMode, state.greeting)
+    }
+    StaggerItem(StaggerOrder.STREAK) { StreakRow(state.streak) }
     // 이번 주 목표 진척 (#215) — 기세(일 단위 연속) 다음에 주 단위 리듬
-    WeeklyGoalRow(state.weeklyProgress)
-    TodaySummaryCard(state)
+    StaggerItem(StaggerOrder.WEEKLY) { WeeklyGoalRow(state.weeklyProgress) }
+    StaggerItem(StaggerOrder.TODAY) { TodaySummaryCard(state) }
     // 개봉 결과를 원정 카드 **위**에 둔다 — 방금 누른 버튼 바로 위에 답이 나타나야 인과가 읽힌다
     ExpeditionResultCard(expedition.reward, expedition.onDismissReward)
-    ExpeditionCard(state.expedition, state.energy, expedition.onDepart, expedition.onOpen)
-    // 다음 목표를 카드로 편입 — 맨 Text로 두면 카드 스택 리듬이 끊긴다 (#254)
-    NexusCard {
-        Text(text = nextGoalText(state), style = MaterialTheme.typography.bodyMedium)
+    StaggerItem(StaggerOrder.TAIL) {
+        ExpeditionCard(state.expedition, state.energy, expedition.onDepart, expedition.onOpen)
     }
-    // 신선도는 푸터 위치 (#221) — 평소엔 조용한 한 줄, 오래 밀렸을 때만 안내 카드로 커진다
-    FreshnessRow(onSyncFinished = onSyncFinished)
+    // 다음 목표를 카드로 편입 — 맨 Text로 두면 카드 스택 리듬이 끊긴다 (#254)
+    StaggerItem(StaggerOrder.TAIL) {
+        NexusCard {
+            Text(text = nextGoalText(state), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+    // 신선도는 푸터 위치 (#221) — 평소엔 조용한 한 줄, 오래 밀렸을 때만 안내 카드로 커진다.
+    // 자체 등장 연출이 없는 평범한 푸터라 위 카드들과 같은 스태거를 탄다(혼자 즉시 뜨면 튄다).
+    StaggerItem(StaggerOrder.TAIL) { FreshnessRow(onSyncFinished = onSyncFinished) }
 }
 
 @Composable
@@ -211,3 +220,15 @@ private fun nextGoalText(state: HomeUiState): String = when {
 
 /** 다음 목표 문구의 활동 기준(분) — 컨디션 활동 문턱(10pt≈걷기 10분)과 맞춘다. */
 private const val ACTIVE_GOAL_MINUTES = 10
+
+/**
+ * 홈 본문 카드의 등장 순서 (#268). 화면에 보이는 순서와 같아야 위→아래로 읽힌다.
+ * [TAIL]은 지연 상한에 걸리는 인덱스로, 아래 카드들이 같은 시점에 함께 올라온다.
+ */
+private object StaggerOrder {
+    const val HERO = 0
+    const val STREAK = 1
+    const val WEEKLY = 2
+    const val TODAY = 3
+    const val TAIL = 4
+}
