@@ -22,7 +22,9 @@ import androidx.compose.ui.unit.dp
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.character.LivelyCharacter
 import com.nexus.app.character.equipRenderLayers
+import com.nexus.app.ui.AmbienceColors
 import com.nexus.app.ui.NexusSpacing
+import com.nexus.core.Ambience
 import com.nexus.core.DialogueSelector
 import com.nexus.core.GreetingVariant
 import kotlinx.coroutines.Dispatchers
@@ -48,10 +50,19 @@ internal fun HomeHero(
     val equipLayers by produceState(emptyList<String>(), spriteState) {
         value = equipRenderLayers(context, spriteState)
     }
+    // 시간대·계절 앰비언스 (#115) — **캐릭터가 있는 공간**에 얹는다.
+    // 화면 여백에만 칠하면 카드가 홈을 거의 덮어 보일 자리가 없다(실기기에서 RGB 1~2 차이였다).
+    // 히어로는 캐릭터의 방이라, 여기가 물들어야 "저녁이 됐다"가 읽힌다.
+    val now = remember { java.time.LocalDateTime.now() }
+    val heroColor = AmbienceColors.wash(
+        surface = MaterialTheme.colorScheme.surfaceContainerHigh,
+        slot = AmbienceColors.tint(Ambience.slotAt(now.hour)),
+        season = AmbienceColors.seasonTint(Ambience.seasonOf(now.monthValue)),
+    )
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = heroColor,
     ) {
         Column(
             Modifier.fillMaxWidth().padding(NexusSpacing.xl),
