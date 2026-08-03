@@ -1,6 +1,8 @@
 package com.nexus.app.settings
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
+import com.nexus.app.BuildConfig
 import com.nexus.app.crash.CrashReporting
 import com.nexus.app.telemetry.Telemetry
 
@@ -28,7 +30,7 @@ import com.nexus.app.telemetry.Telemetry
  */
 object AnalyticsConsent {
 
-    fun isEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, DEFAULT_ENABLED)
+    fun isEnabled(context: Context): Boolean = cached ?: prefs(context).getBoolean(KEY_ENABLED, DEFAULT_ENABLED)
 
     /**
      * 동의 변경 — 저장과 **즉시 적용**을 한 진입점에서 한다.
@@ -37,23 +39,73 @@ object AnalyticsConsent {
      * 재실행에 되살아난다. 둘 다 조용한 실패라 화면으로는 구분이 안 된다.
      */
     fun set(context: Context, enabled: Boolean) {
-        prefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
-        apply(context, enabled)
-    }
-
-    /** 앱 시작 시 1회 — 저장된 동의를 그대로 적용한다. */
-    fun applyStored(context: Context) {
-        apply(context, isEnabled(context))
-    }
-
-    private fun apply(context: Context, enabled: Boolean) {
-        if (enabled) {
-            Telemetry.init(context)
-            CrashReporting.init(context)
-        } else {
-            Telemetry.stop()
-            CrashReporting.stop()
+        // 메모리에 먼저 — 디스크 쓰기와 SDK 기동은 아래에서 백그라운드로 나가므로,
+        // 토글 직후 화면이 읽는 값이 이 한 줄로 정해진다
+        cached = enabled
+        // 설정값은 **지금** 읽는다 — 백그라운드 블록 안에서 읽으면 그 사이에 바뀐 값을 쓴다
+        val appId = telemetryAppId()
+        val dsn = sentryDsn()
+        runner {
+            // 철회는 잃으면 안 되는 쓰기다(다시 켜진 채로 되살아나면 약속이 깨진다) — commit()
+            prefs(context).edit().putBoolean(KEY_ENABLED, enabled).commit()
+            apply(context, enabled, appId, dsn)
         }
+    }
+
+    /** 앱 시작 시 1회 — 저장된 동의를 그대로 적용한다. 콜드스타트를 막지 않도록 백그라운드로. */
+    fun applyStored(context: Context) {
+        val enabled = isEnabled(context)
+        val appId = telemetryAppId()
+        val dsn = sentryDsn()
+        runner { apply(context, enabled, appId, dsn) }
+    }
+
+    /**
+     * 실행 시임 (#349 리뷰) — 프로덕션은 백그라운드 스레드.
+     *
+     * 메인에서 돌리면 안 되는 이유가 양쪽에 있다: 끌 때 `Sentry.close()`가 동기 flush를 하고,
+     * 켤 때 `SentryAndroid.init`이 캐시 디렉터리·식별자 파일을 만든다. 설정 스위치 한 번이
+     * ANR 위험을 지는 건 과하다. 테스트는 같은 스레드로 바꿔 결정적으로 만든다.
+     */
+    @VisibleForTesting
+    internal var runner: (() -> Unit) -> Unit = { block -> Thread(block).start() }
+
+    private fun apply(context: Context, enabled: Boolean, appId: String, dsn: String) {
+        if (enabled) {
+            Telemetry.init(context, appId = appId)
+            CrashReporting.init(context, dsn = dsn)
+        } else {
+            Telemetry.stop(context)
+            CrashReporting.stop(context)
+        }
+    }
+
+    /**
+     * 설정값 시임 (#349 리뷰) — 테스트 빌드엔 앱 ID·DSN이 없어서, 이게 없으면 **다시 켜는
+     * 경로가 아무것도 검증하지 못한다**(두 init이 빈 값으로 즉시 반환한다).
+     */
+    @VisibleForTesting
+    internal var telemetryAppId: () -> String = { BuildConfig.TELEMETRYDECK_APP_ID }
+
+    @VisibleForTesting
+    internal var sentryDsn: () -> String = { BuildConfig.SENTRY_DSN }
+
+    /**
+     * 마지막으로 정한 값 — 디스크 쓰기가 백그라운드로 나가므로 화면이 즉시 읽을 값이 필요하다.
+     *
+     * `object`의 정적 상태라 테스트 사이에 샌다(로보렉트릭은 클래스 사이에서도 같은 샌드박스
+     * 클래스로더를 재사용한다). 테스트가 [resetForTest]로 되돌린다.
+     */
+    @Volatile
+    private var cached: Boolean? = null
+
+    /** 테스트 전용 — 정적 상태를 초기 상태로. */
+    @VisibleForTesting
+    internal fun resetForTest() {
+        cached = null
+        runner = { block -> Thread(block).start() }
+        telemetryAppId = { BuildConfig.TELEMETRYDECK_APP_ID }
+        sentryDsn = { BuildConfig.SENTRY_DSN }
     }
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

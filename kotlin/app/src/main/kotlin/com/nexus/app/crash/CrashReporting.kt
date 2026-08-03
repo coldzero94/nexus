@@ -9,6 +9,7 @@ import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroid
+import java.io.File
 
 private const val TAG = "CrashReporting"
 
@@ -48,11 +49,20 @@ object CrashReporting {
      * 동의를 껐다 켜면 다시 온다.
      */
     fun init(context: Context, dsn: String = BuildConfig.SENTRY_DSN) {
+        if (enabled) return
         if (dsn.isBlank()) {
             Log.i(TAG, "DSN absent — crash reporting off")
             return
         }
-        enabled = true
+        runCatching { initSentry(context, dsn) }
+            // 플래그는 **SDK에게 물어서** 정한다. "init이 안 던졌다"로 올리면 잘못된 DSN처럼
+            // SDK가 조용히 스스로를 끄는 경우에 "보내는 중"이라고 거짓 보고한다(#349 리뷰).
+            // `isActive`는 이 기능의 관측 가능한 계약이라 SDK 상태와 어긋나면 안 된다.
+            .onSuccess { enabled = Sentry.isEnabled() }
+            .onFailure { Log.w(TAG, "crash reporting init failed", it) }
+    }
+
+    private fun initSentry(context: Context, dsn: String) {
         SentryAndroid.init(context.applicationContext) { options ->
             options.dsn = dsn
             options.isSendDefaultPii = false // 기본값이지만 계약이므로 명시
@@ -60,6 +70,9 @@ object CrashReporting {
             options.isAttachScreenshot = false // 화면에 건강 파생 표시값이 있다 — 첨부 금지
             options.isAttachViewHierarchy = false
             options.environment = if (BuildConfig.DEBUG) "debug" else "release"
+            // 동의를 끄는 순간 마지막 업로드가 일어나면 안 된다 — Sentry.close()는 이 값만큼
+            // 동기 flush를 하고(무료 API엔 close(false)가 없다) 그 자체가 전송 행위가 된다 (#349 리뷰)
+            options.shutdownTimeoutMillis = 0
             // 방어 심화 — 미래에 값 보간 예외 메시지("steps=8432")가 생겨도 수치는 안 나간다([CrashScrubber])
             options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
                 event.exceptions?.forEach { ex -> ex.value = CrashScrubber.scrub(ex.value) }
@@ -75,14 +88,21 @@ object CrashReporting {
      * `Sentry.close()`까지 부르는 이유는 [com.nexus.app.telemetry.Telemetry.stop]과 같다:
      * 미처리 크래시 핸들러는 우리 래퍼를 안 거치므로, 플래그만 내리면 다음 크래시가 그대로 나간다.
      */
-    fun stop() {
+    fun stop(context: Context) {
         enabled = false
         runCatching { Sentry.close() }
             .onFailure { Log.w(TAG, "crash reporting stop failed", it) }
+        // 아직 못 올린 envelope·세션·breadcrumb이 캐시에 남는다 — 다음 init이 그걸 묶어 보낸다.
+        // 철회 이전 데이터가 재동의 순간 나가는 셈이라, 큐를 세워두지 않고 버린다 (#349 리뷰).
+        runCatching { File(context.cacheDir, SENTRY_CACHE_DIR).deleteRecursively() }
+            .onFailure { Log.w(TAG, "crash cache cleanup failed", it) }
     }
 
     @Volatile
     private var enabled = false
+
+    /** SDK가 못 올린 envelope·세션·breadcrumb을 쌓아두는 디렉터리. */
+    private const val SENTRY_CACHE_DIR = "sentry"
 
     /** 처리된-실패 메시지 접두어 — Sentry에서 미처리 크래시와 구분해 필터링한다. */
     private const val HANDLED_PREFIX = "handled:"

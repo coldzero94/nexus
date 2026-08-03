@@ -118,6 +118,7 @@ class SettingsScreenRenderTest {
             R.string.settings_reminder,
             R.string.settings_goal,
             R.string.settings_backup_title,
+            R.string.settings_analytics,
             R.string.settings_open_days,
             R.string.settings_delete_desc,
         ).forEach { title ->

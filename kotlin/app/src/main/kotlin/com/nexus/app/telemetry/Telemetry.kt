@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.nexus.app.BuildConfig
 import com.telemetrydeck.sdk.TelemetryDeck
+import java.io.File
 
 private const val TAG = "Telemetry"
 
@@ -32,16 +33,23 @@ object Telemetry {
      * 두 번 불러도 안전해야 한다 — 동의를 껐다 켜면 다시 온다.
      */
     fun init(context: Context, appId: String = BuildConfig.TELEMETRYDECK_APP_ID) {
+        if (enabled) return
         if (appId.isBlank()) {
             Log.i(TAG, "app ID absent — telemetry off")
             return
         }
-        val builder = TelemetryDeck.Builder()
-            .appID(appId)
-            .testMode(BuildConfig.DEBUG)
-            .showDebugLogs(BuildConfig.DEBUG)
-        TelemetryDeck.start(context.applicationContext, builder)
-        enabled = true
+        // 기동 전체를 감싼다 — 앱 ID가 UUID가 아니면 **빌더 단계에서** 던지고, 그게 설정 화면의
+        // 토글 람다까지 올라간다. 프라이버시 스위치를 누르다 앱이 죽는 건 최악의 실패 모양이다
+        runCatching {
+            val builder = TelemetryDeck.Builder()
+                .appID(appId)
+                .testMode(BuildConfig.DEBUG)
+                .showDebugLogs(BuildConfig.DEBUG)
+            TelemetryDeck.start(context.applicationContext, builder)
+        }
+            // SDK에게 물어서 정한다 — CrashReporting과 같은 이유(#349 리뷰)
+            .onSuccess { enabled = TelemetryDeck.getInstance() != null }
+            .onFailure { Log.w(TAG, "telemetry start failed", it) }
     }
 
     /**
@@ -49,11 +57,23 @@ object Telemetry {
      *
      * 플래그만 내리지 않고 SDK까지 멈추는 이유: 우리 래퍼를 안 거치는 신호(세션·수명주기)가
      * SDK 안에 있다. 플래그만 내리면 "껐는데 세션 신호는 계속 나가는" 상태가 된다.
+     *
+     * **큐까지 지운다.** `TelemetryDeck.stop()`은 flush도 clear도 하지 않는다 — 아직 못 올린
+     * 신호가 `cacheDir/telemetrydeck.json`에 그대로 남고, `PersistentSignalCache`는 생성자에서
+     * 그 파일을 다시 읽는다. 즉 껐다가 다시 켜는 순간 **철회 이전 신호가 나간다**(#349 리뷰가
+     * 파일 크기로 확인). 철회는 큐를 세워두는 게 아니라 버리는 것이다.
+     *
+     * 설치 식별자(`filesDir/telemetrydeckid`)도 함께 지운다. 남겨두면 껐다 켠 전후 데이터가
+     * 같은 id로 이어져, 철회가 "잠깐 멈춤"이 된다.
      */
-    fun stop() {
+    fun stop(context: Context) {
         enabled = false
         runCatching { TelemetryDeck.stop() }
             .onFailure { Log.w(TAG, "telemetry stop failed", it) }
+        runCatching {
+            File(context.cacheDir, SIGNAL_CACHE_FILE).delete()
+            File(context.filesDir, IDENTITY_FILE).delete()
+        }.onFailure { Log.w(TAG, "telemetry queue cleanup failed", it) }
     }
 
     /**
@@ -87,4 +107,10 @@ object Telemetry {
 
     /** 첫-발화 기록 prefs 이름 — 디버그 도구(#245)가 재현을 위해 초기화한다. */
     internal const val FIRSTS_PREFS = "nexus_telemetry_firsts"
+
+    /** SDK가 못 올린 신호를 쌓아두는 파일 (TelemetryDeck `PersistentSignalCache`). */
+    private const val SIGNAL_CACHE_FILE = "telemetrydeck.json"
+
+    /** SDK가 만드는 설치 식별자 파일 (`FileUserIdentityProvider`). */
+    private const val IDENTITY_FILE = "telemetrydeckid"
 }
