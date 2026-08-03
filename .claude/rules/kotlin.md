@@ -33,6 +33,33 @@ paths:
 - Debug seeds write **synthetic ledger rows** (`synthetic-` key prefix), never real Health Connect records — a seeded record becomes an indistinguishable health-derived value in an append-only ledger.
 - `RoomDatabase.clearAllTables()` is blocking and asserts off-main-thread — wrap it in `withContext(Dispatchers.IO)`. Never add a delete query to a DAO in main: that gives production code the ability to erase the ledger.
 
+## Testing — 연출(모션·그리기) 검증
+
+**이 하네스에서 무엇이 관측 가능한가** (#338). 이 표를 안 보고 쓰면 통과하지만 아무것도 검증하지 않는 테스트가 나온다 — #246·#268에서 실제로 아홉 번 그랬다.
+
+| 관측 | 가능? | 비고 |
+|---|---|---|
+| 시맨틱 트리(존재·텍스트·contentDescription) | ✅ | 가장 믿을 수 있음 |
+| 측정 크기(`size`) | ✅ | 단 `graphicsLayer`의 alpha·translation은 **크기를 안 바꾼다** |
+| `positionInRoot` (`fetchSemanticsNode`) | ⚠️ | **`setContent` 직후 첫 프레임만** — 이후엔 낡은 값을 계속 준다 |
+| `onGloballyPositioned` 궤적 | ⚠️ | 레이아웃이 다시 돌 때만 갱신 — 그리기 전용 변화는 못 봄 |
+| alpha | ❌ | 시맨틱에 없음 |
+| 그리기 전용 변화(shimmer·브러시) | ❌ | 크기·위치·시맨틱 모두 불변 |
+| 컴포즈 노드 픽셀(`captureToImage`) | ❌ | `GraphicsMode.NATIVE`에서도 idle 미도달 → 타임아웃 |
+| 무한 애니메이션 가동 여부(`waitForIdle` 타임아웃) | ❌ | 무한 전환이 돌아도 idle이 그냥 돌아온다 |
+| 직접 만든 `Bitmap`의 픽셀 | ✅ | `@GraphicsMode(NATIVE)` + `getPixels` (위젯 합성 경로) |
+
+**관측 불가일 때의 순서**: ① 그리기 결정을 **순수 함수로 끌어낸다**(`skeletonColors`·`skeletonBandLeft`·`celebrationEnter` 선례 — 값을 돌려주면 그냥 비교하면 된다) ② 그래도 안 되면 **소스 가드**로 삭제만 막고 한계를 주석에 적는다. 관측 가능한 척하는 단언은 없느니만 못하다.
+
+**규율 3가지**
+- **양성 대조 필수**: "안 움직인다"를 단언하면 같은 파일에 "평소엔 움직인다"를 함께 단언한다. 아무것도 안 그려도 통과하는 걸 막는다(`MotionHarnessGuardTest`가 강제).
+- **`LocalMotionScale`은 `NexusTheme` 안쪽에서 주입**한다. 테마가 시스템 값으로 다시 공급하므로 바깥 주입은 조용히 무시된다(`MotionHarnessGuardTest`가 강제).
+- **주기성을 가진 값은 주기와 어긋나게 센다**: 2프레임 루프에 짝수 틱을 흘리면 제자리로 돌아와 "멈췄다"가 통과한다.
+
+**티커 `delay`는 컴포즈 프레임 클럭이 아니라 Robolectric 메인 루퍼가 굴린다** — `shadowOf(Looper.getMainLooper()).idleFor(...)`를 함께 부르지 않으면 티커가 선 채로 통과한다.
+
+**컴포넌트가 아니라 배선을 검증한다**: "부를 수 있다"와 "부른다"는 다른 명제다. 화면이 실제로 그 컴포넌트를 쓰는지는 소스 가드로 고정한다(`SkeletonWiringTest` 선례) — #268은 기능 전체를 되돌려도 초록이었다.
+
 ## Testing
 
 - `core/` logic requires case-table tests (input → expected XP) — the same table as the balance spreadsheet. **`core/src/jvmTest/resources/balance/*.csv` is the single source for balance tables** (spreadsheet export → commit CSV, no code edit; CI enforces parity via BalanceCsvHarnessTest).
