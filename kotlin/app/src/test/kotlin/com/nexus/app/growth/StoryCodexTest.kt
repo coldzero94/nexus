@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.character.loadStoryFragments
+import com.nexus.core.StoryDropPicker
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -80,15 +81,16 @@ class StoryCodexTest {
         assertEquals(table.fragments.size, state!!.collected.size, "안 나오는 조각이 있다")
     }
 
-    /** 반대쪽 — 첫 몇 번에 다 나오면 발견이 아니라 배급이다. */
+    /**
+     * 반대쪽 — 매 운동마다 나오면 배급이다. 도감 상태로는 잴 수 없어(조각 8개에서 포화한다)
+     * 드롭 자체의 빈도를 센다.
+     */
     @Test
-    fun `초반 몇 번으로는 도감이 안 찬다`() {
-        val state = load(sessions(FEW_SESSIONS))
+    fun `모든 운동이 조각을 주지는 않는다`() {
+        val hits = sessions(MANY_SESSIONS).count { StoryDropPicker.drop(it, table, DROP_PERCENT) != null }
 
-        assertTrue(
-            state!!.collected.size < table.fragments.size,
-            "$FEW_SESSIONS 번 만에 도감이 다 찼다 — 드롭 확률이 너무 높다",
-        )
+        assertTrue(hits > 0, "드롭이 하나도 안 일어난다")
+        assertTrue(hits < MANY_SESSIONS / 2, "운동 $MANY_SESSIONS 번 중 $hits 번 나왔다 — 너무 잦다")
     }
 
     /** 저장소는 집합이라 두 번 넣어도 같다 — 축하는 **새로 들어온 것**에만 붙어야 한다. */
@@ -107,8 +109,6 @@ class StoryCodexTest {
 
 /** 도감이 다 차지 않을 만큼 적고, 드롭이 확실히 일어날 만큼 많은 수. */
 private const val SAMPLE_SESSIONS = 20
-
-private const val FEW_SESSIONS = 3
 
 /** 알파 사용자가 몇 달에 걸쳐 쌓을 세션 수 — 이만큼이면 모든 조각이 나와야 한다. */
 private const val MANY_SESSIONS = 400

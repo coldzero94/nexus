@@ -89,7 +89,13 @@ internal fun StoryCodexCard(state: StoryCodexState, modifier: Modifier = Modifie
     }
 }
 
-/** 드롭 확률 — 운동 다섯 번에 한 번쯤. 너무 잦으면 발견이 아니라 배급이 된다. */
-private const val DROP_PERCENT = 20
+/**
+ * 드롭 확률 — 운동 다섯 번에 한 번쯤.
+ *
+ * 매번 주면 발견이 아니라 배급이다: 도감이 며칠 만에 다 차고 그 뒤로는 운동해도 아무 일도
+ * 안 일어난다. `internal`인 이유는 이 값이 표시가 아니라 **체감 리듬**을 정하기 때문에
+ * 테스트가 실제 드롭 빈도를 직접 재야 하기 때문이다.
+ */
+internal const val DROP_PERCENT = 20
 
 private const val TAG_CODEX = "StoryCodex"
