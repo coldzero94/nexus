@@ -30,6 +30,19 @@ BLUSH = "#EF7A5C"
 WHITE = "#FFFFFF"
 SPARK = "#FFCC5C"
 
+# ── 장비 팔레트 (#76) ──
+# 몸통 앰버(#FFB74D)와 겹쳐도 읽히도록 채도·명도를 벌린다. 앰버 계열은 장비에 쓰지 않는다.
+STRAW = "#E0B268"
+STRAW_DK = "#C08F45"
+WOOL = "#7E6BC4"
+WOOL_DK = "#5F4FA0"
+LEAF = "#6FA96B"
+LEAF_DK = "#4E8250"
+CLOTH = "#E5544B"
+CLOTH_DK = "#B93B34"
+CORD = "#6B5545"
+METAL = "#E8C24A"
+
 STROKE = 2.4
 
 
@@ -128,6 +141,62 @@ def sparkle(cx, cy, r):
     return fill(SPARK, f"M{cx},{cy - r}q{r * 0.28},{r * 0.72} {r},{r}q-{r * 0.72},{r * 0.28} -{r},{r}q-{r * 0.28},-{r * 0.72} -{r},-{r}q{r * 0.72},-{r * 0.28} {r},-{r}z")
 
 
+def equipment():
+    """장비 레이어 (#76) — 캐릭터와 **같은 96×96 좌표계**에 그린다.
+
+    본체 위에 `matchParentSize`로 겹쳐지므로(EquipmentSection), 좌표가 어긋나면 모자가 공중에 뜬다.
+    기준: 머리 돔 꼭대기 y≈22, 중심 x=48, 머리 반폭 ≈29. 목/가슴은 y 52~70.
+    HEAD는 y 12~34, ACCESSORY는 y 52~72 안에서 그린다.
+    """
+    items = {}
+
+    # ── HEAD 4종 ──
+    items["hat_straw"] = [
+        fill(STRAW, ell(48, 30, 31, 6.5)),                       # 챙
+        fill(STRAW_DK, "M17,30c10,4 52,4 62,0c-10,6 -52,6 -62,0z"),
+        fill(STRAW, "M31,29c0,-11 6,-17 17,-17c11,0 17,6 17,17z"),  # 크라운
+        fill(STRAW_DK, "M31,27c11,3 23,3 34,0l0,2c-11,3 -23,3 -34,0z"),
+    ]
+    items["hat_beanie"] = [
+        fill(WOOL, "M29,29c0,-12 7,-19 19,-19c12,0 19,7 19,19z"),
+        fill(WOOL_DK, "M28,28c13,3 27,3 40,0l0,5c-13,3 -27,3 -40,0z"),  # 접힌 단
+        fill(WOOL, ell(48, 9, 5, 5)),                            # 방울
+    ]
+    items["band_leaf"] = [
+        fill(LEAF, "M27,30c12,4 30,4 42,0l0,4c-12,4 -30,4 -42,0z"),   # 띠
+        fill(LEAF_DK, "M66,29c6,-5 12,-3 12,3c-5,4 -10,3 -12,-3z"),   # 옆 잎
+        fill(LEAF, "M64,33c6,2 9,7 6,11c-5,-1 -7,-6 -6,-11z"),
+    ]
+    items["crown_bud"] = [
+        fill(METAL, "M28,31l3,-13l7,7l10,-11l10,11l7,-7l3,13z"),
+        fill(METAL, "M28,31c13,3 27,3 40,0l0,3c-13,3 -27,3 -40,0z"),
+        fill(CLOTH, ell(48, 21, 2.6, 2.6)),
+    ]
+
+    # ── ACCESSORY 4종 ──
+    # ACCESSORY는 입(y≈59)을 가리지 않게 **목 아래**(y 64~80)에 앉힌다.
+    # 처음엔 y 56에 뒀더니 목도리가 입을 통째로 덮어 표정이 사라졌다.
+    items["scarf_red"] = [
+        fill(CLOTH, "M30,64c11,7 25,7 36,0c2,4 2,7 0,10c-12,6 -24,6 -36,0c-2,-3 -2,-6 0,-10z"),
+        fill(CLOTH_DK, "M60,72c6,2 8,9 5,15c-4,1 -7,-1 -8,-4c2,-4 3,-8 3,-11z"),
+    ]
+    items["collar_bell"] = [
+        fill(CORD, "M32,65c10,6 22,6 32,0c1,2 1,4 0,5c-11,6 -21,6 -32,0c-1,-1 -1,-3 0,-5z"),
+        fill(METAL, "M48,71c4,0 6,3 6,6c0,2 -2,3 -6,3c-4,0 -6,-1 -6,-3c0,-3 2,-6 6,-6z"),
+        fill(CORD, ell(48, 79, 1.6, 1.6)),
+    ]
+    items["pendant_leaf"] = [
+        fill(CORD, "M34,63c8,6 20,6 28,0c1,1 1,2 0,3c-9,6 -19,6 -28,0c-1,-1 -1,-2 0,-3z"),
+        fill(LEAF, "M48,68c6,2 9,8 6,13c-6,-1 -9,-7 -6,-13z"),
+    ]
+    items["pouch_side"] = [
+        fill(CORD, "M28,66c13,5 27,5 40,0l0,3c-13,5 -27,5 -40,0z"),
+        fill(STRAW_DK, "M64,68c6,0 9,3 9,7c0,5 -3,7 -9,7c-6,0 -9,-2 -9,-7c0,-4 3,-7 9,-7z"),
+        fill(CORD, "M56,71c5,2 11,2 16,0l0,3c-5,2 -11,2 -16,0z"),
+    ]
+    return items
+
+
 def vector(paths):
     body = "\n".join(paths)
     return (
@@ -189,6 +258,9 @@ def build():
     paths.append(stroke(INK, "M64,26h8l-8,9h8", 2.2))
     paths.append(stroke(INK, "M76,14h6l-6,7h6", 1.9))
     files["character_cozy_roll_0"] = paths
+
+    for state, paths in equipment().items():
+        files[f"character_{state}_0"] = paths
 
     for name, paths in files.items():
         (OUT / f"{name}.xml").write_text(vector(paths), encoding="utf-8")
