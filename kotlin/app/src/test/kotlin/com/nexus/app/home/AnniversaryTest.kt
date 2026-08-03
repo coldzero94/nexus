@@ -62,14 +62,58 @@ class AnniversaryTest {
     }
 
     /**
-     * 이미 쓰던 사용자: 원장 첫날로 소급한다. 오늘로 잡으면 기념일 시계가 리셋된다 —
-     * 누적된 시간을 자산으로 만들자는 티켓에서 정확히 반대되는 결과다.
+     * 이미 오래 쓰던 사용자: 원장 첫날로 소급한다. 원장은 append-only라 소급 창(28일)보다
+     * 오래된 행은 "그때부터 앱을 쓰고 있었다"는 증거다.
      */
     @Test
-    fun `기존 사용자는 원장 첫날로 소급한다`() {
+    fun `오래 쓴 사용자는 원장 첫날로 소급한다`() {
         val ninetyDaysAgo = TODAY - 90
 
         assertEquals(ninetyDaysAgo, store().firstMetEpochDay(ninetyDaysAgo, TODAY))
+    }
+
+    /**
+     * **설치 당일 소급을 만난 날로 착각하지 않는다** (#111 리뷰).
+     *
+     * 홈 로드와 소급 지급(#44)이 설치 직후 최근 28일치 세션을 원장에 적는다. 삼성헬스 이력이 있는
+     * 신규 사용자는 설치 당일에 이미 28일 전 원장 행을 갖는다 — 그걸 만난 날로 삼으면 **설치
+     * 사흘 만에 "만난 지 한 달"**이 뜨고, 알파 안에 닿는 기념일 둘이 거짓으로 소진된다.
+     */
+    @Test
+    fun `설치 직후 소급된 원장은 만난 날이 아니다`() {
+        val withinBackfill = TODAY - 27
+
+        assertEquals(TODAY, store().firstMetEpochDay(withinBackfill, TODAY))
+    }
+
+    /** 창 경계 — 28일 전은 아직 소급으로 설명된다. */
+    @Test
+    fun `소급 창 경계는 오늘로 본다`() {
+        assertEquals(TODAY, store().firstMetEpochDay(TODAY - 28, TODAY))
+    }
+
+    /** 위 가드가 기능을 죽이지 않는지 — 창 하루 밖은 증거로 인정한다. */
+    @Test
+    fun `소급 창 바로 밖은 증거로 인정한다`() {
+        assertEquals(TODAY - 29, store().firstMetEpochDay(TODAY - 29, TODAY))
+    }
+
+    /**
+     * 삼성헬스 이력이 있는 신규 사용자가 설치 당일 기념일을 보면 안 된다 —
+     * 위 단언들이 지키려는 실제 사용자 시나리오.
+     */
+    @Test
+    fun `이력 많은 신규 사용자는 설치 당일 기념일이 없다`() {
+        val s = store()
+        val firstMet = s.firstMetEpochDay(ledgerFirstEpochDay = TODAY - 27, todayEpochDay = TODAY)
+
+        val pending = com.nexus.core.Anniversaries.pendingAt(
+            table,
+            daysTogether = com.nexus.core.Anniversaries.daysTogether(firstMet, TODAY),
+            celebratedDays = s.celebratedDays,
+        )
+
+        assertNull(pending, "설치 당일에 기념일이 떴다: ${pending?.title}")
     }
 
     /** 한 번 정해지면 안 바뀐다 — 원장이 정리돼도 기념일이 뒤로 밀리면 안 된다. */

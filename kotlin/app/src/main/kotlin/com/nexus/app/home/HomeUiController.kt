@@ -153,8 +153,11 @@ internal class HomeUiController(val stores: HomeStores, private val context: and
             settlementDelta = settleOnLoad(stores.settlement, loaded.state.cappedTotalXp)
             morningVisible = shouldShowMorningCard(stores.morning)
             journalVisible = shouldShowJournal(stores.journal, now)
-            anniversaryVisible = true
-            anniversary = loadAnniversary(context, stores.ledger, cardEpochDay, stores.together)
+            // 가시성이 데이터를 **앞서면 안 된다** — true를 먼저 두면 방금 닫은 카드가 로드가
+            // 끝나기 전까지 다시 보이고, 등장 연출과 낭독이 통째로 재생된다(#111 리뷰)
+            val pending = loadAnniversary(context, stores.ledger, cardEpochDay, stores.together)
+            anniversaryVisible = pending != null
+            anniversary = pending
         }
     }
 

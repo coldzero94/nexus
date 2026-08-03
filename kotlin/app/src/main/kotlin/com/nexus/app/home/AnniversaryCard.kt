@@ -1,6 +1,7 @@
 package com.nexus.app.home
 
 import android.content.Context
+import android.database.SQLException
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeOut
@@ -105,7 +106,7 @@ internal suspend fun loadAnniversary(
     context: Context,
     ledger: RewardLedgerRepository,
     todayEpochDay: Long,
-    store: TogetherStore = TogetherStore(context),
+    store: TogetherStore,
 ): Anniversary? = try {
     val table = withContext(Dispatchers.IO) { CharacterAssets(context).loadAnniversaries() }
     val firstMet = withContext(Dispatchers.IO) {
@@ -120,6 +121,11 @@ internal suspend fun loadAnniversary(
     throw e
 } catch (e: IOException) {
     Log.w(TAG, "anniversary table IO failure", e)
+    null
+} catch (e: SQLException) {
+    // 원장을 읽으므로 형제 로더(loadHome·backfillOrNull)와 같은 DB 예외를 받는다 — 여기서 새면
+    // 기념일이 없는 게 아니라 홈 탭이 죽는다
+    Log.w(TAG, "anniversary ledger db failure", e)
     null
 } catch (e: IllegalStateException) {
     Log.w(TAG, "anniversary state failure", e)
