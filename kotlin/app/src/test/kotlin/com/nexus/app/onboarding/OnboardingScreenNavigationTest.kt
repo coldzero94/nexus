@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.nexus.app.R
 import com.nexus.app.health.HealthConnectManager
@@ -21,8 +22,8 @@ import kotlin.test.assertEquals
 /**
  * 온보딩 내비게이션 (#225, E14-15) — 실제 화면을 태워 **뒤로 갔을 때 값이 남는지**까지 본다.
  *
- * Robolectric엔 Health Connect가 없어 `availability()`가 `Unavailable`이다 → 경로는 3단계
- * (WELCOME → SAMSUNG_HEALTH → WEEKLY_GOAL)이고 권한 설명은 건너뛴다. 그게 이 티켓에서 가장
+ * Robolectric엔 Health Connect가 없어 `availability()`가 `Unavailable`이다 → 경로는 4단계
+ * (WELCOME → CREATE → SAMSUNG_HEALTH → WEEKLY_GOAL)이고 권한 설명은 건너뛴다. 그게 이 티켓에서 가장
  * 까다로운 경로라 오히려 검증 가치가 크다: **건너뛴 스텝으로 되돌아가면 안 된다.**
  *
  * ## 여기서 못 잡는 것
@@ -51,6 +52,13 @@ class OnboardingScreenNavigationTest {
 
     private fun back() = composeRule.onNodeWithContentDescription(string(R.string.onboarding_back))
 
+    /** 캐릭터 만들기(#42)를 건너뛰고 지난다 — 이 파일의 관심사는 경로·진행 표시이지 작명이 아니다. */
+    private fun passCreate() = composeRule
+        .onNodeWithText(string(R.string.onboarding_create_skip))
+        // 캐릭터 만들기는 스크롤 스텝이라(스프라이트 + 입력 + 칩 8개) 좁은 화면에선 버튼이 접힌다
+        .performScrollTo()
+        .performClick()
+
     /**
      * 진행 표시는 한 시맨틱 노드로 묶여 있어(#224 규칙) 안쪽 숫자 텍스트가 트리에 없다.
      * 그래서 단언도 스크린리더가 보는 노드로 한다.
@@ -62,7 +70,7 @@ class OnboardingScreenNavigationTest {
     fun `첫 스텝은 1단계이고 뒤로가 없다`() {
         render()
 
-        progress(1, 3).assertIsDisplayed()
+        progress(1, 4).assertIsDisplayed()
         back().assertDoesNotExist()
     }
 
@@ -72,8 +80,9 @@ class OnboardingScreenNavigationTest {
 
         composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
 
-        progress(2, 3).assertIsDisplayed()
+        progress(2, 4).assertIsDisplayed()
         back().assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.onboarding_create_title)).assertIsDisplayed()
     }
 
     /**
@@ -84,11 +93,12 @@ class OnboardingScreenNavigationTest {
     fun `뒤로 가면 건너뛴 스텝이 아니라 첫 스텝으로 돌아간다`() {
         render()
         composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passCreate()
 
         back().performClick()
 
-        progress(1, 3).assertIsDisplayed()
-        composeRule.onNodeWithText(string(R.string.onboarding_welcome_title)).assertIsDisplayed()
+        progress(2, 4).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.onboarding_create_title)).assertIsDisplayed()
         // 권한 설명은 이 경로에 없다
         composeRule.onNodeWithText(string(R.string.permission_rationale_title)).assertDoesNotExist()
     }
@@ -97,10 +107,11 @@ class OnboardingScreenNavigationTest {
     fun `마지막 스텝까지 진행 번호가 이어진다`() {
         render()
         composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passCreate()
 
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).performClick()
 
-        progress(3, 3).assertIsDisplayed()
+        progress(4, 4).assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.onboarding_goal_title)).assertIsDisplayed()
     }
 
@@ -114,6 +125,7 @@ class OnboardingScreenNavigationTest {
         val picked = if (initial == PICK_A) PICK_B else PICK_A
         render()
         composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passCreate()
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).performClick()
         composeRule.onNodeWithText(string(R.string.goal_days_format, picked)).performClick()
 
@@ -139,11 +151,12 @@ class OnboardingScreenNavigationTest {
             NexusTheme { OnboardingScreen(manager = HealthConnectManager(context), onFinished = {}) }
         }
         composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
-        progress(2, 3).assertIsDisplayed()
+        passCreate()
+        progress(3, 4).assertIsDisplayed()
 
         restorer.emulateSavedInstanceStateRestore()
 
-        progress(2, 3).assertIsDisplayed()
+        progress(3, 4).assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).assertIsDisplayed()
     }
 
@@ -156,6 +169,7 @@ class OnboardingScreenNavigationTest {
             NexusTheme { OnboardingScreen(manager = HealthConnectManager(context), onFinished = {}) }
         }
         composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passCreate()
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).performClick()
         composeRule.onNodeWithText(string(R.string.goal_days_format, picked)).performClick()
 
@@ -170,6 +184,7 @@ class OnboardingScreenNavigationTest {
         var finished: Boolean? = null
         render(onFinished = { finished = it })
         composeRule.onNodeWithText(string(R.string.onboarding_next)).performClick()
+        passCreate()
         composeRule.onNodeWithText(string(R.string.samsung_health_done)).performClick()
 
         composeRule.onNodeWithText(string(R.string.onboarding_goal_confirm)).performClick()

@@ -35,10 +35,10 @@ class FunnelPayloadTest {
     }
 
     @Test
-    fun `온보딩 스텝 네 개가 모두 신호를 갖는다`() {
-        // 스텝을 추가하고 계측을 빼면 이탈 지점에 구멍이 생긴다 — 4단계 대응을 못 박는다
+    fun `온보딩 스텝 다섯 개가 모두 신호를 갖는다`() {
+        // 스텝을 추가하고 계측을 빼면 이탈 지점에 구멍이 생긴다 — 5단계 대응을 못 박는다 (#42로 캐릭터 만들기 추가)
         val stepSignals = signals.filter { it.startsWith("funnel.onboardingStage") }
-        assertEquals(4, stepSignals.size, "온보딩 스텝 수와 계측 신호 수가 어긋난다")
+        assertEquals(5, stepSignals.size, "온보딩 스텝 수와 계측 신호 수가 어긋난다")
     }
 
     @Test
