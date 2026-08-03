@@ -2,6 +2,7 @@ package com.nexus.app.character
 
 import android.content.Context
 import android.util.Log
+import com.nexus.core.ActivityType
 import com.nexus.core.Baseline
 import com.nexus.core.MoodContext
 import com.nexus.core.MoodEvaluator
@@ -36,13 +37,26 @@ object MoodResolver {
         restMode: Boolean,
         weeklyGoalMet: Boolean,
         condition: Int,
+        minutesByType: Map<ActivityType, Int> = emptyMap(),
     ): MoodContext = MoodContext(
         todayActiveMin = todayActiveMin,
+        walkMin = minutesByType[ActivityType.WALKING] ?: 0,
+        runMin = minutesByType[ActivityType.RUNNING] ?: 0,
+        strengthMin = minutesByType[ActivityType.STRENGTH] ?: 0,
         personalCoef = personalCoef,
         restMode = restMode,
         weeklyGoalMet = weeklyGoalMet,
         condition = condition,
     )
+
+    /**
+     * 오늘 종류별 활동 분 (#114) — 순수. 종류가 없는 세션(매핑 안 된 종목)은 빠진다:
+     * XP도 안 주는 세션에 반응만 붙으면 "얘가 뭘 보고 저러지"가 된다.
+     */
+    fun minutesByTypeToday(sessions: List<SessionInput>, todayEpoch: Long): Map<ActivityType, Int> = sessions
+        .filter { it.epochDay == todayEpoch && it.type != null }
+        .groupBy { it.type!! }
+        .mapValues { (_, s) -> s.sumOf { it.minutes } }
 
     /** 이번 주 활동일이 주간 목표일 수 이상인가 — 순수. */
     fun weeklyGoalMet(activeDaysThisWeek: Int, goalDays: Int): Boolean = activeDaysThisWeek >= goalDays
@@ -62,6 +76,7 @@ object MoodResolver {
             restMode = restMode,
             weeklyGoalMet = weeklyGoalMet(activeDaysThisWeek(sessions, today), goalDays),
             condition = condition,
+            minutesByType = minutesByTypeToday(sessions, todayEpoch),
         )
     }
 

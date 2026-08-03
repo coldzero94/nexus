@@ -304,6 +304,38 @@ def build():
     paths.append(stroke(INK, "M76,14h6l-6,7h6", 1.9))
     files["character_cozy_roll_0"] = paths
 
+    # ── 운동 종류별 특화 반응 3종 (#114) ──
+    #
+    # 표정 5종과 **실루엣이 달라야** 한다. 얼굴만 바꾸면 홈에 뜬 그림이 늘 같은 덩어리로 읽혀
+    # "내가 한 운동을 얘가 안다"가 전달되지 않는다 — 그게 이 티켓의 값어치 전부다.
+
+    # 러닝 — 옆에서 같이 뜀: 발을 크게 벌리고 뒤로 속도선. 신남(jump_hyped)과 달리 팔은 뒤로 간다.
+    paths, cy = body_paths(lift=2.5, arm_y=60.0, foot_dx=7.0)
+    paths += blush(cy, "0.55") + eyes_arc(cy, down=True)
+    paths.append(fill(INK, ell(48, cy + 9, 5.5, 4.5)))
+    paths.append(stroke(BODY, "M8,52h13", 2.8))
+    paths.append(stroke(BODY, "M5,62h10", 2.4))
+    paths.append(stroke(BODY, "M10,72h11", 2.2))
+    files["character_run_along_0"] = paths
+
+    # 근력 — 알통 자랑: 팔을 위로 접고 그 위에 알통을 덧그린다. 눈은 ^^, 입은 씩.
+    paths, cy = body_paths(squash=-2.0, arm_y=44.0)
+    paths.append(fill(BODY, ell(15.0, cy - 4, 7.5, 6.5)))
+    paths.append(fill(BODY, ell(81.0, cy - 4, 7.5, 6.5)))
+    paths += blush(cy, "0.55") + eyes_arc(cy, down=True)
+    paths.append(stroke(INK, f"M43,{cy + 8}c2.5,3 6,3 8.5,0.5"))
+    paths.append(stroke(INK, "M20,26c3,-4 7,-4 10,0", 2.2))
+    paths.append(stroke(INK, "M67,24c3,-4 7,-4 10,0", 2.2))
+    files["character_flex_0"] = paths
+
+    # 걷기 — 따라 산책: 걷는 자세 + 지나온 발자국. walk 프레임과 달리 발자국이 궤적을 만든다.
+    paths, cy = body_paths(foot_dx=4.0)
+    paths += blush(cy) + eyes_arc(cy, down=False)
+    paths.append(stroke(INK, f"M43,{cy + 8}c2.5,3.5 7.5,3.5 10,0"))
+    for fx, fy in [(14, 84), (24, 88), (34, 84)]:
+        paths.append(fill(BODY, ell(fx, fy, 3.2, 2.2), "0.55"))
+    files["character_walk_along_0"] = paths
+
     for state, paths in equipment().items():
         files[f"character_{state}_0"] = paths
 

@@ -35,6 +35,16 @@ data class MoodResult(val mood: String, val face: String, val conditionEffect: S
  */
 data class MoodContext(
     val todayActiveMin: Int = 0,
+    /**
+     * 오늘 종류별 활동 분 (#114) — 표가 "가장 많이 한 운동"을 고를 수 있게 **분 단위**로 준다.
+     *
+     * 불리언 플래그(`didRun`)로 두지 않은 이유: 러닝 40분 + 근력 5분인 날에 근력 반응이 뜨면
+     * "내가 한 운동을 얘가 안다"가 오히려 깨진다. 분을 주면 우세 판정을 표가 하고, 나중에
+     * 규칙을 바꾸고 싶을 때도 코드를 안 고친다(E4-4 계약).
+     */
+    val walkMin: Int = 0,
+    val runMin: Int = 0,
+    val strengthMin: Int = 0,
     val personalCoef: Double = 1.0,
     val highIntensity: Boolean = false,
     val restMode: Boolean = false,
@@ -49,6 +59,9 @@ data class MoodContext(
 ) {
     fun toVars(): Map<String, Double> = mapOf(
         "todayActiveMin" to todayActiveMin.toDouble(),
+        "walkMin" to walkMin.toDouble(),
+        "runMin" to runMin.toDouble(),
+        "strengthMin" to strengthMin.toDouble(),
         "personalCoef" to personalCoef,
         "highIntensity" to highIntensity.toFlag(),
         "restMode" to restMode.toFlag(),
@@ -68,6 +81,9 @@ data class MoodContext(
         /** 표의 `when`에서 참조 가능한 변수 어휘 — 파서가 이 집합으로 오탈자/미지원 변수를 걸러낸다. */
         val VARS: Set<String> = setOf(
             "todayActiveMin",
+            "walkMin",
+            "runMin",
+            "strengthMin",
             "personalCoef",
             "highIntensity",
             "restMode",
