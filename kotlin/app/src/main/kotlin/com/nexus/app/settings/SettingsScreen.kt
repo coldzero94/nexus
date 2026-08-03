@@ -82,6 +82,7 @@ fun SettingsScreen(manager: HealthConnectManager, modifier: Modifier = Modifier,
 
         SettingsSection(stringResource(R.string.settings_section_data)) {
             BackupCard()
+            AnalyticsConsentCard()
         }
 
         // 디버그 소스셋에만 실체가 있다 — 릴리스는 no-op 짝이 컴파일된다 (#245).

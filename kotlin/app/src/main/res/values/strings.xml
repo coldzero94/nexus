@@ -78,6 +78,8 @@
     <string name="settings_section_connection">연동</string>
     <string name="settings_section_activity">캐릭터·활동</string>
     <string name="settings_section_data">데이터·백업</string>
+    <string name="settings_analytics">사용 통계·오류 보고</string>
+    <string name="settings_analytics_desc">어떤 화면이 쓰이는지와 앱이 멈춘 원인을 익명으로 보냅니다. 걸음 수·운동 시간·심박·경험치 같은 수치는 어떤 형태로도 보내지 않아요. 끄면 즉시 멈춥니다.</string>
     <string name="settings_section_danger">되돌릴 수 없는 작업</string>
     <!-- 캐릭터 이름 (#216) -->
     <string name="settings_name">캐릭터 이름</string>

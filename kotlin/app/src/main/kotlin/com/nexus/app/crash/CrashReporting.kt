@@ -2,12 +2,14 @@ package com.nexus.app.crash
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.nexus.app.BuildConfig
 import com.nexus.core.FailureCategory
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroid
+import java.io.File
 
 private const val TAG = "CrashReporting"
 
@@ -33,18 +35,35 @@ object CrashReporting {
      * DSN이 없으면(알파 초기·디버그) 조용히 아무것도 하지 않는다 — 호출부가 분기하지 않게.
      */
     fun recordHandledFailure(category: FailureCategory) {
-        if (BuildConfig.SENTRY_DSN.isBlank()) return
+        if (BuildConfig.SENTRY_DSN.isBlank() || !enabled) return
         // 메시지가 아니라 breadcrumb·level로 — 검색 가능한 분류 하나면 운영 판단에 충분하다.
         Sentry.captureMessage(HANDLED_PREFIX + category.name, SentryLevel.WARNING)
     }
 
-    /** [com.nexus.app.NexusApplication]에서 1회 호출. */
-    fun init(context: Context) {
-        val dsn = BuildConfig.SENTRY_DSN
+    /** 지금 오류를 보내는 상태인가 (#349) — 동의 토글 테스트가 읽는다. */
+    @get:VisibleForTesting
+    val isActive: Boolean get() = enabled
+
+    /**
+     * [com.nexus.app.settings.AnalyticsConsent]가 부른다. 두 번 불러도 안전해야 한다 —
+     * 동의를 껐다 켜면 다시 온다.
+     */
+    fun init(context: Context, dsn: String = BuildConfig.SENTRY_DSN) {
+        if (enabled) return
         if (dsn.isBlank()) {
             Log.i(TAG, "DSN absent — crash reporting off")
             return
         }
+        runCatching { initSentry(context, dsn) }
+            // 플래그는 **init 뒤에**, 그리고 SDK에게 물어서 정한다. 앞에 두면 init이 던졌을 때
+            // "보내는 중"이라고 거짓 보고한다(#349 리뷰가 잘못된 DSN으로 재현 — 테스트가 고정).
+            // `isEnabled()`로 정하는 건 그 위의 방어다: SDK가 던지지 않고 조용히 스스로를 끄는
+            // 경우까지 덮는다(현재 테스트로는 도달 경로가 없어 단언하지 않는다).
+            .onSuccess { enabled = Sentry.isEnabled() }
+            .onFailure { Log.w(TAG, "crash reporting init failed", it) }
+    }
+
+    private fun initSentry(context: Context, dsn: String) {
         SentryAndroid.init(context.applicationContext) { options ->
             options.dsn = dsn
             options.isSendDefaultPii = false // 기본값이지만 계약이므로 명시
@@ -52,6 +71,9 @@ object CrashReporting {
             options.isAttachScreenshot = false // 화면에 건강 파생 표시값이 있다 — 첨부 금지
             options.isAttachViewHierarchy = false
             options.environment = if (BuildConfig.DEBUG) "debug" else "release"
+            // 동의를 끄는 순간 마지막 업로드가 일어나면 안 된다 — Sentry.close()는 이 값만큼
+            // 동기 flush를 하고(무료 API엔 close(false)가 없다) 그 자체가 전송 행위가 된다 (#349 리뷰)
+            options.shutdownTimeoutMillis = 0
             // 방어 심화 — 미래에 값 보간 예외 메시지("steps=8432")가 생겨도 수치는 안 나간다([CrashScrubber])
             options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
                 event.exceptions?.forEach { ex -> ex.value = CrashScrubber.scrub(ex.value) }
@@ -60,6 +82,28 @@ object CrashReporting {
             }
         }
     }
+
+    /**
+     * 오류 보고 중단 (#349) — 동의를 끈 순간부터 아무것도 안 나간다.
+     *
+     * `Sentry.close()`까지 부르는 이유는 [com.nexus.app.telemetry.Telemetry.stop]과 같다:
+     * 미처리 크래시 핸들러는 우리 래퍼를 안 거치므로, 플래그만 내리면 다음 크래시가 그대로 나간다.
+     */
+    fun stop(context: Context) {
+        enabled = false
+        runCatching { Sentry.close() }
+            .onFailure { Log.w(TAG, "crash reporting stop failed", it) }
+        // 아직 못 올린 envelope·세션·breadcrumb이 캐시에 남는다 — 다음 init이 그걸 묶어 보낸다.
+        // 철회 이전 데이터가 재동의 순간 나가는 셈이라, 큐를 세워두지 않고 버린다 (#349 리뷰).
+        runCatching { File(context.cacheDir, SENTRY_CACHE_DIR).deleteRecursively() }
+            .onFailure { Log.w(TAG, "crash cache cleanup failed", it) }
+    }
+
+    @Volatile
+    private var enabled = false
+
+    /** SDK가 못 올린 envelope·세션·breadcrumb을 쌓아두는 디렉터리. */
+    private const val SENTRY_CACHE_DIR = "sentry"
 
     /** 처리된-실패 메시지 접두어 — Sentry에서 미처리 크래시와 구분해 필터링한다. */
     private const val HANDLED_PREFIX = "handled:"
