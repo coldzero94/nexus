@@ -14,12 +14,15 @@ import kotlin.test.assertTrue
 
 /**
  * 기분 배선 조립 고정 (#212) — [MoodResolver.buildMoodContext]가 홈 신호를 올바른 [com.nexus.core.MoodContext]로
- * 맵핑하고, 실제 표(mood_triggers.json과 동일 규칙)로 평가 시 5분기가 각각 맞는 기분으로 떨어지는지 검증.
- * 엔진 자체는 core에서 검증되므로 여기선 "홈 신호 → 기분" 배선의 정합만 고정한다.
+ * 맵핑하는지. 엔진 자체는 core에서 검증되므로 여기선 "홈 신호 → 기분" 배선의 정합만 고정한다.
+ *
+ * 표는 **인라인 축약본**이다 — 실제 `mood_triggers.json`과 같지 않다(운동 종류별 규칙 p3~5가 없다).
+ * 실제 표를 태우는 검증은 [ActivityReactionTest]가 한다. 여기서 축약본을 쓰는 이유는 이 파일의
+ * 명제가 "표가 옳은가"가 아니라 "홈 신호가 컨텍스트로 제대로 옮겨지는가"이기 때문이다.
  */
 class MoodResolverTest {
 
-    // mood_triggers.json과 동일한 규칙(우선순위·식·표정) — 배선 검증용 인라인 표
+    // 배선 검증용 인라인 축약표 — 종류별 규칙은 일부러 뺐다(위 KDoc 참고)
     private val table = MoodTable(
         version = "test",
         rules = listOf(
@@ -48,7 +51,14 @@ class MoodResolverTest {
     private fun moodOf(todayActiveMin: Int, personalCoef: Double, restMode: Boolean, weeklyGoalMet: Boolean): String? =
         MoodEvaluator.evaluate(
             table,
-            MoodResolver.buildMoodContext(todayActiveMin, personalCoef, restMode, weeklyGoalMet, condition = 70),
+            MoodResolver.buildMoodContext(
+                // 종류별 분이 곧 총 활동 분이다 — 따로 받으면 프로덕션에서 못 만드는 조합이 생긴다
+                minutesByType = if (todayActiveMin > 0) mapOf(ActivityType.WALKING to todayActiveMin) else emptyMap(),
+                personalCoef = personalCoef,
+                restMode = restMode,
+                weeklyGoalMet = weeklyGoalMet,
+                condition = 70,
+            ),
         )?.mood
 
     @Test
@@ -77,10 +87,19 @@ class MoodResolverTest {
         assertEquals("심심", moodOf(0, personalCoef = 1.0, restMode = false, weeklyGoalMet = false))
     }
 
+    /**
+     * 축하는 **넘긴 날 하루**다. 주간 활동일 수는 주 안에서 줄지 않으므로 `>= goalDays`로 두면
+     * 달성한 뒤 남은 요일 내내 뿌듯(p1)이 다른 기분을 전부 먹는다 — 매일 운동하는 사용자일수록
+     * 반응 다양성을 못 보게 된다(#114 리뷰).
+     */
     @Test
-    fun weeklyGoalMet_thresholdIsInclusive() {
-        assertEquals(true, MoodResolver.weeklyGoalMet(activeDaysThisWeek = 4, goalDays = 4))
-        assertEquals(false, MoodResolver.weeklyGoalMet(activeDaysThisWeek = 3, goalDays = 4))
+    fun weeklyGoalMet_firesOnlyOnTheDayItIsCrossed() {
+        assertEquals(true, MoodResolver.weeklyGoalMet(activeDaysThisWeek = 4, goalDays = 4, activeToday = true))
+        assertEquals(false, MoodResolver.weeklyGoalMet(activeDaysThisWeek = 3, goalDays = 4, activeToday = true))
+        // 이미 넘긴 주의 다음 활동일 — 다시 축하하지 않는다
+        assertEquals(false, MoodResolver.weeklyGoalMet(activeDaysThisWeek = 5, goalDays = 4, activeToday = true))
+        // 넘긴 주의 쉬는 날 — 활동이 없으면 축하 대상이 아니다
+        assertEquals(false, MoodResolver.weeklyGoalMet(activeDaysThisWeek = 4, goalDays = 4, activeToday = false))
     }
 
     private fun session(date: LocalDate, type: ActivityType, minutes: Int) =
@@ -99,8 +118,11 @@ class MoodResolverTest {
             session(wed, ActivityType.RUNNING, 10), // 수 중복 → distinct 3일
             session(LocalDate.of(2026, 7, 17), ActivityType.WALKING, 20), // 지난 금 → 이번주 제외
         )
+        // 수요일에 3일째 → 목표 3일을 오늘 넘겼다
         assertTrue(ctx(sessions, wed, goalDays = 3).weeklyGoalMet)
         assertFalse(ctx(sessions, wed, goalDays = 4).weeklyGoalMet)
+        // 목표가 2일이면 화요일에 이미 넘겼다 — 수요일엔 축하하지 않는다
+        assertFalse(ctx(sessions, wed, goalDays = 2).weeklyGoalMet)
     }
 
     @Test

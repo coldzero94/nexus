@@ -304,6 +304,51 @@ def build():
     paths.append(stroke(INK, "M76,14h6l-6,7h6", 1.9))
     files["character_cozy_roll_0"] = paths
 
+    # ── 운동 종류별 특화 반응 3종 (#114) ──
+    #
+    # 표정 5종과 **실루엣이 달라야** 한다. 얼굴만 바꾸면 홈에 뜬 그림이 늘 같은 덩어리로 읽혀
+    # "내가 한 운동을 얘가 안다"가 전달되지 않는다 — 그게 이 티켓의 값어치 전부다.
+    #
+    # 96x96 평면 치비라 회전이 없다. 그래서 자세가 아니라 **소품 하나**로 종류를 읽힌다:
+    # 걷기=발자국 궤적, 러닝=속도선, 근력=알통. 소품은 팔·몸에 가리지 않는 자리에 둔다.
+
+    # 러닝 — 옆에서 같이 뜀: 두 발이 뜨고 뒤로 속도선 3줄.
+    paths, cy = body_paths(lift=3.0, arm_y=52.0, foot_dx=9.0)
+    paths += blush(cy, "0.55") + eyes_arc(cy, down=True)
+    paths.append(fill(INK, ell(48, cy + 9, 6.0, 4.5)))
+    paths.append(fill(BLUSH, ell(48, cy + 11, 3.0, 2.0)))
+    # 팔(x 12~23, y 46~64)을 피해 위·아래·바깥으로만 긋는다 — 겹치면 속도선이 팔에 먹힌다
+    paths.append(stroke(BODY, "M6,32h20", 3.0))
+    paths.append(stroke(BODY, "M2,55h8", 2.6))
+    paths.append(stroke(BODY, "M8,76h18", 2.6))
+    files["character_run_along_0"] = paths
+
+    # 근력 — 알통 자랑: 팔을 위로 올리고 그 위에 알통을 덧그린다. 머리 위 이펙트는 안 쓴다
+    # (눈썹으로 읽힌다 — #114 첫 시안에서 실제로 그랬다). 대신 땀방울 하나로 힘쓴 티를 낸다.
+    paths, cy = body_paths(squash=-2.0, arm_y=44.0)
+    paths.append(fill(BODY, ell(16.5, cy - 3, 8.5, 7.5)))
+    paths.append(fill(BODY, ell(79.5, cy - 3, 8.5, 7.5)))
+    paths.append(fill(BELLY, ell(16.5, cy - 5, 4.0, 3.0), "0.55"))
+    paths.append(fill(BELLY, ell(79.5, cy - 5, 4.0, 3.0), "0.55"))
+    paths += blush(cy, "0.6") + eyes_arc(cy, down=True)
+    paths.append(stroke(INK, f"M42,{cy + 8}c3,3.5 7,3.5 10,-0.5"))
+    paths.append(fill(BELLY, "M70,20c3,4 5,6.5 5,9a5,5 0 0,1 -10,0c0,-2.5 2,-5 5,-9z"))
+    files["character_flex_0"] = paths
+
+    # 걷기 — 따라 산책: 걷는 자세 + 지나온 발자국.
+    #
+    # 발자국은 **몸 실루엣 밖**에만 둔다(몸통 x 19~77, 발 x 23~68). 처음엔 잉크를 옅게 깔았더니
+    # 회색 자갈로 읽혔다 — 발자국은 형태(패드+발가락)와 몸과 같은 앰버로 읽힌다.
+    paths, cy = body_paths(foot_dx=5.0)
+    paths += blush(cy) + face_default(cy, look_dx=2.0)
+    paths.append(stroke(INK, f"M43,{cy + 8}c2.5,3.5 7.5,3.5 10,0"))
+    for fx, fy, a in [(6, 66, "0.35"), (13, 78, "0.55"), (7, 90, "0.75")]:
+        paths.append(fill(BODY, ell(fx, fy, 3.0, 2.3), a))
+        paths.append(fill(BODY, ell(fx - 2.6, fy - 3.2, 1.15, 1.15), a))
+        paths.append(fill(BODY, ell(fx, fy - 3.9, 1.15, 1.15), a))
+        paths.append(fill(BODY, ell(fx + 2.6, fy - 3.2, 1.15, 1.15), a))
+    files["character_walk_along_0"] = paths
+
     for state, paths in equipment().items():
         files[f"character_{state}_0"] = paths
 

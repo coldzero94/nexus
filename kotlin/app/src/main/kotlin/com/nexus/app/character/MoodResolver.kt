@@ -2,6 +2,7 @@ package com.nexus.app.character
 
 import android.content.Context
 import android.util.Log
+import com.nexus.core.ActivityType
 import com.nexus.core.Baseline
 import com.nexus.core.MoodContext
 import com.nexus.core.MoodEvaluator
@@ -29,23 +30,51 @@ private const val TAG = "MoodResolver"
  */
 object MoodResolver {
 
-    /** 홈에서 가용한 신호로 [MoodContext] 조립 — 순수 함수(단위 테스트 대상). */
+    /**
+     * 홈에서 가용한 신호로 [MoodContext] 조립 — 순수 함수(단위 테스트 대상).
+     *
+     * `todayActiveMin`을 인자로 받지 않고 [minutesByType]에서 더하는 이유: 둘을 따로 받으면
+     * "총 20분인데 종류별은 전부 0분"처럼 **production에서 만들 수 없는 조합**이 테스트에서
+     * 만들어진다. 그 조합으로 통과한 단언은 실제 화면과 무관하다(#114 리뷰).
+     */
     fun buildMoodContext(
-        todayActiveMin: Int,
+        minutesByType: Map<ActivityType, Int>,
         personalCoef: Double,
         restMode: Boolean,
         weeklyGoalMet: Boolean,
         condition: Int,
     ): MoodContext = MoodContext(
-        todayActiveMin = todayActiveMin,
+        todayActiveMin = minutesByType.values.sum(),
+        walkMin = minutesByType[ActivityType.WALKING] ?: 0,
+        runMin = minutesByType[ActivityType.RUNNING] ?: 0,
+        strengthMin = minutesByType[ActivityType.STRENGTH] ?: 0,
         personalCoef = personalCoef,
         restMode = restMode,
         weeklyGoalMet = weeklyGoalMet,
         condition = condition,
     )
 
-    /** 이번 주 활동일이 주간 목표일 수 이상인가 — 순수. */
-    fun weeklyGoalMet(activeDaysThisWeek: Int, goalDays: Int): Boolean = activeDaysThisWeek >= goalDays
+    /**
+     * 오늘 종류별 활동 분 (#114) — 순수. 종류가 없는 세션(매핑 안 된 종목)은 빠진다:
+     * XP도 안 주는 세션에 반응만 붙으면 "얘가 뭘 보고 저러지"가 된다.
+     */
+    fun minutesByTypeToday(sessions: List<SessionInput>, todayEpoch: Long): Map<ActivityType, Int> = sessions
+        .filter { it.epochDay == todayEpoch && it.type != null }
+        .groupBy { it.type!! }
+        .mapValues { (_, s) -> s.sumOf { it.minutes } }
+
+    /**
+     * 주간 목표를 **오늘 넘겼는가** — 순수 (#114 리뷰).
+     *
+     * "이번 주 달성했다"(`activeDays >= goalDays`)로 두면 안 된다. 활동일 수는 주 안에서 줄지
+     * 않으므로 한 번 달성한 뒤로는 **남은 요일 내내 참**이 되고, 그러면 뿌듯(p1)이 다른 모든
+     * 기분을 먹는다. 매일 운동하는 사용자일수록 반응 다양성을 못 보게 되는, 정확히 거꾸로 된 결과다
+     * (주 4일 목표 기준 7일 중 4일). CHARACTER.md §3도 p1을 '오늘 성취 이벤트'로 적고 있다.
+     *
+     * 오늘 활동이 없으면 거짓이다 — 안 그러면 달성한 주의 쉬는 날마다 다시 축하한다.
+     */
+    fun weeklyGoalMet(activeDaysThisWeek: Int, goalDays: Int, activeToday: Boolean): Boolean =
+        activeToday && activeDaysThisWeek >= goalDays && activeDaysThisWeek - 1 < goalDays
 
     /** 최근 세션에서 홈이 가진 신호로 [MoodContext] 조립 — 홈 로드의 단일 진입점(#212). */
     fun contextFromSessions(
@@ -56,11 +85,16 @@ object MoodResolver {
         condition: Int,
     ): MoodContext {
         val todayEpoch = today.toEpochDay()
+        val minutesByType = minutesByTypeToday(sessions, todayEpoch)
         return buildMoodContext(
-            todayActiveMin = sessions.filter { it.epochDay == todayEpoch && it.type != null }.sumOf { it.minutes },
+            minutesByType = minutesByType,
             personalCoef = personalCoefToday(sessions, todayEpoch),
             restMode = restMode,
-            weeklyGoalMet = weeklyGoalMet(activeDaysThisWeek(sessions, today), goalDays),
+            weeklyGoalMet = weeklyGoalMet(
+                activeDaysThisWeek(sessions, today),
+                goalDays,
+                activeToday = minutesByType.isNotEmpty(),
+            ),
             condition = condition,
         )
     }

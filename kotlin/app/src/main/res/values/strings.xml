@@ -236,6 +236,14 @@
     <string name="a11y_today_xp_gauge">오늘 XP 진행</string>
     <string name="a11y_today_xp_state">%1$d XP · 하루 목표 %2$d XP</string>
     <string name="a11y_sprite_idle">쉬고 있어요</string>
+    <string name="a11y_sprite_calm">잔잔하게 웃고 있어요</string>
+    <string name="a11y_sprite_hyped">신나서 뛰고 있어요</string>
+    <string name="a11y_sprite_proud">뿌듯해하고 있어요</string>
+    <string name="a11y_sprite_bored">심심해하고 있어요</string>
+    <string name="a11y_sprite_cozy">쉬는 중이에요</string>
+    <string name="a11y_sprite_walk_along">발자국을 남기며 함께 걷고 있어요</string>
+    <string name="a11y_sprite_run_along">옆에서 같이 달리고 있어요</string>
+    <string name="a11y_sprite_flex">알통을 자랑하고 있어요</string>
     <string name="a11y_sprite_walk">걷고 있어요</string>
     <string name="a11y_widget_progress">오늘 XP %1$d, 하루 목표 %2$d XP</string>
     <!-- 레벨업 홈 축하 (#219) — 무엇이 올랐는지 공개 -->

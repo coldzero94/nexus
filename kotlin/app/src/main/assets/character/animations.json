@@ -35,6 +35,21 @@
       "frameDurationMs": 600,
       "loop": false
     },
+    "run_along": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "flex": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
+    "walk_along": {
+      "frames": 1,
+      "frameDurationMs": 600,
+      "loop": false
+    },
     "egg_0": {
       "frames": 1,
       "frameDurationMs": 600,

@@ -1,6 +1,6 @@
 {
   "version": "v1",
-  "note": "기분 5종 트리거 규칙(#3·#65). MoodEvaluator가 priority 오름차순 평가, 첫 매치 채택. 표만 고치면 코드 무수정 반영(#28). 원본: docs/assets/mood_triggers_v1.json",
+  "note": "기분 트리거 규칙(#3·#65·#114). MoodEvaluator가 priority 오름차순 평가, 첫 매치 채택. 표만 고치면 코드 무수정 반영(#28). 운동 종류별 반응(p3~5)은 각자 '그 종류가 10분 이상이고 셋 중 가장 많다'를 스스로 다 적는다 — 앞 규칙에 기대면 순서를 바꾸는 순간 조용히 어긋난다. 10분은 짧은 활동에 특화 연출이 과하게 붙지 않게 두는 하한이고, 그 아래는 평온(p6)이 받는다. 원본: docs/assets/mood_triggers_v1.json",
   "moods": ["신남", "평온", "뿌듯", "심심", "휴식중"],
   "rules": [
     {
@@ -21,6 +21,30 @@
     },
     {
       "priority": 3,
+      "mood": "신남",
+      "when": "runMin >= 10 && runMin >= walkMin && runMin >= strengthMin",
+      "face": "run_along",
+      "conditionEffect": "recover_small",
+      "lines": ["나도 옆에서 같이 뛰었어 — 봤어? 🏃", "바람 가르는 거 이 맛이지 😤"]
+    },
+    {
+      "priority": 4,
+      "mood": "뿌듯",
+      "when": "strengthMin >= 10 && strengthMin >= walkMin && strengthMin >= runMin",
+      "face": "flex",
+      "conditionEffect": "hold_or_recover_small",
+      "lines": ["알통 봐봐. 이거 우리 거야 💪", "오늘 좀 단단해진 것 같은데?"]
+    },
+    {
+      "priority": 5,
+      "mood": "평온",
+      "when": "walkMin >= 10 && walkMin >= runMin && walkMin >= strengthMin",
+      "face": "walk_along",
+      "conditionEffect": "hold_or_recover_small",
+      "lines": ["나도 뒤에서 졸졸 따라갔어 🐾", "산책 코스 괜찮더라 그치?"]
+    },
+    {
+      "priority": 6,
       "mood": "평온",
       "when": "todayActiveMin > 0",
       "face": "calm_smile",
@@ -28,7 +52,7 @@
       "lines": ["무난하고 좋았어 🙂", "딱 적당했다 그치?"]
     },
     {
-      "priority": 4,
+      "priority": 7,
       "mood": "휴식중",
       "when": "todayActiveMin == 0 && (restMode || plannedRest)",
       "face": "cozy_roll",
@@ -36,7 +60,7 @@
       "lines": ["오늘은 공식 뒹굴데이 🛏️", "쉬는 것도 훈련이라구~ 😏"]
     },
     {
-      "priority": 5,
+      "priority": 8,
       "mood": "심심",
       "when": "todayActiveMin == 0 && !restMode",
       "face": "bored_lookaround",
