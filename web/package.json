@@ -11,11 +11,16 @@
     "verify": "astro build && astro check && node scripts/check-policy.mjs"
   },
   "dependencies": {
-    "astro": "^5.14.1"
+    "astro": "^7.1.6"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "typescript": "^5.9.2"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "sharp": "^0.35.3"
+    }
+  }
 }
