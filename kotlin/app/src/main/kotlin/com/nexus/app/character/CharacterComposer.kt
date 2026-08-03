@@ -248,12 +248,25 @@ internal fun rememberSpriteFrame(anim: AnimationState, state: String = ""): Int 
     return frame
 }
 
-/** 스프라이트 상태를 낭독용 접미사로 (#224) — 모르는 상태는 접미사 없이 기본 설명만. */
+/**
+ * 스프라이트 상태를 낭독용 접미사로 (#224·#114) — 모르는 상태는 접미사 없이 기본 설명만.
+ *
+ * 표정·특화 반응까지 모두 적는다. 안 적으면 그림이 여덟 가지로 바뀌는 동안 낭독은 "내 캐릭터"
+ * 하나로 고정돼, 반응 다양성이 **눈으로 보는 사람에게만** 전달된다.
+ */
 @Composable
 private fun spriteStateSuffix(state: String): String {
     val res = when (state) {
         "walk" -> R.string.a11y_sprite_walk
         "idle" -> R.string.a11y_sprite_idle
+        "calm_smile" -> R.string.a11y_sprite_calm
+        "jump_hyped" -> R.string.a11y_sprite_hyped
+        "proud_sparkle" -> R.string.a11y_sprite_proud
+        "bored_lookaround" -> R.string.a11y_sprite_bored
+        "cozy_roll" -> R.string.a11y_sprite_cozy
+        "walk_along" -> R.string.a11y_sprite_walk_along
+        "run_along" -> R.string.a11y_sprite_run_along
+        "flex" -> R.string.a11y_sprite_flex
         else -> null
     } ?: return ""
     return ", " + stringResource(res)

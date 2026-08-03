@@ -33,7 +33,8 @@ class ActivityReactionTest {
 
     private val assets get() = CharacterAssets(context)
 
-    private val today = LocalDate.of(2026, 8, 3)
+    /** 금요일 — 주(월 시작) 안에서 앞선 요일을 dayOffset으로 만들 수 있어야 주간 목표를 태울 수 있다. */
+    private val today = LocalDate.of(2026, 8, 7)
 
     private fun session(type: ActivityType, minutes: Int, dayOffset: Long = 0) = SessionInput(
         type = type,
@@ -48,8 +49,9 @@ class ActivityReactionTest {
             sessions.toList(),
             today,
             restMode = false,
-            // 주간 목표 달성은 p1(뿌듯)이 다 먹으므로 도달 불가능하게 크게 잡는다
-            goalDays = 99,
+            // 출시 기본값을 그대로 쓴다 (GoalStore.DEFAULT_WEEKLY_DAYS) — 크게 잡아 p1을 피하면
+            // "실제 설정에선 안 보인다"를 못 잡는다 (#114 리뷰)
+            goalDays = DEFAULT_GOAL_DAYS,
             condition = 70,
         )
         val result = MoodEvaluator.evaluate(assets.loadMoodTable(), moodContext)
@@ -115,6 +117,30 @@ class ActivityReactionTest {
     }
 
     /**
+     * 꾸준한 사용자가 이 기능을 **가장 적게** 보는 일이 없어야 한다.
+     *
+     * 주간 활동일 수는 주 안에서 줄지 않는다. 뿌듯(p1)을 "이번 주 목표 달성"으로 걸어두면
+     * 목표를 넘긴 순간부터 남은 요일 내내 p1이 이겨서, 매일 운동하는 사람은 주 4일 목표 기준
+     * 7일 중 4일을 같은 그림으로 보낸다 — 다양성이라는 목적과 정확히 반대다 (#114 리뷰).
+     */
+    @Test
+    fun `목표를 넘긴 주에도 다음 날부터 특화 반응이 돌아온다`() {
+        // 월~금 5일 연속 → 목표(4일)는 목요일에 넘겼다. 금요일엔 다시 종류별 반응이어야 한다
+        val week = (0L until 5L).map { session(ActivityType.RUNNING, 40, dayOffset = -it) }
+
+        assertEquals("run_along", renderState(*week.toTypedArray()))
+    }
+
+    /** 양성 대조 — 넘기는 **당일**엔 성취 축하가 이긴다(그 하루는 뿌듯이 맞다). */
+    @Test
+    fun `목표를 넘긴 당일은 성취 축하가 이긴다`() {
+        // 화~금 4일 = 목요일까지 3일, 금요일에 4일째 → 오늘 넘겼다
+        val week = (0L until DEFAULT_GOAL_DAYS.toLong()).map { session(ActivityType.RUNNING, 40, dayOffset = -it) }
+
+        assertEquals("proud_sparkle", renderState(*week.toTypedArray()))
+    }
+
+    /**
      * 세 반응이 **서로 다른 그림**인지. 같은 파일을 가리키면 규칙은 다 도는데 화면은 그대로라,
      * 위 단언들이 전부 초록인 채로 사용자는 아무 변화를 못 본다.
      */
@@ -151,3 +177,6 @@ class ActivityReactionTest {
 }
 
 private val SPECIAL_STATES = listOf("walk_along", "run_along", "flex")
+
+/** 출시 기본 주간 목표일 수 (`GoalStore.DEFAULT_WEEKLY_DAYS`). */
+private const val DEFAULT_GOAL_DAYS = 4

@@ -14,6 +14,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.nexus.app.character.CharacterAssets
+import com.nexus.app.character.MoodResolver
 import com.nexus.app.character.loadStoryFragments
 import com.nexus.app.crash.CrashReporting
 import com.nexus.app.data.NexusDatabase
@@ -22,8 +23,12 @@ import com.nexus.app.diag.DiagnosticsCollector
 import com.nexus.app.diag.LedgerIntegrityGuard
 import com.nexus.app.growth.DROP_PERCENT
 import com.nexus.app.growth.StoryCollectionStore
+import com.nexus.app.settings.GoalStore
+import com.nexus.app.settings.RestModeStore
 import com.nexus.app.widget.WidgetUpdater
 import com.nexus.core.FailureCategory
+import com.nexus.core.MoodContext
+import com.nexus.core.SessionInput
 import com.nexus.core.StoryDropPicker
 import kotlinx.coroutines.flow.Flow
 import java.io.IOException
@@ -114,6 +119,41 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
         }
 
         /**
+         * 위젯에 그릴 캐릭터 상태 — **홈과 같은 기분 파이프라인**을 태운다 (#212 리뷰 W1 · #114).
+         *
+         * 예전엔 워커가 활동 여부만 보고 walk/idle을 밀었다. 표정 아트(#66)와 운동 종류별 반응(#114)이
+         * 들어온 지금 그 방식은 **홈이 쓴 표정을 15분 안에 지운다** — 위젯은 열어보지 않고 스치는
+         * 자리라 반응이 가장 값어치 있는 곳인데, 거기서만 늘 같은 그림이 된다.
+         *
+         * 컨디션은 최대치로 넘긴다: 지금 표의 어떤 규칙도 `condition`을 안 쓰고, 워커가 컨디션을
+         * 정확히 구하려면 수면까지 읽어야 해서 비용이 목적에 안 맞는다. 규칙이 컨디션을 쓰기 시작하면
+         * 여기부터 고쳐야 한다.
+         */
+        private suspend fun widgetSpriteState(
+            context: Context,
+            sessions: List<ExerciseSummary>,
+            zone: ZoneId,
+        ): String {
+            val inputs = sessions.map {
+                SessionInput(
+                    type = it.type,
+                    minutes = it.durationMinutes.toInt(),
+                    tier = it.trustTier,
+                    epochDay = it.start.atZone(zone).toLocalDate().toEpochDay(),
+                )
+            }
+            val moodContext = MoodResolver.contextFromSessions(
+                sessions = inputs,
+                today = LocalDate.now(zone),
+                restMode = RestModeStore(context).enabled,
+                goalDays = GoalStore(context).weeklyGoalDays,
+                condition = MoodContext.MAX_CONDITION,
+            )
+            val face = MoodResolver.resolveMood(context, moodContext)?.face
+            return MoodResolver.renderState(CharacterAssets(context), face, moodContext.todayActiveMin)
+        }
+
+        /**
          * 조각 드롭을 대기 집합에 적는다 (#112).
          *
          * 실패해도 동기화를 멈추지 않는다 — 원장 append가 이 워커의 본업이고, 조각은 다음
@@ -152,18 +192,12 @@ class HealthSyncWorker(appContext: Context, params: WorkerParameters) : Coroutin
                 if (ledger.cancel(id, now)) Log.i(TAG, "reward cancelled for deleted record")
             }
             // 위젯 갱신 (#40): 동기화가 위젯의 유일한 백그라운드 갱신원 — 15분 준실시간 한계.
-            // 기분(#212)의 풍부한 신호(개인계수·주간목표)는 델타만 읽는 워커엔 없어 활동 기반 walk/idle만
-            // 전달한다 — 백그라운드 활동의 liveness 유지(#40의 존재 이유). 표정 아트(#66) 랜딩 시엔
-            // 홈이 쓴 표정을 워커 walk/idle이 덮어쓰지 않도록 위젯 기분 배선을 재검토해야 한다(#212 리뷰 W1).
             val todayEpoch = LocalDate.now(zone).toEpochDay()
-            val todayActive = sessions.any {
-                it.type != null && it.start.atZone(zone).toLocalDate().toEpochDay() == todayEpoch
-            }
             WidgetUpdater.update(
                 context = context,
                 cappedTotalXp = ledger.cappedTotalXp(),
                 todayXp = ledger.cappedXpOn(todayEpoch),
-                spriteState = if (todayActive) "walk" else "idle",
+                spriteState = widgetSpriteState(context, sessions, zone),
             )
             verifyLedgerIntegrity(context)
         }
