@@ -165,8 +165,8 @@ dependencies {
     implementation(libs.telemetrydeck.sdk)
     // 세션 리플레이는 **의존에서 뺀다** (#352). 이 앱은 화면 캡처를 명시적으로 막아 뒀는데
     // (`CrashReporting`: "화면에 건강 파생 표시값이 있다") 리플레이는 그보다 더 많이 담는다
-    // — 연속 프레임이다. 지금은 샘플레이트 기본값이 0이라 안 돌지만, 트리에 있는 한 SDK가
-    // 기본값을 바꾸는 순간 조용히 켜진다. NDK(네이티브 크래시)는 남긴다.
+    // — 연속 프레임이다. 지금은 샘플레이트 기본값이 없어서(null) 안 돌지만, 트리에 있는 한
+    // SDK가 기본값을 바꾸는 순간 조용히 켜진다. NDK(네이티브 크래시)는 남긴다.
     implementation(libs.sentry.android) {
         exclude(group = "io.sentry", module = "sentry-android-replay")
     }

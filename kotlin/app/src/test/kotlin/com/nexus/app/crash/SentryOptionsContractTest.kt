@@ -1,11 +1,16 @@
 package com.nexus.app.crash
 
+import io.sentry.Hint
+import io.sentry.SentryEvent
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.protocol.Message
+import io.sentry.protocol.SentryException
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -70,6 +75,39 @@ class SentryOptionsContractTest {
         val present = runCatching { Class.forName("io.sentry.android.core.SentryAndroid") }.isSuccess
 
         assertTrue(present, "Sentry 코어가 없다 — 이 파일의 다른 단언이 전부 무의미해진다")
+    }
+
+    /**
+     * **수치 세탁이 실제로 걸려 있는가.** `CrashScrubber`가 옳은지는 `CrashScrubberTest`가 보지만,
+     * 그게 파이프라인에 **붙어 있는지**는 아무도 안 봤다 — 콜백을 통째로 지워도 전 스위트가
+     * 초록이었다(#352 리뷰가 재현). "부를 수 있다"와 "부른다"는 다른 명제다.
+     *
+     * 이건 이 파일에서 유일하게 불리언이 아니라 **로직**인 계약이고, 지키는 불변식이
+     * "건강 파생 수치는 기기 밖으로 안 나간다"라 가장 값어치가 크다.
+     */
+    @Test
+    fun `예외 메시지의 수치가 전송 전에 지워진다`() {
+        val event = SentryEvent().apply {
+            exceptions = listOf(SentryException().apply { value = "steps=8432" })
+        }
+
+        val sent = configured().beforeSend?.execute(event, Hint())
+
+        val scrubbed = sent?.exceptions?.first()?.value
+        assertNotNull(scrubbed, "beforeSend가 안 걸렸다 — 예외 메시지가 그대로 나간다")
+        assertFalse("8432" in scrubbed, "예외 메시지에 수치가 남았다: $scrubbed")
+    }
+
+    /** 메시지 채널도 같은 통로다 — 한쪽만 세탁하면 다른 쪽으로 샌다. */
+    @Test
+    fun `메시지의 수치도 지워진다`() {
+        val event = SentryEvent().apply { message = Message().apply { formatted = "hr=143" } }
+
+        val sent = configured().beforeSend?.execute(event, Hint())
+
+        val scrubbed = sent?.message?.formatted
+        assertNotNull(scrubbed, "beforeSend가 안 걸렸다")
+        assertFalse("143" in scrubbed, "메시지에 수치가 남았다: $scrubbed")
     }
 
     /** 무료 티어는 에러만 받는다(월 5k) — tracing이 켜지면 표본이 트레이스로 잠식된다. */
