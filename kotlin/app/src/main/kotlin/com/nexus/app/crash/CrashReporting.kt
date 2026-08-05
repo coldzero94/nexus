@@ -9,6 +9,7 @@ import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroid
+import io.sentry.android.core.SentryAndroidOptions
 import java.io.File
 
 private const val TAG = "CrashReporting"
@@ -64,18 +65,34 @@ object CrashReporting {
     }
 
     private fun initSentry(context: Context, dsn: String) {
-        SentryAndroid.init(context.applicationContext) { options ->
-            options.dsn = dsn
-            options.isSendDefaultPii = false // 기본값이지만 계약이므로 명시
-            options.tracesSampleRate = null // tracing off — 무료 티어 5k/월은 에러만
-            options.isAttachScreenshot = false // 화면에 건강 파생 표시값이 있다 — 첨부 금지
-            options.isAttachViewHierarchy = false
-            options.environment = if (BuildConfig.DEBUG) "debug" else "release"
+        SentryAndroid.init(context.applicationContext) { options -> configure(options, dsn) }
+    }
+
+    /**
+     * 옵션 계약 (#48·#349·#352) — **순수 함수로 빼서** 테스트가 값을 직접 검사한다.
+     *
+     * 초기화 콜백 안에 있으면 SDK를 실제로 띄우지 않고는 무엇이 설정됐는지 볼 수 없다. 여기 있는
+     * 값들은 전부 "기본값이지만 계약이므로 명시"에 해당해서, 조용히 뒤집히는 게 정확히 위험이다.
+     */
+    @VisibleForTesting
+    internal fun configure(options: SentryAndroidOptions, dsn: String) {
+        with(options) {
+            this.dsn = dsn
+            isSendDefaultPii = false // 기본값이지만 계약이므로 명시
+            tracesSampleRate = null // tracing off — 무료 티어 5k/월은 에러만
+            isAttachScreenshot = false // 화면에 건강 파생 표시값이 있다 — 첨부 금지
+            isAttachViewHierarchy = false
+            // 세션 리플레이는 의존에서 이미 뺐다(app/build.gradle.kts, #352). 그래도 0을 박는 이유:
+            // 우산 의존이 다시 붙거나 SDK가 기본값을 바꾸면, 화면 캡처보다 더 많이 담는 기능이
+            // 조용히 켜진다. 스크린샷을 명시적으로 막아둔 앱이 리플레이를 기본값에 맡길 수는 없다.
+            sessionReplay.sessionSampleRate = 0.0
+            sessionReplay.onErrorSampleRate = 0.0
+            environment = if (BuildConfig.DEBUG) "debug" else "release"
             // 동의를 끄는 순간 마지막 업로드가 일어나면 안 된다 — Sentry.close()는 이 값만큼
             // 동기 flush를 하고(무료 API엔 close(false)가 없다) 그 자체가 전송 행위가 된다 (#349 리뷰)
-            options.shutdownTimeoutMillis = 0
+            shutdownTimeoutMillis = 0
             // 방어 심화 — 미래에 값 보간 예외 메시지("steps=8432")가 생겨도 수치는 안 나간다([CrashScrubber])
-            options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
+            beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
                 event.exceptions?.forEach { ex -> ex.value = CrashScrubber.scrub(ex.value) }
                 event.message?.let { it.formatted = CrashScrubber.scrub(it.formatted) }
                 event
