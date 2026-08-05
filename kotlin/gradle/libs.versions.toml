@@ -1,29 +1,29 @@
 [versions]
-kotlin = "2.4.0"
+kotlin = "2.4.10"
 ksp = "2.3.10"
 room = "2.8.4"
-agp = "9.2.1"
+agp = "9.3.1"
 composeBom = "2026.06.01"
 activityCompose = "1.13.0"
 coreKtx = "1.19.0"
 healthConnect = "1.1.0"
 workManager = "2.10.0"
-lifecycle = "2.10.0"
+lifecycle = "2.11.0"
 compileSdk = "37"
 minSdk = "34"
 targetSdk = "36"
 
-robolectric = "4.16"
+robolectric = "4.16.1"
 androidxTest = "1.7.0"
 
-spotless = "8.8.0"
+spotless = "8.9.0"
 detekt = "1.23.8"
 ktlint = "1.8.0"
-composeRules = "0.6.2"
+composeRules = "0.6.3"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
-androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version = "1.0.1" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version = "1.2.0" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-health-connect = { module = "androidx.health.connect:connect-client", version.ref = "healthConnect" }
 androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
@@ -40,15 +40,15 @@ room-testing = { module = "androidx.room:room-testing", version.ref = "room" }
 work-testing = { module = "androidx.work:work-testing", version.ref = "workManager" }
 compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
 compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest" }
-kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version = "1.10.2" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version = "1.11.0" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.10.0" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.11.0" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 glance-appwidget = { module = "androidx.glance:glance-appwidget", version = "1.1.1" }
 telemetrydeck-sdk = { module = "com.telemetrydeck:kotlin-sdk", version = "7.1.0" }
-sentry-android = { module = "io.sentry:sentry-android", version = "8.49.0" }
+sentry-android = { module = "io.sentry:sentry-android", version = "8.51.0" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 
