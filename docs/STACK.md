@@ -15,7 +15,7 @@
 | CI/CD | GitHub Actions (ubuntu) + Play App Signing | 리눅스 러너 1x 배율 — 월 2,000분 무료로 충분. 연 고정비 $0 (Play $25 일회성뿐) |
 | 배포 | 개발 중: **GitHub Releases APK 자동 업로드** → Play 계정 후: **Play 내부 트랙** | 추가 서비스 0개(Firebase 불필요). 내부 트랙은 자동 업데이트 + 워치 앱 배포 경로 |
 | 분석 | TelemetryDeck Kotlin SDK 7.x (무료 50k/월) | 리텐션·세션 빌트인, 식별자 해시. 대안 Aptabase |
-| 크래시 | Sentry 무료(5k/월, tracing off, PII off) + Play vitals 보조 | vitals 단독은 초기 소규모에서 임계치 미달로 안 보임. **Crashlytics 배제**(동의 전 자동 수집) |
+| 크래시 | Sentry 무료(5k/월, tracing off, PII off, **세션 리플레이 의존 제외**) + Play vitals 보조 | vitals 단독은 초기 소규모에서 임계치 미달로 안 보임. **Crashlytics 배제**(동의 전 자동 수집). 리플레이 제외 근거는 §2 아래 |
 | 프로젝트 구성 | AGP 9.x + Gradle 9.6.x + JDK 17 + 버전 카탈로그 + build-logic 컨벤션 플러그인 | 2026-05 JetBrains 신 KMP 표준 구조 — [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | **서버 (S9~)** | **하이브리드**: Supabase(DB·Auth, 관리형) + **자체 Ktor 서버**(core 재사용, Docker→Cloud Run 서울 무료) | 산식 단일 진실 — Edge Functions(TS) 재구현 이원화 배제. 무상태 컨테이너라 운영 부담 최소 |
 | **웹** | Astro + Cloudflare Workers 무료 — 랜딩·폴리시(정적) + 공유 스냅샷(SSR·OG) | KMP 웹 타깃 기각(CMP Web=Beta·SEO 불가). Vercel Hobby는 비상업 한정이라 기각 |
@@ -41,6 +41,7 @@
 - **Play Console 개인 계정($25)은 늦어도 S6 시작 시 생성** — 신규 개인 계정의 "비공개 테스트 12명×14일" 시계는 S7 closed test 업로드부터 시작하므로 더 일찍 만들 실익이 없고, 그전 배포는 GitHub Release APK로 충분. 테스터 이탈 대비 **15명+ 풀**도 S6까지 확보.
 - **Health apps declaration**: HC 데이터 타입별 선언·심사(≤7일, 거절 루프 사례 다수)가 **closed test 트랙에도 적용**. 거절 사유 1순위 = 과다 권한. 최소셋(Steps, ExerciseSession, Distance, TotalCaloriesBurned, HeartRate)만, 타입마다 "XP/능력치 변환에 필요" 정당화 — **'health-integrated games'가 공식 승인 유스케이스**라 게임화 목적을 숨기지 말고 명시. 카테고리는 'Activity and fitness'(Medical 아님), 스토어 문구에 질병·치료 표현 배제 + '의료기기 아님' 문구.
 - **광고 전면 금지**(건강 데이터 보유 앱) → IAP 확정(이미 방침). **분석 이벤트에 건강 파생 수치(XP·레벨 수치 포함) 탑재 금지** — "SDK가 의도치 않게 수신해도 위반" 조항.
+- **세션 리플레이는 의존에서 뺀다** (#352). `io.sentry:sentry-android` 우산이 `sentry-android-replay`를 **릴리스 런타임까지** 끌고 온다. 이 앱은 스크린샷·뷰 계층 첨부를 명시적으로 끄는데(화면에 건강 파생 표시값이 있다) 리플레이는 그보다 더 많이 담는다 — 연속 프레임이다. 지금은 샘플레이트 기본값이 없어서(null) 안 돌지만, 트리에 있는 한 SDK가 기본값을 바꾸는 순간 조용히 켜진다. `exclude`로 빼고(코드가 APK에 아예 안 실린다) 샘플레이트도 0으로 박는다(우산이 다시 붙을 경우의 2차 방어). NDK(네이티브 크래시)는 남긴다 — 담는 게 아니라 잡는 쪽이다. 의존을 바꾸면 **락파일을 같은 PR에서 갱신**해야 한다(`./gradlew :app:dependencies --write-locks`).
 - **Data safety**: '수집' = 기기 밖 전송 기준 → 서버 없는 로컬 앱은 유리. 프라이버시 폴리시 URL 필수(스토어·HC 권한 화면 일치).
 - **타임라인**: 개발 완료 → 공개 출시까지 최소 4주, HC 심사 거절 1회 가정 시 6주. 알파(릴리즈 APK/내부 트랙)는 이 게이트와 무관하게 즉시 가능.
 
