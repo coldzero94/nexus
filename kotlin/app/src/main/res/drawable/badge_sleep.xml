@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  수면 스트릭 (#359) — 초승달 + 작은 별.
+  달력(streak)과 구분되는 '밤/수면' 기호. 무처벌 톤 — 잘 쉰 밤을 모으는 수집물이지 강요가 아니다.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M12.5,3c-4.97,0 -9,4.03 -9,9s4.03,9 9,9c0.32,0 0.64,-0.02 0.95,-0.05C11.13,18.79 9.5,15.09 9.5,11c0,-4.09 1.63,-7.79 3.95,-9.95C13.14,3.02 12.82,3 12.5,3z" />
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M17.5,3.5l0.6,1.6 1.6,0.6 -1.6,0.6 -0.6,1.6 -0.6,-1.6 -1.6,-0.6 1.6,-0.6z" />
+</vector>

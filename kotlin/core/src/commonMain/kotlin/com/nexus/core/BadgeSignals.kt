@@ -62,12 +62,14 @@ object BadgeSignals {
      * @param dailyActive 창 내 일별 활동 여부(오래된→최신). activeDaysTotal·streakDays의 입력
      * @param bestDaySteps 창 내 하루 최대 걸음(#7)
      * @param expeditionsCompleted 완료 원정 수 — 앱의 ExpeditionStore 개봉 카운터가 소스(#204)
+     * @param sleepStreakDays 연속 수면 기록일(#359) — 워치 수면 측정 인센티브 배지 신호. 미측정=0
      */
     fun build(
         cumulativeXp: Int,
         dailyActive: List<Boolean>,
         bestDaySteps: Int,
         expeditionsCompleted: Int,
+        sleepStreakDays: Int = 0,
     ): BadgeContext = BadgeContext(
         level = LevelCurve.displayLevel(cumulativeXp),
         cumulativeXp = cumulativeXp,
@@ -75,5 +77,6 @@ object BadgeSignals {
         streakDays = StreakCalculator.currentStreak(dailyActive),
         expeditionsCompleted = expeditionsCompleted,
         bestDaySteps = bestDaySteps,
+        sleepStreakDays = sleepStreakDays,
     )
 }
