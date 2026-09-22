@@ -35,13 +35,11 @@ object ConditionEngine {
     const val ACTIVE_DAY_THRESHOLD_POINTS = 10.0
 
     /**
-     * 수면 반영 상수 (#180, E4-12) — 표시 게이지라 자유 튜닝. 목표 이상=가산, 부족 이하=감산.
-     * 무처벌 원칙상 감산 폭은 소폭으로 두고, 결과는 항상 [SOFT_FLOOR] 위로 클램프한다.
+     * 수면 반영 상수 (#180, E4-12) — 표시 게이지라 자유 튜닝. **보상 전용**: 수면 시간에 비례해
+     * 최대 +[SLEEP_BONUS]까지 가산(감산 없음 — 워치 미착용·부족 수면도 벌하지 않는다).
      */
     const val SLEEP_TARGET_HOURS = 7.0
-    const val SLEEP_POOR_HOURS = 5.0
     const val SLEEP_BONUS = 8.0
-    const val SLEEP_PENALTY = 6.0
 
     /**
      * 하루 경과 반영. [current]는 어제의 컨디션, [dayBasePoints]는 그날의 신뢰 반영 전
@@ -85,23 +83,14 @@ object ConditionEngine {
         dayPoints.fold(DEFAULT) { acc, points -> nextDay(acc, points, restMode) }
 
     /**
-     * 지난밤 수면 반영 (#180, E4-12) — 활동 기반 컨디션에 소프트 보정. [sleepHours]가 null(데이터
-     * 없음·sync 희소)이면 무효과로 현행 유지. 목표([SLEEP_TARGET_HOURS]) 이상=+[SLEEP_BONUS],
-     * 부족([SLEEP_POOR_HOURS]) 이하=−[SLEEP_PENALTY], 사이는 선형 보간. 결과는 항상
-     * [SOFT_FLOOR]~[MAX] — 수면 부족도 바닥을 뚫지 않는다(불변식 유지).
+     * 지난밤 수면 반영 (#180, E4-12) — **보상 전용**. 워치로 잰 수면일수록 컨디션이 오른다.
+     * [sleepHours]가 null(미착용·sync 희소)이면 무효과로 활동 기반 유지 — **감산 없음**(워치를 차고
+     * 자는 불편함을 벌이 아니라 보상으로 다루는 설계, #359). 보정은 수면 시간에 비례해
+     * [SLEEP_TARGET_HOURS]에서 +[SLEEP_BONUS] 상한, 결과는 [MAX] 이하.
      */
     fun applySleep(condition: Double, sleepHours: Double?): Double {
         if (sleepHours == null) return condition
-        val adjust = when {
-            sleepHours >= SLEEP_TARGET_HOURS -> SLEEP_BONUS
-
-            sleepHours <= SLEEP_POOR_HOURS -> -SLEEP_PENALTY
-
-            else -> {
-                val t = (sleepHours - SLEEP_POOR_HOURS) / (SLEEP_TARGET_HOURS - SLEEP_POOR_HOURS)
-                -SLEEP_PENALTY + t * (SLEEP_BONUS + SLEEP_PENALTY)
-            }
-        }
-        return (condition + adjust).coerceIn(SOFT_FLOOR, MAX)
+        val ratio = (sleepHours / SLEEP_TARGET_HOURS).coerceIn(0.0, 1.0)
+        return (condition + SLEEP_BONUS * ratio).coerceAtMost(MAX)
     }
 }
