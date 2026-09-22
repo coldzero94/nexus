@@ -78,4 +78,30 @@ class BadgeSignalsTest {
         )
         assertEquals(setOf("week_streak"), BadgeEvaluator.unlocked(table, ctx))
     }
+
+    @Test
+    fun sleepStreak_flows_into_context_and_evaluator() {
+        // 수면 스트릭 신호(#359)가 배지 조건까지 전달되는지 — 3일이면 해금, 기본 0이면 미해금.
+        val table = BadgeTableReader.parse(
+            """{ "version": "t", "badges": [
+                 { "id": "sleep_streak_3", "name": "n", "description": "d", "when": "sleepStreakDays >= 3" } ] }""",
+        )
+        val withSleep = BadgeSignals.build(
+            cumulativeXp = 0,
+            dailyActive = emptyList(),
+            bestDaySteps = 0,
+            expeditionsCompleted = 0,
+            sleepStreakDays = 3,
+        )
+        assertEquals(3, withSleep.sleepStreakDays)
+        assertEquals(setOf("sleep_streak_3"), BadgeEvaluator.unlocked(table, withSleep))
+        // 기본값(수면 미측정)=0 → 미해금
+        val noSleep = BadgeSignals.build(
+            cumulativeXp = 0,
+            dailyActive = emptyList(),
+            bestDaySteps = 0,
+            expeditionsCompleted = 0,
+        )
+        assertEquals(emptySet(), BadgeEvaluator.unlocked(table, noSleep))
+    }
 }
