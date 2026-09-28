@@ -5,9 +5,9 @@ room = "2.8.5"
 agp = "9.4.1"
 composeBom = "2026.09.00"
 activityCompose = "1.13.0"
-coreKtx = "1.19.0"
+coreKtx = "1.19.1"
 healthConnect = "1.1.0"
-workManager = "2.10.0"
+workManager = "2.12.0"
 lifecycle = "2.10.0"
 compileSdk = "37"
 minSdk = "34"
@@ -19,7 +19,7 @@ androidxTest = "1.7.0"
 spotless = "8.10.2"
 detekt = "1.23.8"
 ktlint = "1.8.0"
-composeRules = "0.6.6"
+composeRules = "0.6.7"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -48,7 +48,7 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 glance-appwidget = { module = "androidx.glance:glance-appwidget", version = "1.1.1" }
 telemetrydeck-sdk = { module = "com.telemetrydeck:kotlin-sdk", version = "7.2.0" }
-sentry-android = { module = "io.sentry:sentry-android", version = "8.57.0" }
+sentry-android = { module = "io.sentry:sentry-android", version = "8.58.0" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 
