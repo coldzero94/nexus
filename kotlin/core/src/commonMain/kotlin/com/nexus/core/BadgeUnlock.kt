@@ -50,6 +50,11 @@ data class BadgeContext(
      * 원장은 append-only라 이 값이 **줄어들지 않는다**(불퇴행).
      */
     val activeDaysLifetime: Int = 0,
+    /**
+     * 연속 수면 기록일 (#359) — 워치로 수면을 잰 밤이 며칠 이어졌는가. 워치를 차고 자는 불편함을
+     * 보상하는 인센티브 신호(수면 스트릭 배지). 미착용/미기록 밤에서 끊긴다.
+     */
+    val sleepStreakDays: Int = 0,
 ) {
     fun toVars(): Map<String, Double> = mapOf(
         "level" to level.toDouble(),
@@ -59,6 +64,7 @@ data class BadgeContext(
         "expeditionsCompleted" to expeditionsCompleted.toDouble(),
         "bestDaySteps" to bestDaySteps.toDouble(),
         "activeDaysLifetime" to activeDaysLifetime.toDouble(),
+        "sleepStreakDays" to sleepStreakDays.toDouble(),
     )
 
     companion object {
@@ -71,6 +77,7 @@ data class BadgeContext(
             "expeditionsCompleted",
             "bestDaySteps",
             "activeDaysLifetime",
+            "sleepStreakDays",
         )
     }
 }
