@@ -30,7 +30,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       # 포맷·정적분석·Android Lint (#242) — Lint는 매니페스트 권한·backup_rules 오설정·HC 회귀를
       # 잡는 무료 게이트. error 0건 상태라 baseline 없이 새 error를 즉시 차단한다(abortOnError는 AGP 기본값).
       - name: Quality gates (format + static analysis + lint)
