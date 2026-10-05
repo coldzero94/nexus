@@ -16,7 +16,7 @@ targetSdk = "36"
 robolectric = "4.17"
 androidxTest = "1.7.0"
 
-spotless = "8.10.2"
+spotless = "8.10.3"
 detekt = "1.23.8"
 ktlint = "1.8.0"
 composeRules = "0.6.7"
@@ -48,7 +48,7 @@ room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 glance-appwidget = { module = "androidx.glance:glance-appwidget", version = "1.1.1" }
 telemetrydeck-sdk = { module = "com.telemetrydeck:kotlin-sdk", version = "7.2.0" }
-sentry-android = { module = "io.sentry:sentry-android", version = "8.58.0" }
+sentry-android = { module = "io.sentry:sentry-android", version = "8.59.0" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 
