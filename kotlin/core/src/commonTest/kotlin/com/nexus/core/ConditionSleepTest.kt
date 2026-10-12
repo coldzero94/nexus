@@ -9,40 +9,32 @@ class ConditionSleepTest {
 
     @Test
     fun nullSleep_leaves_condition_unchanged() {
-        // 수면 데이터 없음(sync 희소) → 무효과, 현행 활동 기반 유지.
+        // 워치 미착용·수면 없음(sync 희소) → 무효과, 활동 기반 유지.
         assertEquals(70.0, ConditionEngine.applySleep(70.0, null), delta)
     }
 
     @Test
-    fun sufficient_sleep_adds_bonus() {
-        assertEquals(70.0 + ConditionEngine.SLEEP_BONUS, ConditionEngine.applySleep(70.0, 7.5), delta)
-        // 목표 경계 포함(>=)
+    fun full_sleep_adds_max_bonus() {
         assertEquals(70.0 + ConditionEngine.SLEEP_BONUS, ConditionEngine.applySleep(70.0, 7.0), delta)
+        // 목표 초과도 상한(+BONUS)에서 포화
+        assertEquals(70.0 + ConditionEngine.SLEEP_BONUS, ConditionEngine.applySleep(70.0, 9.0), delta)
     }
 
     @Test
-    fun poor_sleep_subtracts_penalty() {
-        assertEquals(70.0 - ConditionEngine.SLEEP_PENALTY, ConditionEngine.applySleep(70.0, 4.0), delta)
-        // 부족 경계 포함(<=)
-        assertEquals(70.0 - ConditionEngine.SLEEP_PENALTY, ConditionEngine.applySleep(70.0, 5.0), delta)
+    fun bonus_scales_with_sleep_duration() {
+        // 목표의 절반(3.5h) → +BONUS/2
+        assertEquals(70.0 + ConditionEngine.SLEEP_BONUS / 2.0, ConditionEngine.applySleep(70.0, 3.5), delta)
     }
 
     @Test
-    fun between_interpolates_linearly() {
-        // 6h = 5~7h 정중앙 → 보정 = (-PENALTY + BONUS)/2
-        val mid = (-ConditionEngine.SLEEP_PENALTY + ConditionEngine.SLEEP_BONUS) / 2.0
-        assertEquals(70.0 + mid, ConditionEngine.applySleep(70.0, 6.0), delta)
+    fun short_sleep_never_penalizes() {
+        // 보상 전용: 짧게 자도(2h) 컨디션이 내려가지 않는다(무처벌).
+        assertTrue(ConditionEngine.applySleep(70.0, 2.0) >= 70.0)
+        assertEquals(70.0, ConditionEngine.applySleep(70.0, 0.0), delta)
     }
 
     @Test
-    fun never_below_floor_even_with_poor_sleep() {
-        // 무처벌 불변식: 수면 부족도 바닥을 뚫지 않는다.
-        assertEquals(ConditionEngine.SOFT_FLOOR, ConditionEngine.applySleep(ConditionEngine.SOFT_FLOOR, 3.0), delta)
-        assertTrue(ConditionEngine.applySleep(22.0, 3.0) >= ConditionEngine.SOFT_FLOOR)
-    }
-
-    @Test
-    fun never_above_max_with_bonus() {
+    fun never_above_max() {
         assertEquals(ConditionEngine.MAX, ConditionEngine.applySleep(98.0, 8.0), delta)
     }
 }
