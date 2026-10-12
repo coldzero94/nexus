@@ -36,6 +36,20 @@
       "name": "만보 주파",
       "description": "하루 10,000보를 넘겼어요.",
       "when": "bestDaySteps >= 10000"
+    },
+    {
+      "id": "sleep_streak_3",
+      "icon": "sleep",
+      "name": "잘 자는 습관",
+      "description": "3일 연속 수면을 기록했어요.",
+      "when": "sleepStreakDays >= 3"
+    },
+    {
+      "id": "sleep_streak_7",
+      "icon": "sleep",
+      "name": "꿈나라 단골",
+      "description": "7일 연속 수면을 기록했어요.",
+      "when": "sleepStreakDays >= 7"
     }
   ]
 }
