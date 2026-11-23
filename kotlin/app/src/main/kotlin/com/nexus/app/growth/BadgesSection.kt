@@ -10,6 +10,7 @@ import com.nexus.app.R
 import com.nexus.app.character.CharacterAssets
 import com.nexus.app.data.ExpeditionStore
 import com.nexus.app.health.HealthConnectManager
+import com.nexus.app.health.sleepStreakOrZero
 import com.nexus.app.telemetry.Telemetry
 import com.nexus.app.telemetry.TelemetryEvent
 import com.nexus.app.ui.NexusCard
@@ -70,6 +71,8 @@ internal fun commitBadgeProgress(
 internal suspend fun loadBadges(context: Context, manager: HealthConnectManager, cumulativeXp: Int): BadgeState? = try {
     val repo = manager.growthRepositoryOrNull() ?: return null
     val inputs = repo.computeBadgeInputs()
+    // 연속 수면 기록일 (#359) — 워치 수면 측정 인센티브. 실패·미측정은 0(무영향)
+    val sleepStreak = sleepStreakOrZero(manager.sleepRepositoryOrNull())
     // 에셋 파싱·프리퍼런스 최초 로드는 모두 디스크 IO — 한 번의 컨텍스트 전환으로 묶는다
     val (table, store, expeditionsCompleted) = withContext(Dispatchers.IO) {
         Triple(
@@ -83,6 +86,7 @@ internal suspend fun loadBadges(context: Context, manager: HealthConnectManager,
         dailyActive = inputs.dailyActive,
         bestDaySteps = inputs.bestDaySteps,
         expeditionsCompleted = expeditionsCompleted,
+        sleepStreakDays = sleepStreak,
     )
     val currently = BadgeEvaluator.unlocked(table, signals)
     val newly = currently - store.earned
